@@ -42,7 +42,7 @@ func (v AlertVariant) Render(w io.Writer) error {
 	case AlertVariantDestructive:
 		class = "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
 	default:
-		panic("invalid button size property")
+		panic("invalid alert variant property")
 	}
 
 	return renderer.Class(class).Render(w)
@@ -61,11 +61,11 @@ func Alert(props ...renderer.Renderer) *renderer.Element {
 	}
 
 	for _, prop := range props {
-		switch c := prop.(type) {
+		switch prop := prop.(type) {
 		case AlertVariant:
-			variant = c
+			variant = prop
 		default:
-			ps = append(ps, c)
+			ps = append(ps, prop)
 		}
 	}
 

@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"bytes"
 	"fmt"
 	"html"
 	"io"
@@ -239,3 +240,32 @@ func (*Element) Node()  {}
 func (*Fragment) Node() {}
 func (*Text) Node()     {}
 func (*RawNode) Node()  {}
+
+func GetAttr(el *Element, name string) (string, bool) {
+
+	for _, attr := range el.attrs {
+		var key string
+
+		htmlAttr, ok := attr.(*HtmlAttribute)
+		if ok {
+			key = htmlAttr.Key
+		} else {
+			keyer, ok := attr.(interface{ Key() string })
+			if ok {
+				key = keyer.Key()
+			}
+		}
+
+		if len(key) == 0 {
+			return "", false
+		}
+
+		if key == name {
+			buf := bytes.NewBuffer([]byte{})
+			attr.Render(buf)
+			return buf.String(), true
+		}
+	}
+
+	return "", false
+}
