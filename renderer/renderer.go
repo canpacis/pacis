@@ -1,10 +1,11 @@
 package renderer
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"html"
 	"io"
+	"slices"
 	"strings"
 )
 
@@ -25,44 +26,271 @@ var selfClosingTags = map[string]string{
 	"wbr":    "wbr",
 }
 
-type noopwriter struct {
-	w   io.Writer
-	n   int
+// Represents a general renderable structure eg: an element, an attribute
+type Renderer interface {
+	Render(context.Context, io.Writer) error
+}
+
+// A shorter alias to Renderer
+type I Renderer
+
+// Node type enumerator
+type NodeType int
+
+const (
+	NodeText = NodeType(iota)
+	NodeElement
+	NodeFragment
+)
+
+// Represents an HTML node that is renderable. This
+// can be anything from an element to a text node.
+type Node interface {
+	Renderer
+	NodeType() NodeType
+}
+
+// Represents and HTML element, conceptually encompassing a
+// Node in that it also renders a node but can also have attributes.
+type Element interface {
+	Node
+	GetTag() string
+	GetAttributes() []Attribute
+	GetAttribute(string) (Attribute, bool)
+	SetAttribute(int, Attribute)
+	GetElement(int) (Element, bool)
+	GetElements() []Element
+	GetNode(int) (Node, bool)
+	GetNodes() []Node
+	Add(Node)
+	Remove(int)
+}
+
+// Represents any kind of element attribute
+type Attribute interface {
+	Renderer
+	GetKey() string
+	GetValue() any
+}
+
+type element struct {
+	tag         string
+	nodes       []Node
+	attrs       []Attribute
+	selfClosing bool
+
 	err error
 }
 
-func (nw *noopwriter) write(p []byte) {
-	if nw.err != nil {
+func (e *element) Render(ctx context.Context, w io.Writer) error {
+	if e.err != nil {
+		return e.err
+	}
+
+	if _, err := w.Write(fmt.Appendf(nil, "<%s", e.tag)); err != nil {
+		return err
+	}
+
+	attrs := map[string][]Attribute{}
+
+	// Collapse duplicate definitions
+	for _, attr := range e.attrs {
+		key := attr.GetKey()
+		attrs[key] = append(attrs[key], attr)
+	}
+
+	for key, list := range attrs {
+		// join class names with a space, duplicate other attributes
+		if key == "class" {
+			if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
+				return err
+			}
+
+			for _, class := range list {
+				if _, err := w.Write([]byte(" ")); err != nil {
+					return err
+				}
+				if err := class.Render(ctx, w); err != nil {
+					return err
+				}
+			}
+			if _, err := w.Write([]byte("\"")); err != nil {
+				return err
+			}
+		} else {
+			for _, attr := range list {
+				if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
+					return err
+				}
+				if err := attr.Render(ctx, w); err != nil {
+					return err
+				}
+				if _, err := w.Write([]byte("\"")); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if e.selfClosing {
+		_, err := w.Write([]byte(" />"))
+		return err
+	}
+	if _, err := w.Write([]byte(">")); err != nil {
+		return err
+	}
+
+	for _, node := range e.nodes {
+		if err := node.Render(ctx, w); err != nil {
+			return err
+		}
+	}
+
+	if _, err := w.Write(fmt.Appendf(nil, "</%s>", e.tag)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *element) NodeType() NodeType {
+	return NodeElement
+}
+
+func (e *element) GetTag() string {
+	return e.tag
+}
+
+func (e *element) GetAttributes() []Attribute {
+	return e.attrs
+}
+
+func (e *element) GetAttribute(key string) (Attribute, bool) {
+	for _, attr := range e.attrs {
+		if attr.GetKey() == key {
+			return attr, true
+		}
+	}
+	return nil, false
+}
+
+func (e *element) SetAttribute(i int, attr Attribute) {
+	if len(e.attrs) <= i {
+		e.err = fmt.Errorf("set attribute: cannot set attribte %d on element %s, index is out of bounds", i, e.tag)
 		return
 	}
 
-	nw.n, nw.err = nw.w.Write(p)
+	e.attrs[i] = attr
 }
 
-func (nw *noopwriter) reset(w io.Writer) {
-	nw.w = w
-	nw.n = 0
-	nw.err = nil
+func (e *element) GetElement(i int) (Element, bool) {
+	elements := e.GetElements()
+	if len(elements) <= i {
+		return nil, false
+	}
+	return elements[i], false
 }
 
-type Renderer interface {
-	Render(io.Writer) error
+func (e *element) GetElements() []Element {
+	elements := []Element{}
+
+	for _, node := range e.nodes {
+		element, ok := node.(Element)
+		if ok {
+			elements = append(elements, element)
+		}
+	}
+	return elements
 }
 
-type Attribute interface {
-	Renderer
+func (e *element) GetNode(i int) (Node, bool) {
+	if len(e.nodes) <= i {
+		return nil, false
+	}
+	return e.nodes[i], false
 }
 
-type HtmlAttribute struct {
-	Key   string
-	Value any
+func (e *element) GetNodes() []Node {
+	return e.nodes
 }
 
-// Attribute renders only its value for key deduplication
-func (a *HtmlAttribute) Render(w io.Writer) error {
+func (e *element) Add(node Node) {
+	e.nodes = append(e.nodes, node)
+}
+
+func (e *element) Remove(i int) {
+	if len(e.nodes) <= i {
+		e.err = fmt.Errorf("remove: cannot remove node %d on element %s, index is out of bounds", i, e.tag)
+		return
+	}
+	e.nodes = slices.Delete(e.nodes, i, i+1)
+}
+
+// Creates an element with default html renderer
+func El(tag string, items ...I) Element {
+	_, selfClosing := selfClosingTags[tag]
+	el := &element{tag: tag, selfClosing: selfClosing}
+
+	for _, item := range items {
+		switch item := item.(type) {
+		case Attribute:
+			el.attrs = append(el.attrs, item)
+		case Node:
+			el.nodes = append(el.nodes, item)
+		default:
+			fmt.Println(tag, item)
+			panic(fmt.Sprintf("unknown item type %t", item))
+		}
+	}
+
+	return el
+}
+
+// Clones an element. This does not clone the Render() method
+// of that element, instead it creates a new element with the
+// default html element renderer.
+func Clone(elem Element, items ...I) Element {
+	_, selfClosing := selfClosingTags[elem.GetTag()]
+	el := &element{
+		tag:         elem.GetTag(),
+		nodes:       elem.GetNodes(),
+		attrs:       elem.GetAttributes(),
+		selfClosing: selfClosing,
+	}
+
+	for _, item := range items {
+		switch item := item.(type) {
+		case Attribute:
+			el.attrs = append(el.attrs, item)
+		case Node:
+			el.nodes = append(el.nodes, item)
+		default:
+			panic(fmt.Sprintf("unknown item type %t", item))
+		}
+	}
+
+	return el
+}
+
+// Represents a text node
+type Text string
+
+func (t Text) Render(ctx context.Context, w io.Writer) error {
+	_, err := w.Write([]byte(html.EscapeString(string(t))))
+	return err
+}
+
+func (Text) NodeType() NodeType {
+	return NodeText
+}
+
+type attr struct {
+	key   string
+	value any
+}
+
+func (a attr) Render(ctx context.Context, w io.Writer) error {
 	var str string
-
-	switch value := a.Value.(type) {
+	switch value := a.value.(type) {
 	case bool:
 		if value {
 			str = "true"
@@ -70,7 +298,7 @@ func (a *HtmlAttribute) Render(w io.Writer) error {
 			str = "false"
 		}
 	case string:
-		if a.Key == "class" {
+		if a.key == "class" {
 			str = strings.ReplaceAll(value, "\"", "'")
 		} else {
 			str = html.EscapeString(value)
@@ -80,119 +308,29 @@ func (a *HtmlAttribute) Render(w io.Writer) error {
 	case interface{ String() string }:
 		str = html.EscapeString(value.String())
 	default:
-		panic(fmt.Sprintf("unsupported attribute type: %t", value))
+		str = fmt.Sprintf("%v", value)
 	}
 
 	_, err := w.Write([]byte(str))
 	return err
 }
 
-func (a HtmlAttribute) Attribute() string {
-	return a.Key
+func (a *attr) GetKey() string {
+	return a.key
 }
 
-func Attr(key string, value ...any) *HtmlAttribute {
+func (a *attr) GetValue() any {
+	return a.value
+}
+
+func Attr(key string, value ...any) Attribute {
 	switch len(value) {
 	case 0:
-		return &HtmlAttribute{Key: key, Value: ""}
+		return &attr{key: key, value: nil}
 	case 1:
-		return &HtmlAttribute{Key: key, Value: value[0]}
+		return &attr{key: key, value: value[0]}
 	default:
-		panic("invalid number of attribute values")
-	}
-}
-
-type Node interface {
-	Renderer
-	Node()
-}
-
-type Element struct {
-	tag         string
-	attrs       []Attribute
-	children    []Node
-	selfClosing bool
-
-	*noopwriter
-}
-
-func (e *Element) Render(w io.Writer) error {
-	e.reset(w)
-
-	e.write(fmt.Appendf(nil, "<%s", e.tag))
-
-	attrs := map[string][]Attribute{}
-
-	// Extract duplicate attributes to be joined
-	for _, attr := range e.attrs {
-		htmlAttr, ok := attr.(*HtmlAttribute)
-		if ok {
-			attrs[htmlAttr.Key] = append(attrs[htmlAttr.Key], attr)
-		}
-		keyer, ok := attr.(interface{ Key() string })
-		if ok {
-			attrs[keyer.Key()] = append(attrs[keyer.Key()], attr)
-		}
-	}
-
-	for key, attrs := range attrs {
-		e.write(fmt.Appendf(nil, " %s=\"", key))
-		if e.err != nil {
-			return e.err
-		}
-
-		for i, attr := range attrs {
-			e.err = attr.Render(w)
-
-			// seperate different attrs declarations with space
-			if i < len(attrs)-1 {
-				e.write([]byte(" "))
-			}
-		}
-
-		e.write([]byte("\""))
-	}
-
-	if e.selfClosing {
-		e.write([]byte(" />"))
-		return e.err
-	}
-	e.write([]byte(">"))
-
-	for _, child := range e.children {
-		if e.err != nil {
-			return e.err
-		}
-		e.err = child.Render(w)
-	}
-
-	e.write(fmt.Appendf(nil, "</%s>", e.tag))
-
-	return e.err
-}
-
-func El(tag string, props ...Renderer) *Element {
-	children := []Node{}
-	attrs := []Attribute{}
-
-	for _, prop := range props {
-		switch prop := prop.(type) {
-		case Text:
-			children = append(children, prop)
-		case Node:
-			children = append(children, prop)
-		case Attribute:
-			attrs = append(attrs, prop)
-		}
-	}
-
-	_, selfClosing := selfClosingTags[tag]
-	return &Element{
-		tag:         tag,
-		attrs:       attrs,
-		children:    children,
-		noopwriter:  &noopwriter{},
-		selfClosing: selfClosing,
+		panic("attr expects no more than 2 parameters")
 	}
 }
 
@@ -200,54 +338,24 @@ type Fragment struct {
 	children []Node
 }
 
-func (f *Fragment) Render(w io.Writer) error {
+func (f *Fragment) Render(ctx context.Context, w io.Writer) error {
 	for _, child := range f.children {
-		if err := child.Render(w); err != nil {
+		if err := child.Render(ctx, w); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func Frag(children ...Node) *Fragment {
+func (Fragment) NodeType() NodeType {
+	return NodeFragment
+}
+
+func Frag(children ...Node) Node {
 	return &Fragment{children: children}
 }
 
-type Text string
-
-func (t Text) Render(w io.Writer) error {
-	_, err := w.Write([]byte(html.EscapeString(string(t))))
-	return err
-}
-
-type RawNode struct {
-	data   string
-	escape bool
-}
-
-func (n *RawNode) Render(w io.Writer) (err error) {
-	if n.escape {
-		_, err = w.Write([]byte(html.EscapeString(n.data)))
-	} else {
-		_, err = w.Write([]byte(n.data))
-	}
-	return err
-}
-
-func Raw(data string) *RawNode {
-	return &RawNode{data: data, escape: true}
-}
-
-func UnsafeRaw(data string) *RawNode {
-	return &RawNode{data: data, escape: false}
-}
-
-func (*Element) Node()  {}
-func (*Fragment) Node() {}
-func (Text) Node()      {}
-func (*RawNode) Node()  {}
-
-func Map[T any](items []T, fn func(T, int) Node) Renderer {
+func Map[T any](items []T, fn func(T, int) Node) Node {
 	mapped := []Node{}
 
 	for i, item := range items {
@@ -257,52 +365,9 @@ func Map[T any](items []T, fn func(T, int) Node) Renderer {
 	return Frag(mapped...)
 }
 
-func If(cond bool, elem Renderer) Renderer {
+func If(cond bool, elem Node) Node {
 	if cond {
 		return elem
 	}
 	return Frag()
-}
-
-func GetAttr(el *Element, name string) (string, bool) {
-	for _, attr := range el.attrs {
-		var key string
-
-		htmlAttr, ok := attr.(*HtmlAttribute)
-		if ok {
-			key = htmlAttr.Key
-		} else {
-			keyer, ok := attr.(interface{ Key() string })
-			if ok {
-				key = keyer.Key()
-			}
-		}
-
-		if len(key) == 0 {
-			return "", false
-		}
-
-		if key == name {
-			buf := bytes.NewBuffer([]byte{})
-			attr.Render(buf)
-			return buf.String(), true
-		}
-	}
-
-	return "", false
-}
-
-func Clone(el *Element, props ...Renderer) *Element {
-	for _, prop := range props {
-		switch prop := prop.(type) {
-		case Text:
-			el.children = append(el.children, prop)
-		case Node:
-			el.children = append(el.children, prop)
-		case Attribute:
-			el.attrs = append(el.attrs, prop)
-		}
-	}
-
-	return el
 }

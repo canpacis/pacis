@@ -1,27 +1,18 @@
 package components
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
+
+	r "github.com/canpacis/pacis/renderer"
 )
-
-type aschild int
-
-func (aschild) Render(io.Writer) error {
-	return nil
-}
-
-func (aschild) Key() string {
-	return "as-child"
-}
-
-const AsChild = aschild(0)
 
 type D map[string]any
 
-func (d D) Render(w io.Writer) error {
+func (d D) Render(ctx context.Context, w io.Writer) error {
 	enc, err := json.Marshal(d)
 	if err != nil {
 		return err
@@ -31,25 +22,14 @@ func (d D) Render(w io.Writer) error {
 	return err
 }
 
-func (d D) Key() string {
+func (D) GetKey() string {
 	return "x-data"
 }
 
-type EventHandler struct {
-	event     string
-	handler   string
-	modifiers []string
+func (d D) GetValue() any {
+	return d
 }
 
-func (e *EventHandler) Render(w io.Writer) error {
-	_, err := w.Write([]byte(e.handler))
-	return err
-}
-
-func (e *EventHandler) Key() string {
-	return fmt.Sprintf("x-on:%s", e.event)
-}
-
-func On(event string, handler string) *EventHandler {
-	return &EventHandler{event: event, handler: handler}
+func On(event string, handler string) r.Attribute {
+	return r.Attr(fmt.Sprintf("x-on:%s", event), handler)
 }

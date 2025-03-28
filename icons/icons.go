@@ -1,6 +1,7 @@
 package icons
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -75,13 +76,13 @@ type Node struct {
 	Nodes []Node `xml:",any"`
 }
 
-func (el *Node) Render(w io.Writer) error {
+func (el *Node) Render(ctx context.Context, w io.Writer) error {
 	if el.root {
 		if err := el.init(); err != nil {
 			return err
 		}
 	}
-	attrs := []r.Renderer{}
+	attrs := []r.I{}
 
 	switch el.XMLName.Local {
 	case "svg":
@@ -133,7 +134,7 @@ func (el *Node) Render(w io.Writer) error {
 		attrs = append(attrs, &node)
 	}
 
-	return r.El(el.XMLName.Local, attrs...).Render(w)
+	return r.El(el.XMLName.Local, attrs...).Render(ctx, w)
 }
 
 func (n *Node) init() error {
@@ -177,7 +178,9 @@ func (n *Node) init() error {
 	return nil
 }
 
-func (*Node) Node() {}
+func (*Node) NodeType() r.NodeType {
+	return r.NodeElement
+}
 
 func Icon(name string, options ...func(*IconOptions)) *Node {
 	return &Node{name: name, options: options, root: true}

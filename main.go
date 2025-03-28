@@ -136,7 +136,7 @@ func main() {
 			),
 			Body(body),
 		)
-		fmt.Println(html.Render(w))
+		fmt.Println(html.Render(r.Context(), w))
 	})
 
 	mux.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir("./public/"))))

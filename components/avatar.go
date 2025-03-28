@@ -1,13 +1,14 @@
 package components
 
 import (
+	"context"
 	"io"
 
 	r "github.com/canpacis/pacis/renderer"
 )
 
-func AvatarFallback(props ...r.Renderer) *r.Element {
-	ps := []r.Renderer{
+func AvatarFallback(props ...r.I) r.Element {
+	ps := []r.I{
 		r.Class("bg-muted flex size-full items-center justify-center rounded-full"),
 		r.Attr(":class", "!error ? 'hidden' : 'block'"),
 	}
@@ -16,8 +17,8 @@ func AvatarFallback(props ...r.Renderer) *r.Element {
 	return r.Div(ps...)
 }
 
-func AvatarImage(props ...r.Renderer) *r.Element {
-	ps := []r.Renderer{
+func AvatarImage(props ...r.I) r.Element {
+	ps := []r.I{
 		r.Class("aspect-square size-full"),
 		r.Attr(":class", "error ? 'hidden' : 'block'"),
 		r.Attr(":src", "url"),
@@ -26,7 +27,7 @@ func AvatarImage(props ...r.Renderer) *r.Element {
 	ps = append(ps, props...)
 
 	el := r.Img(ps...)
-	src, ok := r.GetAttr(el, "src")
+	src, ok := el.GetAttribute("src")
 	if !ok {
 		panic("avatar image component needs a src attribute")
 	}
@@ -44,7 +45,7 @@ const (
 	AvatarSizeLg
 )
 
-func (v AvatarSize) Render(w io.Writer) error {
+func (v AvatarSize) Render(ctx context.Context, w io.Writer) error {
 	class := ""
 
 	switch v {
@@ -58,17 +59,17 @@ func (v AvatarSize) Render(w io.Writer) error {
 		panic("invalid avatar size property")
 	}
 
-	return r.Class(class).Render(w)
+	return r.Class(class).Render(ctx, w)
 }
 
 func (AvatarSize) Key() string {
 	return "class"
 }
 
-func Avatar(props ...r.Renderer) *r.Element {
+func Avatar(props ...r.I) r.Element {
 	var size AvatarSize
 
-	ps := []r.Renderer{
+	ps := []r.I{
 		r.Class("relative flex shrink-0 overflow-hidden rounded-full"),
 		D{"error": false},
 	}
