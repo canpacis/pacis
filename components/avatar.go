@@ -3,36 +3,36 @@ package components
 import (
 	"io"
 
-	"github.com/canpacis/pacis/renderer"
+	r "github.com/canpacis/pacis/renderer"
 )
 
-func AvatarFallback(props ...renderer.Renderer) *renderer.Element {
-	ps := []renderer.Renderer{
-		renderer.Class("bg-muted flex size-full items-center justify-center rounded-full"),
-		renderer.Attr(":class", "!error ? 'hidden' : 'block'"),
+func AvatarFallback(props ...r.Renderer) *r.Element {
+	ps := []r.Renderer{
+		r.Class("bg-muted flex size-full items-center justify-center rounded-full"),
+		r.Attr(":class", "!error ? 'hidden' : 'block'"),
 	}
 	ps = append(ps, props...)
 
-	return renderer.Div(ps...)
+	return r.Div(ps...)
 }
 
-func AvatarImage(props ...renderer.Renderer) *renderer.Element {
-	ps := []renderer.Renderer{
-		renderer.Class("aspect-square size-full"),
-		renderer.Attr(":class", "error ? 'hidden' : 'block'"),
-		renderer.Attr(":src", "url"),
-		renderer.Attr("@error", "error = true"),
+func AvatarImage(props ...r.Renderer) *r.Element {
+	ps := []r.Renderer{
+		r.Class("aspect-square size-full"),
+		r.Attr(":class", "error ? 'hidden' : 'block'"),
+		r.Attr(":src", "url"),
+		On("error", "error = true"),
 	}
 	ps = append(ps, props...)
 
-	el := renderer.Img(ps...)
-	src, ok := renderer.GetAttr(el, "src")
+	el := r.Img(ps...)
+	src, ok := r.GetAttr(el, "src")
 	if !ok {
 		panic("avatar image component needs a src attribute")
 	}
 
 	ps = append(ps, D{"url": src})
-	el = renderer.Img(ps...)
+	el = r.Img(ps...)
 	return el
 }
 
@@ -58,19 +58,19 @@ func (v AvatarSize) Render(w io.Writer) error {
 		panic("invalid avatar size property")
 	}
 
-	return renderer.Class(class).Render(w)
+	return r.Class(class).Render(w)
 }
 
 func (AvatarSize) Key() string {
 	return "class"
 }
 
-func Avatar(props ...renderer.Renderer) *renderer.Element {
+func Avatar(props ...r.Renderer) *r.Element {
 	var size AvatarSize
 
-	ps := []renderer.Renderer{
-		renderer.Class("relative flex shrink-0 overflow-hidden rounded-full"),
-		renderer.Attr("x-data", "{ 'error': false }"),
+	ps := []r.Renderer{
+		r.Class("relative flex shrink-0 overflow-hidden rounded-full"),
+		D{"error": false},
 	}
 
 	for _, prop := range props {
@@ -83,5 +83,5 @@ func Avatar(props ...renderer.Renderer) *renderer.Element {
 	}
 	ps = append(ps, size)
 
-	return renderer.Div(ps...)
+	return r.Div(ps...)
 }

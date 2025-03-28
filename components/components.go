@@ -7,6 +7,18 @@ import (
 	"strings"
 )
 
+type aschild int
+
+func (aschild) Render(io.Writer) error {
+	return nil
+}
+
+func (aschild) Key() string {
+	return "as-child"
+}
+
+const AsChild = aschild(0)
+
 type D map[string]any
 
 func (d D) Render(w io.Writer) error {
@@ -35,7 +47,7 @@ func (e *EventHandler) Render(w io.Writer) error {
 }
 
 func (e *EventHandler) Key() string {
-	return fmt.Sprintf("@%s", e.event)
+	return fmt.Sprintf("x-on:%s", e.event)
 }
 
 func On(event string, handler string) *EventHandler {

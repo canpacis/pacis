@@ -3,7 +3,7 @@ package components
 import (
 	"io"
 
-	"github.com/canpacis/pacis/renderer"
+	r "github.com/canpacis/pacis/renderer"
 )
 
 type ButtonSize int
@@ -31,7 +31,7 @@ func (s ButtonSize) Render(w io.Writer) error {
 		panic("invalid button size property")
 	}
 
-	return renderer.Class(class).Render(w)
+	return r.Class(class).Render(w)
 }
 
 func (ButtonSize) Key() string {
@@ -54,13 +54,13 @@ func (v ButtonVariant) Render(w io.Writer) error {
 
 	switch v {
 	case ButtonVariantDefault:
-		class = "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
+		class = "shadow-xs bg-primary text-primary-foreground hover:bg-primary/90"
 	case ButtonVariantDestructive:
-		class = "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
+		class = "text-white shadow-xs bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
 	case ButtonVariantOutline:
-		class = "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
+		class = "border shadow-xs bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
 	case ButtonVariantSecondary:
-		class = "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80"
+		class = "shadow-xs bg-secondary text-secondary-foreground hover:bg-secondary/80"
 	case ButtonVariantGhost:
 		class = "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
 	case ButtonVariantLink:
@@ -69,19 +69,19 @@ func (v ButtonVariant) Render(w io.Writer) error {
 		panic("invalid button variant property")
 	}
 
-	return renderer.Class(class).Render(w)
+	return r.Class(class).Render(w)
 }
 
 func (ButtonVariant) Key() string {
 	return "class"
 }
 
-func Button(props ...renderer.Renderer) *renderer.Element {
+func Button(props ...r.Renderer) *r.Element {
 	var variant ButtonVariant
 	var size ButtonSize
 
-	ps := []renderer.Renderer{
-		renderer.Class("inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"),
+	ps := []r.Renderer{
+		r.Class("inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"),
 	}
 
 	for _, prop := range props {
@@ -97,5 +97,5 @@ func Button(props ...renderer.Renderer) *renderer.Element {
 
 	ps = append(ps, variant)
 	ps = append(ps, size)
-	return renderer.Btn(ps...)
+	return r.Btn(ps...)
 }

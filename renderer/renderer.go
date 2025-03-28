@@ -137,6 +137,9 @@ func (e *Element) Render(w io.Writer) error {
 
 	for key, attrs := range attrs {
 		e.write(fmt.Appendf(nil, " %s=\"", key))
+		if e.err != nil {
+			return e.err
+		}
 
 		for i, attr := range attrs {
 			e.err = attr.Render(w)
@@ -157,6 +160,9 @@ func (e *Element) Render(w io.Writer) error {
 	e.write([]byte(">"))
 
 	for _, child := range e.children {
+		if e.err != nil {
+			return e.err
+		}
 		e.err = child.Render(w)
 	}
 
@@ -165,18 +171,18 @@ func (e *Element) Render(w io.Writer) error {
 	return e.err
 }
 
-func El(tag string, constituents ...Renderer) *Element {
+func El(tag string, props ...Renderer) *Element {
 	children := []Node{}
 	attrs := []Attribute{}
 
-	for _, constituent := range constituents {
-		switch constituent := constituent.(type) {
+	for _, prop := range props {
+		switch prop := prop.(type) {
 		case Text:
-			children = append(children, &constituent)
+			children = append(children, prop)
 		case Node:
-			children = append(children, constituent)
+			children = append(children, prop)
 		case Attribute:
-			attrs = append(attrs, constituent)
+			attrs = append(attrs, prop)
 		}
 	}
 
@@ -238,11 +244,27 @@ func UnsafeRaw(data string) *RawNode {
 
 func (*Element) Node()  {}
 func (*Fragment) Node() {}
-func (*Text) Node()     {}
+func (Text) Node()      {}
 func (*RawNode) Node()  {}
 
-func GetAttr(el *Element, name string) (string, bool) {
+func Map[T any](items []T, fn func(T, int) Node) Renderer {
+	mapped := []Node{}
 
+	for i, item := range items {
+		mapped = append(mapped, fn(item, i))
+	}
+
+	return Frag(mapped...)
+}
+
+func If(cond bool, elem Renderer) Renderer {
+	if cond {
+		return elem
+	}
+	return Frag()
+}
+
+func GetAttr(el *Element, name string) (string, bool) {
 	for _, attr := range el.attrs {
 		var key string
 
@@ -268,4 +290,19 @@ func GetAttr(el *Element, name string) (string, bool) {
 	}
 
 	return "", false
+}
+
+func Clone(el *Element, props ...Renderer) *Element {
+	for _, prop := range props {
+		switch prop := prop.(type) {
+		case Text:
+			el.children = append(el.children, prop)
+		case Node:
+			el.children = append(el.children, prop)
+		case Attribute:
+			el.attrs = append(el.attrs, prop)
+		}
+	}
+
+	return el
 }

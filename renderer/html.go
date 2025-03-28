@@ -1,9 +1,12 @@
 package renderer
 
+import "strings"
+
 // Elements
 
 func Html(props ...Renderer) *Element       { return El("html", props...) }
 func Head(props ...Renderer) *Element       { return El("head", props...) }
+func Link(props ...Renderer) *Element       { return El("link", props...) }
 func Body(props ...Renderer) *Element       { return El("body", props...) }
 func Title(props ...Renderer) *Element      { return El("title", props...) }
 func Style(props ...Renderer) *Element      { return El("style", props...) }
@@ -86,7 +89,7 @@ func Tfoot(props ...Renderer) *Element      { return El("tfoot", props...) }
 func Colgroup(props ...Renderer) *Element   { return El("colgroup", props...) }
 func Img(props ...Renderer) *Element        { return El("img", props...) }
 func Figure(props ...Renderer) *Element     { return El("figure", props...) }
-func Map(props ...Renderer) *Element        { return El("map", props...) }
+func MapElem(props ...Renderer) *Element    { return El("map", props...) }
 func Area(props ...Renderer) *Element       { return El("area", props...) }
 func Audio(props ...Renderer) *Element      { return El("audio", props...) }
 func Source(props ...Renderer) *Element     { return El("source", props...) }
@@ -100,12 +103,19 @@ func Progress(props ...Renderer) *Element   { return El("progress", props...) }
 
 // Attributes
 
-func Accept(value string) *HtmlAttribute          { return Attr("accept", value) }
-func AcceptCharset(value string) *HtmlAttribute   { return Attr("accept-charset", value) }
-func AccessKey(value string) *HtmlAttribute       { return Attr("accesskey", value) }
-func Action(value string) *HtmlAttribute          { return Attr("action", value) }
-func Align(value string) *HtmlAttribute           { return Attr("align", value) }
-func Alt(value string) *HtmlAttribute             { return Attr("alt", value) }
+func As(value string) *HtmlAttribute            { return Attr("as", value) }
+func Accept(value string) *HtmlAttribute        { return Attr("accept", value) }
+func AcceptCharset(value string) *HtmlAttribute { return Attr("accept-charset", value) }
+func AccessKey(value string) *HtmlAttribute     { return Attr("accesskey", value) }
+func Action(value string) *HtmlAttribute        { return Attr("action", value) }
+func Align(value string) *HtmlAttribute         { return Attr("align", value) }
+func Alt(value string) *HtmlAttribute           { return Attr("alt", value) }
+func Aria(name, value string) *HtmlAttribute {
+	if strings.HasPrefix(name, ":") {
+		return Attr(":aria-"+name[1:], value)
+	}
+	return Attr("aria-"+name, value)
+}
 func Async(value string) *HtmlAttribute           { return Attr("async", value) }
 func Autocomplete(value string) *HtmlAttribute    { return Attr("autocomplete", value) }
 func Autofocus(value string) *HtmlAttribute       { return Attr("autofocus", value) }
@@ -123,45 +133,53 @@ func Content(value string) *HtmlAttribute         { return Attr("content", value
 func ContentEditable(value string) *HtmlAttribute { return Attr("contenteditable", value) }
 func Controls(value string) *HtmlAttribute        { return Attr("controls", value) }
 func Coords(value string) *HtmlAttribute          { return Attr("coords", value) }
-func Data(name, value string) *HtmlAttribute      { return Attr("data-"+name, value) }
-func Datetime(value string) *HtmlAttribute        { return Attr("datetime", value) }
-func Default(value string) *HtmlAttribute         { return Attr("default", value) }
-func Defer(value string) *HtmlAttribute           { return Attr("defer", value) }
-func Dir(value string) *HtmlAttribute             { return Attr("dir", value) }
-func Dirname(value string) *HtmlAttribute         { return Attr("dirname", value) }
-func Disabled(value string) *HtmlAttribute        { return Attr("disabled", value) }
-func Download(value string) *HtmlAttribute        { return Attr("download", value) }
-func Draggable(value string) *HtmlAttribute       { return Attr("draggable", value) }
-func Enctype(value string) *HtmlAttribute         { return Attr("enctype", value) }
-func EnterKeyHint(value string) *HtmlAttribute    { return Attr("enterkeyhint", value) }
-func For(value string) *HtmlAttribute             { return Attr("for", value) }
-func FormAttr(value string) *HtmlAttribute        { return Attr("form", value) }
-func FormAction(value string) *HtmlAttribute      { return Attr("formaction", value) }
-func Headers(value string) *HtmlAttribute         { return Attr("headers", value) }
-func Height(value string) *HtmlAttribute          { return Attr("height", value) }
-func Hidden(value string) *HtmlAttribute          { return Attr("hidden", value) }
-func High(value string) *HtmlAttribute            { return Attr("high", value) }
-func Href(value string) *HtmlAttribute            { return Attr("href", value) }
-func HrefLang(value string) *HtmlAttribute        { return Attr("hreflang", value) }
-func HttpEquiv(value string) *HtmlAttribute       { return Attr("http-equiv", value) }
-func ID(value string) *HtmlAttribute              { return Attr("id", value) }
-func Inert(value string) *HtmlAttribute           { return Attr("inert", value) }
-func InputMode(value string) *HtmlAttribute       { return Attr("inputmode", value) }
-func IsMap(value string) *HtmlAttribute           { return Attr("ismap", value) }
-func Kind(value string) *HtmlAttribute            { return Attr("kind", value) }
-func LabelAttr(value string) *HtmlAttribute       { return Attr("label", value) }
-func Src(value string) *HtmlAttribute             { return Attr("src", value) }
-func Role(value string) *HtmlAttribute            { return Attr("role", value) }
-func Lang(value string) *HtmlAttribute            { return Attr("lang", value) }
-func List(value string) *HtmlAttribute            { return Attr("list", value) }
-func Loop(value string) *HtmlAttribute            { return Attr("loop", value) }
-func Low(value string) *HtmlAttribute             { return Attr("low", value) }
-func Max(value string) *HtmlAttribute             { return Attr("max", value) }
-func MaxLength(value string) *HtmlAttribute       { return Attr("maxlength", value) }
-func Media(value string) *HtmlAttribute           { return Attr("media", value) }
-func Method(value string) *HtmlAttribute          { return Attr("method", value) }
-func Min(value string) *HtmlAttribute             { return Attr("min", value) }
-func Multiple(value string) *HtmlAttribute        { return Attr("multiple", value) }
-func Muted(value string) *HtmlAttribute           { return Attr("muted", value) }
-func Name(value string) *HtmlAttribute            { return Attr("name", value) }
-func NoValidate(value string) *HtmlAttribute      { return Attr("novalidate", value) }
+func Data(name, value string) *HtmlAttribute {
+	if strings.HasPrefix(name, ":") {
+		return Attr(":data-"+name[1:], value)
+	}
+	return Attr("data-"+name, value)
+}
+func Datetime(value string) *HtmlAttribute     { return Attr("datetime", value) }
+func Default(value string) *HtmlAttribute      { return Attr("default", value) }
+func Defer(value string) *HtmlAttribute        { return Attr("defer", value) }
+func Dir(value string) *HtmlAttribute          { return Attr("dir", value) }
+func Dirname(value string) *HtmlAttribute      { return Attr("dirname", value) }
+func Disabled(value string) *HtmlAttribute     { return Attr("disabled", value) }
+func Download(value string) *HtmlAttribute     { return Attr("download", value) }
+func Draggable(value string) *HtmlAttribute    { return Attr("draggable", value) }
+func Enctype(value string) *HtmlAttribute      { return Attr("enctype", value) }
+func EnterKeyHint(value string) *HtmlAttribute { return Attr("enterkeyhint", value) }
+func For(value string) *HtmlAttribute          { return Attr("for", value) }
+func FormAttr(value string) *HtmlAttribute     { return Attr("form", value) }
+func FormAction(value string) *HtmlAttribute   { return Attr("formaction", value) }
+func Headers(value string) *HtmlAttribute      { return Attr("headers", value) }
+func Height(value string) *HtmlAttribute       { return Attr("height", value) }
+func Hidden(value string) *HtmlAttribute       { return Attr("hidden", value) }
+func High(value string) *HtmlAttribute         { return Attr("high", value) }
+func Href(value string) *HtmlAttribute         { return Attr("href", value) }
+func HrefLang(value string) *HtmlAttribute     { return Attr("hreflang", value) }
+func HttpEquiv(value string) *HtmlAttribute    { return Attr("http-equiv", value) }
+func ID(value string) *HtmlAttribute           { return Attr("id", value) }
+func Inert(value string) *HtmlAttribute        { return Attr("inert", value) }
+func InputMode(value string) *HtmlAttribute    { return Attr("inputmode", value) }
+func IsMap(value string) *HtmlAttribute        { return Attr("ismap", value) }
+func Kind(value string) *HtmlAttribute         { return Attr("kind", value) }
+func LabelAttr(value string) *HtmlAttribute    { return Attr("label", value) }
+func Src(value string) *HtmlAttribute          { return Attr("src", value) }
+func Role(value string) *HtmlAttribute         { return Attr("role", value) }
+func Lang(value string) *HtmlAttribute         { return Attr("lang", value) }
+func List(value string) *HtmlAttribute         { return Attr("list", value) }
+func Loop(value string) *HtmlAttribute         { return Attr("loop", value) }
+func Low(value string) *HtmlAttribute          { return Attr("low", value) }
+func Max(value string) *HtmlAttribute          { return Attr("max", value) }
+func MaxLength(value string) *HtmlAttribute    { return Attr("maxlength", value) }
+func Media(value string) *HtmlAttribute        { return Attr("media", value) }
+func Method(value string) *HtmlAttribute       { return Attr("method", value) }
+func Min(value string) *HtmlAttribute          { return Attr("min", value) }
+func Multiple(value string) *HtmlAttribute     { return Attr("multiple", value) }
+func Muted(value string) *HtmlAttribute        { return Attr("muted", value) }
+func Name(value string) *HtmlAttribute         { return Attr("name", value) }
+func NoValidate(value string) *HtmlAttribute   { return Attr("novalidate", value) }
+func Type(value string) *HtmlAttribute         { return Attr("type", value) }
+func Rel(value string) *HtmlAttribute          { return Attr("rel", value) }
+func Width(value string) *HtmlAttribute        { return Attr("width", value) }
