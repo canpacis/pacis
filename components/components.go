@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"strings"
 
 	r "github.com/canpacis/pacis/renderer"
@@ -93,11 +94,16 @@ func ErrorText(err error) r.Node {
 
 // Place this component inside the head tag
 func AppHead() r.Node {
+	css, err := os.ReadFile("./public/main.css")
+	if err != nil {
+		panic(err)
+	}
+
 	return r.Frag(
 		r.Link(r.Href("https://fonts.googleapis.com"), r.Rel("preconnect")),
 		r.Link(r.Href("https://fonts.gstatic.com"), r.Rel("preconnect")),
 		r.Link(r.Href("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap"), r.Rel("stylesheet")),
-		r.Link(r.Href("/public/main.css"), r.Rel("stylesheet")),
+		r.Style(r.RawUnsafe(css)),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/anchor@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Defer, r.RawUnsafe(`
