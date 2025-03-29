@@ -3,7 +3,7 @@ package components
 import (
 	"fmt"
 
-	r "github.com/canpacis/pacis/renderer"
+	r "github.com/canpacis/pacis-ui/renderer"
 )
 
 func Dropdown(props ...r.I) r.Element {

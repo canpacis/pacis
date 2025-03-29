@@ -11,7 +11,7 @@ import (
 	"os"
 	"strconv"
 
-	r "github.com/canpacis/pacis/renderer"
+	r "github.com/canpacis/pacis-ui/renderer"
 )
 
 /*

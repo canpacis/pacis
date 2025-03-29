@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	r "github.com/canpacis/pacis/renderer"
+	r "github.com/canpacis/pacis-ui/renderer"
 )
 
 func AvatarFallback(props ...r.I) r.Element {

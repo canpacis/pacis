@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	r "github.com/canpacis/pacis/renderer"
+	r "github.com/canpacis/pacis-ui/renderer"
 )
 
 func AlertTitle(props ...r.I) r.Element {

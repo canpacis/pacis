@@ -1,6 +1,6 @@
 package components
 
-import r "github.com/canpacis/pacis/renderer"
+import r "github.com/canpacis/pacis-ui/renderer"
 
 func Collapsible(props ...r.I) r.Element {
 	ps := []r.I{

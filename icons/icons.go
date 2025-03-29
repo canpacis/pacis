@@ -1,6 +1,6 @@
 package icons
 
-import r "github.com/canpacis/pacis/renderer"
+import r "github.com/canpacis/pacis-ui/renderer"
 
 func AArrowDown(items ...r.I) r.Node            { return Icon("a-arrow-down", items...) }
 func AArrowUp(items ...r.I) r.Node              { return Icon("a-arrow-up", items...) }

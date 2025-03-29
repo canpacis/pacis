@@ -1,6 +1,6 @@
 package components
 
-import r "github.com/canpacis/pacis/renderer"
+import r "github.com/canpacis/pacis-ui/renderer"
 
 func Input(props ...r.I) r.Element {
 	props = join(props,

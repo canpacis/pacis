@@ -1,8 +1,8 @@
 package components
 
 import (
-	icn "github.com/canpacis/pacis/icons"
-	r "github.com/canpacis/pacis/renderer"
+	icn "github.com/canpacis/pacis-ui/icons"
+	r "github.com/canpacis/pacis-ui/renderer"
 )
 
 func Dialog(props ...r.I) r.Element {

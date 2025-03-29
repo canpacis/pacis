@@ -1,8 +1,8 @@
 package components
 
 import (
-	icn "github.com/canpacis/pacis/icons"
-	r "github.com/canpacis/pacis/renderer"
+	icn "github.com/canpacis/pacis-ui/icons"
+	r "github.com/canpacis/pacis-ui/renderer"
 )
 
 func Checkbox(label ...r.Text) r.Element {

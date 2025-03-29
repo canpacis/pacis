@@ -37,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	program := "package icons\n\nimport r \"github.com/canpacis/pacis/renderer\"\n\n"
+	program := "package icons\n\nimport r \"github.com/canpacis/pacis-ui/renderer\"\n\n"
 
 	for _, entry := range entries {
 		name := entry.Name()
