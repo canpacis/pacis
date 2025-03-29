@@ -19,7 +19,7 @@ func Checkbox(label ...r.Text) r.Element {
 				icn.Check(r.Class("size-3.5")),
 			),
 
-			r.Input(
+			r.Inpt(
 				r.Type("checkbox"),
 				r.Class("sr-only"),
 				On("change", "checked = !checked;"),
@@ -30,5 +30,5 @@ func Checkbox(label ...r.Text) r.Element {
 		ps = append(ps, label)
 	}
 
-	return r.Label(ps...)
+	return r.Lbl(ps...)
 }

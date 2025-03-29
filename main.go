@@ -117,6 +117,8 @@ func main() {
 							Button(Text("Dropdown")),
 						),
 						DropdownContent(
+							Anchor(VBottom, HCenter, 8),
+
 							DropdownItem(
 								ID("item-1"),
 
@@ -128,6 +130,44 @@ func main() {
 
 								icn.Settings(),
 								Text("Item 2"),
+							),
+						),
+					),
+				),
+			),
+			Div(
+				Dialog(
+					DialogTrigger(
+						Button(Text("Open Dialog")),
+					),
+					DialogContent(
+						Class("sm:max-w-[425px]"),
+
+						DialogHeader(
+							DialogTitle(Text("Edit profile")),
+							DialogDescription(Text("Make changes to your profile here. Click save when you're done.")),
+						),
+						Div(
+							Class("grid gap-4 py-4"),
+
+							Div(
+								Class("grid grid-cols-4 items-center gap-4"),
+
+								Label(HtmlFor("name"), Class("text-right"), Text("Name")),
+								Input(ID("name"), Class("col-span-3")),
+							),
+							Div(
+								Class("grid grid-cols-4 items-center gap-4"),
+
+								Label(HtmlFor("username"), Class("text-right"), Text("Username")),
+								Input(ID("username"), Class("col-span-3"), Value("canpacis")),
+							),
+						),
+						DialogFooter(
+							Button(
+								On("click", "closeDialog"),
+
+								Text("Save changes"),
 							),
 						),
 					),

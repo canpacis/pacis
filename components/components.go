@@ -63,7 +63,7 @@ func On(event string, handler string) r.Attribute {
 }
 
 func join(props []r.I, rest ...r.I) []r.I {
-	return append(props, rest...)
+	return append(rest, props...)
 }
 
 /*
@@ -99,7 +99,91 @@ func AppHead() r.Node {
 		r.Link(r.Href("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap"), r.Rel("stylesheet")),
 		r.Link(r.Href("/public/main.css"), r.Rel("stylesheet")),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
+		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/anchor@3.x.x/dist/cdn.min.js")),
+		r.Script(r.Defer, r.RawUnsafe(`
+		 document.addEventListener('alpine:init', () => {
+        Alpine.data('dialog', () => ({
+            isOpen: false,
+ 
+						openDialog() {
+              this.isOpen = true;
+							this.$dispatch('open');
+            },
+            closeDialog(dismiss = false) {
+              this.isOpen = false;
+							this.$dispatch('close');
+							if (dismiss) {
+								this.$dispatch('dismiss');
+							}
+            }
+        }))
+    })
+		`)),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://unpkg.com/embla-carousel/embla-carousel.umd.js")),
 	)
 }
+
+type VPos int
+
+const (
+	VTop = VPos(iota)
+	VBottom
+)
+
+type HPos int
+
+const (
+	HStart = HPos(iota)
+	HCenter
+	HEnd
+)
+
+type AnchorPosition struct {
+	vpos   VPos
+	hpos   HPos
+	offset int
+}
+
+func (a AnchorPosition) Render(ctx context.Context, w io.Writer) error {
+	_, err := w.Write([]byte(a.GetValue().(string)))
+	return err
+}
+
+func (a AnchorPosition) GetKey() string {
+	key := "x-anchor"
+
+	switch a.vpos {
+	case VTop:
+		key += ".top"
+	case VBottom:
+		key += ".bottom"
+	default:
+		panic("invalid vertical position for anchor")
+	}
+
+	switch a.hpos {
+	case HStart:
+		key += "-start"
+	case HCenter:
+		key += "-center"
+	case HEnd:
+		key += "-end"
+	default:
+		panic("invalid horizontal position for anchor")
+	}
+
+	key += fmt.Sprintf(".offset.%d", a.offset)
+
+	return key
+}
+
+func (a AnchorPosition) GetValue() any {
+	return "$refs.anchor"
+}
+
+func Anchor(v VPos, h HPos, offset int) AnchorPosition {
+	return AnchorPosition{vpos: v, hpos: h, offset: offset}
+}
+
+func (a AnchorPosition) Dedupe() {}

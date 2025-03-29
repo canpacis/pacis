@@ -14,23 +14,26 @@ func Dropdown(props ...r.I) r.Element {
 			"open":     false,
 			"keyboard": false,
 		},
+		On("keydown.esc.window", "open = false, keyboard = false, $dispatch('close'), $dispatch('dismiss');"),
 	)
 	return r.Div(props...)
 }
 
 func DropdownTrigger(trigger r.Element) r.Element {
 	trigger.AddAttribute(On("click", "open = !open, !open && $dispatch('close')"))
+	trigger.AddAttribute(X("ref", "anchor"))
 	return trigger
 }
 
 func DropdownContent(props ...r.I) r.Element {
 	props = join(
 		props,
-		r.Class("absolute top-[calc(100%+0.325rem)] z-50 min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"),
+		r.Class("min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"),
 		X("cloak"),
 		X("show", "open || keyboard"),
 		X("transition"),
 		X("trap", "keyboard"),
+		Anchor(VBottom, HStart, 8),
 		On("click.outside", "open = false, keyboard = false, $dispatch('close'), $dispatch('dismiss');"),
 		On("keydown.down.prevent", "$focus.wrap().next();"),
 		On("keydown.up.prevent", "$focus.wrap().previous();"),

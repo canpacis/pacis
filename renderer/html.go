@@ -45,10 +45,10 @@ func Iframe(props ...I) Element     { return El("iframe", props...) }
 func Abbr(props ...I) Element       { return El("abbr", props...) }
 func Meter(props ...I) Element      { return El("meter", props...) }
 func Form(props ...I) Element       { return El("form", props...) }
-func Input(props ...I) Element      { return El("input", props...) }
+func Inpt(props ...I) Element       { return El("input", props...) }
 func Select(props ...I) Element     { return El("select", props...) }
 func Option(props ...I) Element     { return El("option", props...) }
-func Label(props ...I) Element      { return El("label", props...) }
+func Lbl(props ...I) Element        { return El("label", props...) }
 func Datalist(props ...I) Element   { return El("datalist", props...) }
 func Output(props ...I) Element     { return El("output", props...) }
 func Command(props ...I) Element    { return El("command", props...) }
@@ -126,7 +126,7 @@ func Charset(value string) Attribute         { return Attr("charset", value) }
 func Checked(value string) Attribute         { return Attr("checked", value) }
 func CiteAttr_(value string) Attribute       { return Attr("cite", value) }
 func Class(value string) Attribute           { return Attr("class", value) }
-func Color(value string) Attribute           { return Attr("color", value) }
+func ColorAttr(value string) Attribute       { return Attr("color", value) }
 func Cols(value string) Attribute            { return Attr("cols", value) }
 func Colspan(value string) Attribute         { return Attr("colspan", value) }
 func Content(value string) Attribute         { return Attr("content", value) }
@@ -139,9 +139,11 @@ func Data(name, value string) Attribute {
 	}
 	return Attr("data-"+name, value)
 }
-func Datetime(value string) Attribute     { return Attr("datetime", value) }
-func Default(value string) Attribute      { return Attr("default", value) }
-func Defer(value string) Attribute        { return Attr("defer", value) }
+func Datetime(value string) Attribute { return Attr("datetime", value) }
+func Default(value string) Attribute  { return Attr("default", value) }
+
+var Defer = Attr("defer")
+
 func Dir(value string) Attribute          { return Attr("dir", value) }
 func Dirname(value string) Attribute      { return Attr("dirname", value) }
 func Disabled(value string) Attribute     { return Attr("disabled", value) }
@@ -159,6 +161,7 @@ func High(value string) Attribute         { return Attr("high", value) }
 func Href(value string) Attribute         { return Attr("href", value) }
 func HrefLang(value string) Attribute     { return Attr("hreflang", value) }
 func HttpEquiv(value string) Attribute    { return Attr("http-equiv", value) }
+func HtmlFor(value string) Attribute      { return Attr("htmlFor", value) }
 func ID(value string) Attribute           { return Attr("id", value) }
 func Inert(value string) Attribute        { return Attr("inert", value) }
 func InputMode(value string) Attribute    { return Attr("inputmode", value) }
@@ -183,3 +186,4 @@ func NoValidate(value string) Attribute   { return Attr("novalidate", value) }
 func Type(value string) Attribute         { return Attr("type", value) }
 func Rel(value string) Attribute          { return Attr("rel", value) }
 func Width(value string) Attribute        { return Attr("width", value) }
+func Value(value string) Attribute        { return Attr("value", value) }
