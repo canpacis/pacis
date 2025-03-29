@@ -28,89 +28,107 @@ func main() {
 		Div(
 			Class("container flex flex-col gap-2"),
 
-			Alert(
-				icn.Icon("terminal"),
-				AlertTitle(Text("Heads Up!")),
-				AlertDescription(
-					Text("Lorem ipsum dolor sit amet consectetur"),
-				),
-			),
-
-			Card(
-				Class("max-w-[340px] mx-auto"),
-
-				CardHeader(
-					CardTitle(
-						Class("flex gap-2"),
-
-						icn.Icon("bell", icn.Width(18), icn.Height(18)),
-						Text("Notifications"),
-					),
-					CardDescription(Text("You have 3 unread messages.")),
-				),
-				CardContent(
-					Class("grid gap-4"),
-
-					Div(
-						Map(notifications, func(item Notification, i int) Node {
-							return Div(
-								Class("mb-4 grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"),
-
-								Span(Class("flex h-2 w-2 translate-y-1 rounded-full bg-sky-500")),
-								Div(
-									Class("space-y-1"),
-
-									P(
-										Class("text-sm font-medium leading-none"),
-
-										Text(item.Title),
-										If(item.Unread, Badge(Class("ml-2"), Text("New"))),
-									),
-									P(Class("text-sm text-muted-foreground"), Text(item.Description)),
-								),
-							)
-						}),
-					),
-					Checkbox(Text("Label")),
-				),
-				CardFooter(
-					Button(
-						Class("w-full"),
-
-						Text("Mark all as read"),
-					),
-				),
-			),
 			Div(
 				Class("flex gap-2 items-center"),
 
-				Collapsible(
-					CollapsibleTrigger(Button(Text("Click to collapse"))),
-					CollapsibleContent(
-						Div(Text("Content")),
+				Alert(
+					icn.Icon("terminal"),
+					AlertTitle(Text("Heads Up!")),
+					AlertDescription(
+						Text("Lorem ipsum dolor sit amet consectetur"),
 					),
 				),
-				icn.Icon("search"),
-				icn.Icon("search", icn.Width(50), icn.Height(50), icn.Stroke("red")),
-				icn.Icon("search", icn.Width(50), icn.Height(50), icn.StrokeWidth(3)),
-				icn.Icon("search", icn.Width(18), icn.Height(18), icn.StrokeWidth(1.4)),
-
-				Dropdown(
-					DropdownTrigger(
-						Button(Text("Dropdown")),
+				Avatar(
+					AvatarImage(
+						Src("https://cloud.appwrite.io/v1/storage/buckets/67dc16070005054cb3c3/files/67dc16220011a2637b55/view?project=ksalt&mode=admin"),
 					),
-					DropdownContent(
-						DropdownItem(
-							// On("click", "console.log('selected item 1')"),
+					AvatarFallback(Text("MC")),
+				),
+			),
 
-							icn.Icon("user-round"),
-							Text("Item 1"),
+			Div(
+				Class("flex gap-2 items-start"),
+
+				Card(
+					Class("max-w-[340px]"),
+
+					CardHeader(
+						CardTitle(
+							Class("flex gap-2"),
+
+							icn.Icon("bell", icn.Width(18), icn.Height(18)),
+							Text("Notifications"),
 						),
-						DropdownItem(
-							// On("click", "console.log('selected item 2')"),
+						CardDescription(Text("You have 3 unread messages.")),
+					),
+					CardContent(
+						Class("grid gap-4"),
 
-							icn.Icon("settings"),
-							Text("Item 2"),
+						Div(
+							Map(notifications, func(item Notification, i int) Node {
+								return Div(
+									Class("mb-4 grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"),
+
+									Span(Class("flex h-2 w-2 translate-y-1 rounded-full bg-sky-500")),
+									Div(
+										Class("space-y-1"),
+
+										P(
+											Class("text-sm font-medium leading-none"),
+
+											Text(item.Title),
+											If(item.Unread, Badge(Class("ml-2"), Text("New"))),
+										),
+										P(Class("text-sm text-muted-foreground"), Text(item.Description)),
+									),
+								)
+							}),
+						),
+						Checkbox(Text("Label")),
+					),
+					CardFooter(
+						Button(
+							Class("w-full"),
+
+							Text("Mark all as read"),
+						),
+					),
+				),
+				Div(
+					Class("flex gap-2 items-center"),
+
+					Collapsible(
+						CollapsibleTrigger(Button(Text("Click to collapse"))),
+						CollapsibleContent(
+							Div(Text("Content")),
+						),
+					),
+					icn.Icon("search"),
+					icn.Icon("search", icn.Width(50), icn.Height(50), icn.Stroke("red")),
+					icn.Icon("search", icn.Width(50), icn.Height(50), icn.StrokeWidth(3)),
+					icn.Icon("search", icn.Width(18), icn.Height(18), icn.StrokeWidth(1.4)),
+
+					Dropdown(
+						On("select", "console.log($event.detail)"),
+						On("close", "console.log('closed')"),
+						On("dismiss", "console.log('dismissed')"),
+
+						DropdownTrigger(
+							Button(Text("Dropdown")),
+						),
+						DropdownContent(
+							DropdownItem(
+								ID("item-1"),
+
+								icn.Icon("user-round"),
+								Text("Item 1"),
+							),
+							DropdownItem(
+								ID("item-2"),
+
+								icn.Icon("settings"),
+								Text("Item 2"),
+							),
 						),
 					),
 				),

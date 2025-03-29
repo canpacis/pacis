@@ -12,20 +12,12 @@ func Collapsible(props ...r.I) r.Element {
 	return r.Div(ps...)
 }
 
-func CollapsibleTrigger(props ...r.I) r.Element {
-	ps := []r.I{
-		On("click", "open = !open"),
-	}
-	ps = append(ps, props...)
-
-	return r.Div(ps...)
+func CollapsibleTrigger(trigger r.Element) r.Element {
+	trigger.AddAttribute(On("click", "open = !open;"))
+	return trigger
 }
 
-func CollapsibleContent(props ...r.I) r.Element {
-	ps := []r.I{
-		r.Attr("x-show", "open"),
-	}
-	ps = append(ps, props...)
-
-	return r.Div(ps...)
+func CollapsibleContent(content r.Element) r.Element {
+	content.AddAttribute(r.Attr("x-show", "open"))
+	return content
 }

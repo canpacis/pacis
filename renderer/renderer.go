@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"html"
@@ -55,15 +56,25 @@ type Node interface {
 type Element interface {
 	Node
 	GetTag() string
+
 	GetAttributes() []Attribute
 	GetAttribute(string) (Attribute, bool)
-	SetAttribute(int, Attribute)
-	GetElement(int) (Element, bool)
-	GetElements() []Element
+	AddAttribute(Attribute)
+	RemoveAttribute(string)
+
 	GetNode(int) (Node, bool)
 	GetNodes() []Node
-	Add(Node)
-	Remove(int)
+	AddNode(Node)
+	RemoveNode(int)
+
+	GetElement(int) (Element, bool)
+	GetElements() []Element
+}
+
+// ErrorSetter is an interface that allows a node to
+// set its error so that it can be raised during rendering.
+type ErrorSetter interface {
+	SetError(error)
 }
 
 // Represents any kind of element attribute
@@ -119,14 +130,20 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 			}
 		} else {
 			for _, attr := range list {
-				if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
-					return err
-				}
-				if err := attr.Render(ctx, w); err != nil {
-					return err
-				}
-				if _, err := w.Write([]byte("\"")); err != nil {
-					return err
+				if attr.GetValue() == nil {
+					if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
+						return err
+					}
+				} else {
+					if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
+						return err
+					}
+					if err := attr.Render(ctx, w); err != nil {
+						return err
+					}
+					if _, err := w.Write([]byte("\"")); err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -173,13 +190,22 @@ func (e *element) GetAttribute(key string) (Attribute, bool) {
 	return nil, false
 }
 
-func (e *element) SetAttribute(i int, attr Attribute) {
-	if len(e.attrs) <= i {
-		e.err = fmt.Errorf("set attribute: cannot set attribte %d on element %s, index is out of bounds", i, e.tag)
-		return
-	}
+func (e *element) AddAttribute(attr Attribute) {
+	e.attrs = append(e.attrs, attr)
+}
 
-	e.attrs[i] = attr
+func (e *element) RemoveAttribute(key string) {
+	idx := -1
+	for i, attr := range e.attrs {
+		if attr.GetKey() == key {
+			idx = i
+		}
+	}
+	if idx < 0 {
+		e.err = fmt.Errorf("remove attribute: cannot remove attribute %s on element %s, attribute does not exist", key, e.tag)
+	} else {
+		e.attrs = slices.Delete(e.attrs, idx, idx+1)
+	}
 }
 
 func (e *element) GetElement(i int) (Element, bool) {
@@ -213,16 +239,20 @@ func (e *element) GetNodes() []Node {
 	return e.nodes
 }
 
-func (e *element) Add(node Node) {
+func (e *element) AddNode(node Node) {
 	e.nodes = append(e.nodes, node)
 }
 
-func (e *element) Remove(i int) {
+func (e *element) RemoveNode(i int) {
 	if len(e.nodes) <= i {
 		e.err = fmt.Errorf("remove: cannot remove node %d on element %s, index is out of bounds", i, e.tag)
 		return
 	}
 	e.nodes = slices.Delete(e.nodes, i, i+1)
+}
+
+func (e *element) SetError(err error) {
+	e.err = err
 }
 
 // Creates an element with default html renderer
@@ -283,6 +313,11 @@ func (Text) NodeType() NodeType {
 	return NodeText
 }
 
+// Create a text node with formatting
+func Textf(format string, a ...any) Text {
+	return Text(fmt.Sprintf(format, a...))
+}
+
 type attr struct {
 	key   string
 	value any
@@ -290,6 +325,7 @@ type attr struct {
 
 func (a attr) Render(ctx context.Context, w io.Writer) error {
 	var str string
+
 	switch value := a.value.(type) {
 	case bool:
 		if value {
@@ -370,4 +406,27 @@ func If(cond bool, elem Node) Node {
 		return elem
 	}
 	return Frag()
+}
+
+type Boundary struct {
+	node     Node
+	fallback func(error) Node
+}
+
+func (b *Boundary) Render(ctx context.Context, w io.Writer) error {
+	buf := bytes.NewBuffer([]byte{})
+	err := b.node.Render(ctx, w)
+	if err == nil {
+		_, err := io.Copy(w, buf)
+		return err
+	}
+	return b.fallback(err).Render(ctx, w)
+}
+
+func (b Boundary) NodeType() NodeType {
+	return NodeFragment
+}
+
+func Try(node Node, fallback func(error) Node) *Boundary {
+	return &Boundary{node: node, fallback: fallback}
 }

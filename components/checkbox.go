@@ -5,7 +5,7 @@ import (
 	r "github.com/canpacis/pacis/renderer"
 )
 
-func Checkbox(props ...r.I) r.Element {
+func Checkbox(label ...r.Text) r.Element {
 	ps := []r.I{
 		r.Class("text-sm gap-2 items-center inline-flex w-fit-content"),
 		r.Span(
@@ -22,12 +22,13 @@ func Checkbox(props ...r.I) r.Element {
 			r.Input(
 				r.Type("checkbox"),
 				r.Class("sr-only"),
-				On("change", "checked = !checked"),
+				On("change", "checked = !checked;"),
 			),
 		),
 	}
-
-	ps = append(ps, props...)
+	for _, label := range label {
+		ps = append(ps, label)
+	}
 
 	return r.Label(ps...)
 }
