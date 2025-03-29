@@ -79,9 +79,14 @@ Usage:
 func ErrorText(err error) r.Node {
 	log.Println(err.Error())
 
-	return r.Span(
-		r.Class("leading-3.5 text-red-700 font-bold text-sm absolute"),
+	return r.Div(
+		r.Class("fixed inset-0 flex justify-center items-center z-80"),
 
-		r.Textf("Failed to render: %s", err.Error()),
+		r.Div(r.Class("bg-neutral-800/60 absolute inset-0")),
+		r.Div(
+			r.Class("bg-neutral-800 text-red-600 rounded-sm p-4 relative z-90"),
+
+			r.Textf("Failed to render: %s", err.Error()),
+		),
 	)
 }

@@ -32,7 +32,7 @@ func main() {
 				Class("flex gap-2 items-center"),
 
 				Alert(
-					icn.Icon("terminal"),
+					icn.Terminal(),
 					AlertTitle(Text("Heads Up!")),
 					AlertDescription(
 						Text("Lorem ipsum dolor sit amet consectetur"),
@@ -56,7 +56,7 @@ func main() {
 						CardTitle(
 							Class("flex gap-2"),
 
-							icn.Icon("bell", icn.Width(18), icn.Height(18)),
+							icn.Bell(icn.Width(18), icn.Height(18)),
 							Text("Notifications"),
 						),
 						CardDescription(Text("You have 3 unread messages.")),
@@ -103,10 +103,10 @@ func main() {
 							Div(Text("Content")),
 						),
 					),
-					icn.Icon("search"),
-					icn.Icon("search", icn.Width(50), icn.Height(50), icn.Stroke("red")),
-					icn.Icon("search", icn.Width(50), icn.Height(50), icn.StrokeWidth(3)),
-					icn.Icon("search", icn.Width(18), icn.Height(18), icn.StrokeWidth(1.4)),
+					icn.Search(),
+					icn.Search(icn.Width(50), icn.Height(50), icn.Stroke("red")),
+					icn.Search(icn.Width(50), icn.Height(50), icn.StrokeWidth(3)),
+					icn.Search(icn.Width(18), icn.Height(18), icn.StrokeWidth(1.4)),
 
 					Dropdown(
 						On("select", "console.log($event.detail)"),
@@ -120,13 +120,13 @@ func main() {
 							DropdownItem(
 								ID("item-1"),
 
-								icn.Icon("user-round"),
+								icn.UserRound(),
 								Text("Item 1"),
 							),
 							DropdownItem(
 								ID("item-2"),
 
-								icn.Icon("settings"),
+								icn.Settings(),
 								Text("Item 2"),
 							),
 						),

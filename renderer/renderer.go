@@ -62,8 +62,8 @@ type Element interface {
 	AddAttribute(Attribute)
 	RemoveAttribute(string)
 
-	GetNode(int) (Node, bool)
 	GetNodes() []Node
+	GetNode(int) (Node, bool)
 	AddNode(Node)
 	RemoveNode(int)
 
@@ -110,6 +110,7 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 		attrs[key] = append(attrs[key], attr)
 	}
 
+	// TODO: Maybe refactor this to its own function
 	for key, list := range attrs {
 		// join class names with a space, duplicate other attributes
 		if key == "class" {
@@ -129,7 +130,13 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 				return err
 			}
 		} else {
-			for _, attr := range list {
+			if len(list) == 0 {
+				continue
+			}
+			// if the attribute is dedupable, pick the last element
+			_, ok := list[0].(interface{ Dedupe() })
+			if ok {
+				attr := list[len(list)-1]
 				if attr.GetValue() == nil {
 					if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
 						return err
@@ -143,6 +150,24 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 					}
 					if _, err := w.Write([]byte("\"")); err != nil {
 						return err
+					}
+				}
+			} else {
+				for _, attr := range list {
+					if attr.GetValue() == nil {
+						if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
+							return err
+						}
+					} else {
+						if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
+							return err
+						}
+						if err := attr.Render(ctx, w); err != nil {
+							return err
+						}
+						if _, err := w.Write([]byte("\"")); err != nil {
+							return err
+						}
 					}
 				}
 			}
@@ -318,6 +343,19 @@ func Textf(format string, a ...any) Text {
 	return Text(fmt.Sprintf(format, a...))
 }
 
+// Represents an unsafe raw text
+// content, use it at your own risk.
+type RawUnsafe string
+
+func (t RawUnsafe) Render(ctx context.Context, w io.Writer) error {
+	_, err := w.Write([]byte(string(t)))
+	return err
+}
+
+func (RawUnsafe) NodeType() NodeType {
+	return NodeText
+}
+
 type attr struct {
 	key   string
 	value any
@@ -358,6 +396,8 @@ func (a *attr) GetKey() string {
 func (a *attr) GetValue() any {
 	return a.value
 }
+
+func (*attr) Dedupe() {}
 
 func Attr(key string, value ...any) Attribute {
 	switch len(value) {

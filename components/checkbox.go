@@ -16,7 +16,7 @@ func Checkbox(label ...r.Text) r.Element {
 			r.Span(
 				r.Class("items-center justify-center text-current transition-none"),
 				r.Attr(":class", "!checked ? 'hidden' : 'flex'"),
-				icn.Icon("check", icn.Width(14), icn.Height(14)),
+				icn.Check(r.Class("size-3.5")),
 			),
 
 			r.Input(
