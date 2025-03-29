@@ -142,16 +142,7 @@ func main() {
 		w.WriteHeader(200)
 		w.Header().Set("Content-Type", "text/html")
 		html := Html(
-			Head(
-				Link(Href("https://fonts.googleapis.com"), Rel("preconnect")),
-				Link(Href("https://fonts.gstatic.com"), Rel("preconnect")),
-				Link(Href("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap"), Rel("stylesheet")),
-				Link(Href("/public/main.css"), Rel("stylesheet")),
-				Link(Href("https://rsms.me/inter/inter.css"), Rel("stylesheet")),
-				Script(Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
-				Script(Src("https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js")),
-				Script(Src("https://unpkg.com/embla-carousel/embla-carousel.umd.js")),
-			),
+			Head(AppHead()),
 			Body(body),
 		)
 		fmt.Println(html.Render(r.Context(), w))

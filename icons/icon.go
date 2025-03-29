@@ -2,6 +2,7 @@
 package icons
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
 	"fmt"
@@ -37,6 +38,8 @@ func ErrorText(err error) r.Node {
 		),
 	)
 }
+
+var cache = map[string][]byte{}
 
 type Width float64
 
@@ -119,19 +122,34 @@ func Icon(path string, items ...r.I) r.Node {
 
 	icon := SvgIcon{path: path, Element: r.El("svg", props...)}
 
-	file, err := os.OpenFile(fmt.Sprintf("./lucide/icons/%s.svg", path), os.O_RDONLY, 0o644)
-	if err != nil {
-		errset, ok := icon.Element.(r.ErrorSetter)
-		if ok {
-			errset.SetError(err)
-			return ErrorText(err)
-		} else {
-			panic(err)
-		}
-	}
-	defer file.Close()
+	var source io.Reader
 
-	err = xml.NewDecoder(file).Decode(&icon)
+	cached, ok := cache[path]
+	if ok {
+		source = bytes.NewReader(cached)
+	} else {
+		var err error
+		file, err := os.OpenFile(fmt.Sprintf("./lucide/icons/%s.svg", path), os.O_RDONLY, 0o644)
+		if err != nil {
+			errset, ok := icon.Element.(r.ErrorSetter)
+			if ok {
+				errset.SetError(err)
+				return ErrorText(err)
+			} else {
+				panic(err)
+			}
+		}
+		defer file.Close()
+
+		buf := bytes.NewBuffer([]byte{})
+		source = io.TeeReader(file, buf)
+
+		defer func() {
+			cache[path] = buf.Bytes()
+		}()
+	}
+
+	err := xml.NewDecoder(source).Decode(&icon)
 	if err != nil {
 		errset, ok := icon.Element.(r.ErrorSetter)
 		if ok {
