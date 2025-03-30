@@ -106,5 +106,14 @@ func Button(props ...r.I) r.Element {
 
 	ps = append(ps, variant)
 	ps = append(ps, size)
-	return r.Btn(ps...)
+
+	el := r.Btn(ps...)
+
+	attr, ok := el.GetAttribute("replace")
+	if ok {
+		el := attr.(*Replacer).element(ps...)
+		el.RemoveAttribute("replace")
+		return el
+	}
+	return el
 }

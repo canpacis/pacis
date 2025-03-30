@@ -124,8 +124,8 @@ Usage:
 		Body( ... )
 	)
 */
-func CreateHead(prefix string) AppHead {
-	head := AppHead{prefix: prefix, Fragment: r.Frag(
+func CreateHead(prefix string) *AppHead {
+	head := &AppHead{prefix: prefix, Fragment: r.Frag(
 		r.Link(r.Href(fmt.Sprintf("%smain.css", prefix)), r.Rel("stylesheet")),
 		r.Script(r.Src(fmt.Sprintf("%smain.js", prefix))),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
@@ -247,3 +247,23 @@ func Anchor(v VPos, h HPos, offset int) AnchorPosition {
 // Implements Deduper interface to deduplicate attribute
 // and use the last provided value as the final attribte
 func (a AnchorPosition) Dedupe() {}
+
+type Replacer struct {
+	element func(items ...r.I) r.Element
+}
+
+func (*Replacer) Render(context.Context, io.Writer) error {
+	return nil
+}
+
+func (*Replacer) GetKey() string {
+	return "replace"
+}
+
+func (*Replacer) IsEmpty() bool {
+	return true
+}
+
+func Replace(element func(items ...r.I) r.Element) *Replacer {
+	return &Replacer{element: element}
+}

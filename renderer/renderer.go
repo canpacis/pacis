@@ -477,43 +477,26 @@ func Try(node Node, fallback func(error) Node) *Boundary {
 	return &Boundary{node: node, fallback: fallback}
 }
 
-type ContextNode struct {
-	node func(context.Context) Node
-}
+type ContextNode func(context.Context) Node
 
 func (cn ContextNode) Render(ctx context.Context, w io.Writer) error {
-	return cn.node(ctx).Render(ctx, w)
+	return cn(ctx).Render(ctx, w)
 }
 
 func (ContextNode) NodeType() NodeType {
 	return NodeFragment
 }
 
-type ContextAttr struct {
-	attr func(context.Context) Attribute
-	key  string
-}
+type ContextAttr func(context.Context) Attribute
 
 func (ca ContextAttr) Render(ctx context.Context, w io.Writer) error {
-	return ca.attr(ctx).Render(ctx, w)
+	return ca(ctx).Render(ctx, w)
 }
 
 func (ca ContextAttr) GetKey() string {
-	return ca.key
+	return ca(context.Background()).GetKey()
 }
 
 func (ContextAttr) IsEmpty() bool {
 	return false
-}
-
-func Context(child any) Renderer {
-	switch child := child.(type) {
-	case func(context.Context) Node:
-		return ContextNode{node: child}
-	case func(context.Context) Attribute:
-		// Render once to get the key
-		return ContextAttr{attr: child, key: child(context.Background()).GetKey()}
-	default:
-		panic(fmt.Sprintf("unknown context child %t", child))
-	}
 }
