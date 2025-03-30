@@ -118,9 +118,11 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 				return err
 			}
 
-			for _, class := range list {
-				if _, err := w.Write([]byte(" ")); err != nil {
-					return err
+			for i, class := range list {
+				if i != 0 {
+					if _, err := w.Write([]byte(" ")); err != nil {
+						return err
+					}
 				}
 				if err := class.Render(ctx, w); err != nil {
 					return err
