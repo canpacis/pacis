@@ -25,4 +25,3 @@ go.work.sum
 .env
 
 node_modules
-components/public/main.css
