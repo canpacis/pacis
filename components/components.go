@@ -124,7 +124,7 @@ func CreateHead(prefix string) AppHead {
 		r.Link(r.Href("https://fonts.googleapis.com"), r.Rel("preconnect")),
 		r.Link(r.Href("https://fonts.gstatic.com"), r.Rel("preconnect")),
 		r.Link(r.Href("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap"), r.Rel("stylesheet")),
-		r.Link(r.Href(fmt.Sprintf("%smain.css", prefix))),
+		r.Link(r.Href(fmt.Sprintf("%smain.css", prefix)), r.Rel("stylesheet")),
 		r.Script(r.Src(fmt.Sprintf("%smain.js", prefix))),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/anchor@3.x.x/dist/cdn.min.js")),
