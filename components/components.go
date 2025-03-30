@@ -12,6 +12,10 @@ import (
 	r "github.com/canpacis/pacis-ui/renderer"
 )
 
+func join(props []r.I, rest ...r.I) []r.I {
+	return append(rest, props...)
+}
+
 /*
 	Provide x-data attributes to your elements.
 
@@ -61,10 +65,6 @@ Usage:
 */
 func On(event string, handler string) r.Attribute {
 	return r.Attr(fmt.Sprintf("x-on:%s", event), handler)
-}
-
-func join(props []r.I, rest ...r.I) []r.I {
-	return append(rest, props...)
 }
 
 /*
@@ -130,6 +130,14 @@ func AppHead() r.Node {
 	)
 }
 
+/*
+Provides vertical positioning for anchored elements like tooltips and dropdown menus.
+See components.AnchorPosition type or components.Anchor function for usage details.
+
+Available options are;
+  - components.VTop: Position on top of an element
+  - components.VBottom: Position on the bottom of an element
+*/
 type VPos int
 
 const (
@@ -137,6 +145,15 @@ const (
 	VBottom
 )
 
+/*
+Provides horizontal positioning for anchored elements like tooltips and dropdown menus.
+See components.AnchorPosition type or components.Anchor function for usage details.
+
+Available options are;
+  - components.HStart: Position at the start of an element
+  - components.HCenter: Position at the center of an element
+  - components.HEnd: Position at the end of an element
+*/
 type HPos int
 
 const (
@@ -145,6 +162,20 @@ const (
 	HEnd
 )
 
+/*
+	Provides anchor positioning attributes to given element
+
+Usage:
+
+	Dropdown(
+		DropdownTrigger( ... )
+		DropdownContent(
+			// Pass this to content elements
+			Anchor(VBottom, HCenter, 12)
+			// Positions content at bottom center of the trigger, offsetted 12 pixels
+		)
+	)
+*/
 type AnchorPosition struct {
 	vpos   VPos
 	hpos   HPos
@@ -188,8 +219,24 @@ func (a AnchorPosition) GetValue() any {
 	return "$refs.anchor"
 }
 
+/*
+	Provides anchor positioning attributes to given element
+
+Usage:
+
+	Dropdown(
+		DropdownTrigger( ... )
+		DropdownContent(
+			// Pass this to content elements
+			Anchor(VBottom, HCenter, 12)
+			// Positions content at bottom center of the trigger, offsetted 12 pixels
+		)
+	)
+*/
 func Anchor(v VPos, h HPos, offset int) AnchorPosition {
 	return AnchorPosition{vpos: v, hpos: h, offset: offset}
 }
 
+// Implements Deduper interface to deduplicate attribute
+// and use the last provided value as the final attribte
 func (a AnchorPosition) Dedupe() {}
