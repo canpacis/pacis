@@ -427,7 +427,7 @@ func (Fragment) NodeType() NodeType {
 	return NodeFragment
 }
 
-func Frag(children ...Node) Node {
+func Frag(children ...Node) *Fragment {
 	return &Fragment{children: children}
 }
 

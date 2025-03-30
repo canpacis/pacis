@@ -2,11 +2,12 @@ package components
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"os"
+	"net/http"
 	"strings"
 
 	r "github.com/canpacis/pacis-ui/renderer"
@@ -92,42 +93,46 @@ func ErrorText(err error) r.Node {
 	)
 }
 
-// Place this component inside the head tag
-func AppHead() r.Node {
-	css, err := os.ReadFile("./public/main.css")
-	if err != nil {
-		panic(err)
-	}
+type AppHead struct {
+	*r.Fragment
+	prefix string
+}
 
-	return r.Frag(
+//go:embed public
+var public embed.FS
+
+// Provides
+func (h AppHead) Handler() http.Handler {
+	return http.FileServerFS(public)
+}
+
+/*
+	Place this component inside the head tag and use the handler to add static files to your server
+
+Usage:
+
+	head := CreateHead("/public/") // include the '/' before and after
+	http.Handle("/public/", head.Handler())
+
+	html := Html(
+		Head(head)
+		Body( ... )
+	)
+*/
+func CreateHead(prefix string) AppHead {
+	head := AppHead{prefix: prefix, Fragment: r.Frag(
 		r.Link(r.Href("https://fonts.googleapis.com"), r.Rel("preconnect")),
 		r.Link(r.Href("https://fonts.gstatic.com"), r.Rel("preconnect")),
 		r.Link(r.Href("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap"), r.Rel("stylesheet")),
-		r.Style(r.RawUnsafe(css)),
+		r.Link(r.Href(fmt.Sprintf("%smain.css", prefix))),
+		r.Script(r.Src(fmt.Sprintf("%smain.js", prefix))),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/anchor@3.x.x/dist/cdn.min.js")),
-		r.Script(r.Defer, r.RawUnsafe(`
-		 document.addEventListener('alpine:init', () => {
-        Alpine.data('dialog', () => ({
-            isOpen: false,
- 
-						openDialog() {
-              this.isOpen = true;
-							this.$dispatch('open');
-            },
-            closeDialog(dismiss = false) {
-              this.isOpen = false;
-							this.$dispatch('close');
-							if (dismiss) {
-								this.$dispatch('dismiss');
-							}
-            }
-        }))
-    })
-		`)),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://unpkg.com/embla-carousel/embla-carousel.umd.js")),
-	)
+	)}
+
+	return head
 }
 
 /*
