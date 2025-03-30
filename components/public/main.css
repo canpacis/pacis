@@ -3,7 +3,6 @@
 @layer theme {
   :root, :host {
     --color-red-600: oklch(0.577 0.245 27.325);
-    --color-neutral-100: oklch(0.97 0 0);
     --color-neutral-800: oklch(0.269 0 0);
     --color-black: #000;
     --color-white: #fff;
@@ -38,7 +37,7 @@
     line-height: 1.5;
     -webkit-text-size-adjust: 100%;
     tab-size: 4;
-    font-family: var(--font-geist-sans, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-family: "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif,Apple Color Emoji,Segoe UI Emoji";
     font-feature-settings: initial;
     font-variation-settings: initial;
     -webkit-tap-highlight-color: transparent;
@@ -65,7 +64,8 @@
     font-weight: bolder;
   }
   code, kbd, samp, pre {
-    font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
     font-feature-settings: initial;
     font-variation-settings: initial;
     font-size: 1em;
@@ -1319,8 +1319,6 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --selection-bg: var(--color-neutral-800);
-  --selection-text: var(--color-neutral-100);
   --gradient-bg-1: hsl(213.8 100% 96.9%);
   --gradient-bg-2: hsl(270 100% 98%);
 }
@@ -1356,8 +1354,6 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --selection-bg: var(--color-neutral-100);
-  --selection-text: var(--color-neutral-800);
   --gradient-bg-1: hsl(226.2 57% 9%);
   --gradient-bg-2: hsl(273.5 86.9% 9%);
 }
@@ -1365,18 +1361,6 @@
   * {
     border-color: var(--border);
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
-    & *::selection {
-      background-color: var(--selection-bg);
-    }
-    &::selection {
-      background-color: var(--selection-bg);
-    }
-    & *::selection {
-      color: var(--selection-text);
-    }
-    &::selection {
-      color: var(--selection-text);
-    }
   }
   body {
     background-color: var(--background);
@@ -1396,12 +1380,6 @@
       max-width: 1200px !important;
     }
   }
-}
-* {
-  font-family: "Inter", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
 }
 @keyframes enter {
   from {
