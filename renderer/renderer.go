@@ -81,7 +81,7 @@ type ErrorSetter interface {
 type Attribute interface {
 	Renderer
 	GetKey() string
-	GetValue() any
+	IsEmpty() bool
 }
 
 type element struct {
@@ -94,8 +94,8 @@ type element struct {
 }
 
 func (e *element) Render(ctx context.Context, w io.Writer) error {
-	if e.err != nil {
-		return e.err
+	if e.GetError() != nil {
+		return e.GetError()
 	}
 
 	if _, err := w.Write(fmt.Appendf(nil, "<%s", e.tag)); err != nil {
@@ -139,7 +139,7 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 			_, ok := list[0].(interface{ Dedupe() })
 			if ok {
 				attr := list[len(list)-1]
-				if attr.GetValue() == nil {
+				if attr.IsEmpty() {
 					if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
 						return err
 					}
@@ -156,7 +156,7 @@ func (e *element) Render(ctx context.Context, w io.Writer) error {
 				}
 			} else {
 				for _, attr := range list {
-					if attr.GetValue() == nil {
+					if attr.IsEmpty() {
 						if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
 							return err
 						}
@@ -282,6 +282,10 @@ func (e *element) SetError(err error) {
 	e.err = err
 }
 
+func (e *element) GetError() error {
+	return e.err
+}
+
 // Creates an element with default html renderer
 func El(tag string, items ...I) Element {
 	_, selfClosing := selfClosingTags[tag]
@@ -395,8 +399,8 @@ func (a *attr) GetKey() string {
 	return a.key
 }
 
-func (a *attr) GetValue() any {
-	return a.value
+func (a *attr) IsEmpty() bool {
+	return a.value == nil
 }
 
 func (*attr) Dedupe() {}
@@ -471,4 +475,45 @@ func (b Boundary) NodeType() NodeType {
 
 func Try(node Node, fallback func(error) Node) *Boundary {
 	return &Boundary{node: node, fallback: fallback}
+}
+
+type ContextNode struct {
+	node func(context.Context) Node
+}
+
+func (cn ContextNode) Render(ctx context.Context, w io.Writer) error {
+	return cn.node(ctx).Render(ctx, w)
+}
+
+func (ContextNode) NodeType() NodeType {
+	return NodeFragment
+}
+
+type ContextAttr struct {
+	attr func(context.Context) Attribute
+	key  string
+}
+
+func (ca ContextAttr) Render(ctx context.Context, w io.Writer) error {
+	return ca.attr(ctx).Render(ctx, w)
+}
+
+func (ca ContextAttr) GetKey() string {
+	return ca.key
+}
+
+func (ContextAttr) IsEmpty() bool {
+	return false
+}
+
+func Context(child any) Renderer {
+	switch child := child.(type) {
+	case func(context.Context) Node:
+		return ContextNode{node: child}
+	case func(context.Context) Attribute:
+		// Render once to get the key
+		return ContextAttr{attr: child, key: child(context.Background()).GetKey()}
+	default:
+		panic(fmt.Sprintf("unknown context child %t", child))
+	}
 }

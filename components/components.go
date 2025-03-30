@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"strings"
@@ -42,8 +43,8 @@ func (D) GetKey() string {
 	return "x-data"
 }
 
-func (d D) GetValue() any {
-	return d
+func (d D) IsEmpty() bool {
+	return d == nil
 }
 
 /*
@@ -101,9 +102,13 @@ type AppHead struct {
 //go:embed public
 var public embed.FS
 
-// Provides
+// Provides an http handler for public assets
 func (h AppHead) Handler() http.Handler {
-	return http.FileServerFS(public)
+	content, err := fs.Sub(public, "public")
+	if err != nil {
+		panic(err)
+	}
+	return http.FileServer(http.FS(content))
 }
 
 /*
@@ -185,7 +190,7 @@ type AnchorPosition struct {
 }
 
 func (a AnchorPosition) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(a.GetValue().(string)))
+	_, err := w.Write([]byte("$refs.anchor"))
 	return err
 }
 
@@ -217,8 +222,8 @@ func (a AnchorPosition) GetKey() string {
 	return key
 }
 
-func (a AnchorPosition) GetValue() any {
-	return "$refs.anchor"
+func (a AnchorPosition) IsEmpty() bool {
+	return false
 }
 
 /*

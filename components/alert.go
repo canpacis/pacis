@@ -35,22 +35,25 @@ const (
 )
 
 func (v AlertVariant) Render(ctx context.Context, w io.Writer) error {
-	return r.Class(v.GetValue().(string)).Render(ctx, w)
+	var value string
+	switch v {
+	case AlertVariantDefault:
+		value = "bg-card text-card-foreground"
+	case AlertVariantDestructive:
+		value = "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
+	default:
+		panic("invalid alert variant property")
+	}
+
+	return r.Class(value).Render(ctx, w)
 }
 
 func (AlertVariant) GetKey() string {
 	return "class"
 }
 
-func (v AlertVariant) GetValue() any {
-	switch v {
-	case AlertVariantDefault:
-		return "bg-card text-card-foreground"
-	case AlertVariantDestructive:
-		return "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
-	default:
-		panic("invalid alert variant property")
-	}
+func (v AlertVariant) IsEmpty() bool {
+	return false
 }
 
 func Alert(props ...r.I) r.Element {

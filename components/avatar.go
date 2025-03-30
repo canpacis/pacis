@@ -28,7 +28,7 @@ func AvatarImage(props ...r.I) r.Node {
 
 	el := r.Img(props...)
 
-	src, ok := el.GetAttribute("src")
+	_, ok := el.GetAttribute("src")
 	if !ok {
 		errset, ok := el.(r.ErrorSetter)
 		if ok {
@@ -37,7 +37,8 @@ func AvatarImage(props ...r.I) r.Node {
 			panic("avatar image component needs a src attribute")
 		}
 	} else {
-		el.AddAttribute(D{"url": src.GetValue()})
+		// TODO: add url value
+		// el.AddAttribute(D{"url": src.GetValue()})
 	}
 
 	return r.Try(el, ErrorText)
@@ -52,24 +53,28 @@ const (
 )
 
 func (v AvatarSize) Render(ctx context.Context, w io.Writer) error {
-	return r.Class(v.GetValue().(string)).Render(ctx, w)
+	var value string
+
+	switch v {
+	case AvatarSizeDefault:
+		value = "size-8"
+	case AvatarSizeSm:
+		value = "size-6"
+	case AvatarSizeLg:
+		value = "size-12"
+	default:
+		panic("invalid avatar size property")
+	}
+
+	return r.Class(value).Render(ctx, w)
 }
 
 func (AvatarSize) GetKey() string {
 	return "class"
 }
 
-func (v AvatarSize) GetValue() any {
-	switch v {
-	case AvatarSizeDefault:
-		return "size-8"
-	case AvatarSizeSm:
-		return "size-6"
-	case AvatarSizeLg:
-		return "size-12"
-	default:
-		panic("invalid avatar size property")
-	}
+func (v AvatarSize) IsEmpty() bool {
+	return false
 }
 
 func Avatar(props ...r.I) r.Element {

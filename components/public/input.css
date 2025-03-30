@@ -123,8 +123,4 @@
   body {
     @apply bg-background text-foreground;
   }
-
-  .container {
-    @apply md:!max-w-[760px] lg:!max-w-[920px] xl:!max-w-[1200px] !max-w-[90dvw] w-full mx-auto;
-  }
 }

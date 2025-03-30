@@ -17,26 +17,30 @@ const (
 )
 
 func (v BadgeVariant) Render(ctx context.Context, w io.Writer) error {
-	return r.Class(v.GetValue().(string)).Render(ctx, w)
+	var value string
+
+	switch v {
+	case BadgeVariantDefault:
+		value = "!border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90"
+	case BadgeVariantSecondary:
+		value = "!border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90"
+	case BadgeVariantDestructive:
+		value = "!border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
+	case BadgeVariantOutline:
+		value = "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
+	default:
+		panic("invalid badge variant property")
+	}
+
+	return r.Class(value).Render(ctx, w)
 }
 
 func (BadgeVariant) GetKey() string {
 	return "class"
 }
 
-func (v BadgeVariant) GetValue() any {
-	switch v {
-	case BadgeVariantDefault:
-		return "!border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90"
-	case BadgeVariantSecondary:
-		return "!border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90"
-	case BadgeVariantDestructive:
-		return "!border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
-	case BadgeVariantOutline:
-		return "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
-	default:
-		panic("invalid badge variant property")
-	}
+func (v BadgeVariant) IsEmpty() bool {
+	return false
 }
 
 func Badge(props ...r.I) r.Element {

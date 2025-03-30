@@ -154,7 +154,7 @@ func Draggable(value string) Attribute    { return Attr("draggable", value) }
 func Enctype(value string) Attribute      { return Attr("enctype", value) }
 func EnterKeyHint(value string) Attribute { return Attr("enterkeyhint", value) }
 func For(value string) Attribute          { return Attr("for", value) }
-func FormAttr_(value string) Attribute    { return Attr("form", value) }
+func FormAttr(value string) Attribute     { return Attr("form", value) }
 func FormAction(value string) Attribute   { return Attr("formaction", value) }
 func Headers(value string) Attribute      { return Attr("headers", value) }
 func Height(value string) Attribute       { return Attr("height", value) }
@@ -169,7 +169,7 @@ func Inert(value string) Attribute        { return Attr("inert", value) }
 func InputMode(value string) Attribute    { return Attr("inputmode", value) }
 func IsMap(value string) Attribute        { return Attr("ismap", value) }
 func Kind(value string) Attribute         { return Attr("kind", value) }
-func LabelAttr_(value string) Attribute   { return Attr("label", value) }
+func LabelAttr(value string) Attribute    { return Attr("label", value) }
 func Src(value string) Attribute          { return Attr("src", value) }
 func Role(value string) Attribute         { return Attr("role", value) }
 func Lang(value string) Attribute         { return Attr("lang", value) }
@@ -185,6 +185,7 @@ func Multiple(value string) Attribute     { return Attr("multiple", value) }
 func Muted(value string) Attribute        { return Attr("muted", value) }
 func Name(value string) Attribute         { return Attr("name", value) }
 func NoValidate(value string) Attribute   { return Attr("novalidate", value) }
+func Placeholder(value string) Attribute  { return Attr("placeholder", value) }
 func Type(value string) Attribute         { return Attr("type", value) }
 func Rel(value string) Attribute          { return Attr("rel", value) }
 func Width(value string) Attribute        { return Attr("width", value) }

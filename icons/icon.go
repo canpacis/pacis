@@ -19,8 +19,8 @@ func (Width) GetKey() string {
 	return "width"
 }
 
-func (wd Width) GetValue() any {
-	return float64(wd)
+func (wd Width) IsEmpty() bool {
+	return false
 }
 
 // Implements Deduper interface to deduplicate attribute
@@ -38,8 +38,8 @@ func (Height) GetKey() string {
 	return "height"
 }
 
-func (wd Height) GetValue() any {
-	return float64(wd)
+func (wd Height) IsEmpty() bool {
+	return false
 }
 
 // Implements Deduper interface to deduplicate attribute
@@ -57,8 +57,8 @@ func (StrokeWidth) GetKey() string {
 	return "stroke-width"
 }
 
-func (wd StrokeWidth) GetValue() any {
-	return float64(wd)
+func (wd StrokeWidth) IsEmpty() bool {
+	return false
 }
 
 // Implements Deduper interface to deduplicate attribute

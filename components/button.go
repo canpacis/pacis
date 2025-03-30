@@ -17,26 +17,30 @@ const (
 )
 
 func (s ButtonSize) Render(ctx context.Context, w io.Writer) error {
-	return r.Class(s.GetValue().(string)).Render(ctx, w)
+	var value string
+
+	switch s {
+	case ButtonSizeDefault:
+		value = "h-9 px-4 py-2 has-[>svg]:px-3"
+	case ButtonSizeSm:
+		value = "h-8 rounded-md text-xs gap-1.5 px-3 has-[>svg]:px-2.5"
+	case ButtonSizeLg:
+		value = "h-10 rounded-md px-6 has-[>svg]:px-4"
+	case ButtonSizeIcon:
+		value = "size-9"
+	default:
+		panic("invalid button size property")
+	}
+
+	return r.Class(value).Render(ctx, w)
 }
 
 func (ButtonSize) GetKey() string {
 	return "class"
 }
 
-func (s ButtonSize) GetValue() any {
-	switch s {
-	case ButtonSizeDefault:
-		return "h-9 px-4 py-2 has-[>svg]:px-3"
-	case ButtonSizeSm:
-		return "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5"
-	case ButtonSizeLg:
-		return "h-10 rounded-md px-6 has-[>svg]:px-4"
-	case ButtonSizeIcon:
-		return "size-9"
-	default:
-		panic("invalid button size property")
-	}
+func (s ButtonSize) IsEmpty() bool {
+	return false
 }
 
 type ButtonVariant int
@@ -51,30 +55,34 @@ const (
 )
 
 func (v ButtonVariant) Render(ctx context.Context, w io.Writer) error {
-	return r.Class(v.GetValue().(string)).Render(ctx, w)
+	var value string
+
+	switch v {
+	case ButtonVariantDefault:
+		value = "shadow-xs bg-primary text-primary-foreground hover:bg-primary/90"
+	case ButtonVariantDestructive:
+		value = "text-white shadow-xs bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
+	case ButtonVariantOutline:
+		value = "border shadow-xs bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
+	case ButtonVariantSecondary:
+		value = "shadow-xs bg-secondary text-secondary-foreground hover:bg-secondary/80"
+	case ButtonVariantGhost:
+		value = "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
+	case ButtonVariantLink:
+		value = "text-primary underline-offset-4 hover:underline"
+	default:
+		panic("invalid button variant property")
+	}
+
+	return r.Class(value).Render(ctx, w)
 }
 
 func (ButtonVariant) GetKey() string {
 	return "class"
 }
 
-func (v ButtonVariant) GetValue() any {
-	switch v {
-	case ButtonVariantDefault:
-		return "shadow-xs bg-primary text-primary-foreground hover:bg-primary/90"
-	case ButtonVariantDestructive:
-		return "text-white shadow-xs bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
-	case ButtonVariantOutline:
-		return "border shadow-xs bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
-	case ButtonVariantSecondary:
-		return "shadow-xs bg-secondary text-secondary-foreground hover:bg-secondary/80"
-	case ButtonVariantGhost:
-		return "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
-	case ButtonVariantLink:
-		return "text-primary underline-offset-4 hover:underline"
-	default:
-		panic("invalid button variant property")
-	}
+func (v ButtonVariant) IsEmpty() bool {
+	return false
 }
 
 func Button(props ...r.I) r.Element {

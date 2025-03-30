@@ -47,7 +47,8 @@ func DropdownItem(props ...r.I) r.Node {
 		r.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
 	)
 	el := r.Btn(props...)
-	id, ok := el.GetAttribute("id")
+	ok := false
+	// id, ok := el.GetAttribute("id")
 	if !ok {
 		errset, ok := el.(r.ErrorSetter)
 		if ok {
@@ -61,7 +62,8 @@ func DropdownItem(props ...r.I) r.Node {
 				"click",
 				fmt.Sprintf(
 					"open = false, keyboard = false, $dispatch('select', { id: '%s' }), $dispatch('close');",
-					id.GetValue(),
+					"TODO PLACE ID HERE",
+					// id.GetValue(),
 				),
 			),
 		)
