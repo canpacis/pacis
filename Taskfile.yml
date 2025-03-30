@@ -1,0 +1,9 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  build:
+    cmds:
+      - go generate icons/icon.go
+      - npx @tailwindcss/cli -i ./components/public/input.css -o ./components/public/main.css
