@@ -100,6 +100,7 @@ func Embed(props ...I) Element      { return El("embed", props...) }
 func Canvas(props ...I) Element     { return El("canvas", props...) }
 func Address(props ...I) Element    { return El("address", props...) }
 func Progress(props ...I) Element   { return El("progress", props...) }
+func Section(props ...I) Element    { return El("section", props...) }
 
 // Attributes
 
