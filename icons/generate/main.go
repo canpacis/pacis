@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"log"
 	"os"
@@ -21,18 +22,33 @@ func toPascalCase(s string) string {
 	return strings.Join(words, "")
 }
 
-func template(name string) string {
-	return fmt.Sprintf("func %s(items ...r.I) r.Node { return Icon(\"%s\", items...) }", toPascalCase(name), name)
+func template(name string, content []byte) string {
+	c := []string{}
+
+	for _, b := range content {
+		c = append(c, fmt.Sprintf("%d", b))
+	}
+
+	return fmt.Sprintf(`func %s(props ...r.I) r.Node {
+	props = join(props, r.RawUnsafe([]byte{%s}))
+	return Icon(props...) 
+}`, toPascalCase(name), strings.Join(c, ", "))
+}
+
+type SvgIcon struct {
+	Content []byte `xml:",innerxml"`
 }
 
 func main() {
+	os.Remove("icons.go")
 	file, err := os.OpenFile("icons.go", os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
-	entries, err := os.ReadDir("../lucide/icons")
+	dir := "../lucide/icons"
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +62,17 @@ func main() {
 			continue
 		}
 
-		program += template(strings.TrimSuffix(name, ext))
+		var icon SvgIcon
+		file, err := os.OpenFile(path.Join(dir, name), os.O_RDONLY, 0o644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		decoder := xml.NewDecoder(file)
+		if err := decoder.Decode(&icon); err != nil {
+			log.Fatal(err)
+		}
+
+		program += template(strings.TrimSuffix(name, ext), icon.Content)
 		program += "\n"
 	}
 
