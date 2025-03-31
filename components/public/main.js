@@ -45,7 +45,7 @@ window.addEventListener("load", () => {
       return
     }
 
-    const slot = wrapper.shadowRoot.querySelector(`slot[name='${id}']`)
+    const slot = wrapper.querySelector(`slot[name='${id}']`)
     if (!slot) {
       return
     }
