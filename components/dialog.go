@@ -6,7 +6,7 @@ import (
 )
 
 func Dialog(props ...r.I) r.Element {
-	props = join(
+	props = Join(
 		props,
 		X("data", "dialog"),
 		On("keydown.esc.window", "closeDialog"),
@@ -55,21 +55,21 @@ func DialogContent(props ...r.I) r.Node {
 }
 
 func DialogHeader(props ...r.I) r.Element {
-	props = join(props, r.Class("flex flex-col space-y-1.5 text-center sm:text-left"))
+	props = Join(props, r.Class("flex flex-col space-y-1.5 text-center sm:text-left"))
 	return r.Div(props...)
 }
 
 func DialogFooter(props ...r.I) r.Element {
-	props = join(props, r.Class("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2"))
+	props = Join(props, r.Class("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2"))
 	return r.Div(props...)
 }
 
 func DialogTitle(props ...r.I) r.Element {
-	props = join(props, r.Class("text-lg font-semibold leading-none tracking-tight"))
+	props = Join(props, r.Class("text-lg font-semibold leading-none tracking-tight"))
 	return r.Span(props...)
 }
 
 func DialogDescription(props ...r.I) r.Element {
-	props = join(props, r.Class("text-sm text-muted-foreground"))
+	props = Join(props, r.Class("text-sm text-muted-foreground"))
 	return r.Span(props...)
 }

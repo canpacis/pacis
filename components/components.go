@@ -14,7 +14,21 @@ import (
 	r "github.com/canpacis/pacis-ui/renderer"
 )
 
-func join(props []r.I, rest ...r.I) []r.I {
+/*
+	Joins a prop list with rest. Puts the props at the end for correct attribute deduplication.
+
+Usage:
+
+	func Component(props ...I) Element {
+		return Div(
+			Join(
+				props,
+				Class( ... )
+			)...
+		)
+	}
+*/
+func Join(props []r.I, rest ...r.I) []r.I {
 	return append(rest, props...)
 }
 
@@ -131,7 +145,7 @@ func CreateHead(prefix string) *AppHead {
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/anchor@3.x.x/dist/cdn.min.js")),
 		r.Script(r.Src("https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js")),
-		r.Script(r.Src("https://unpkg.com/embla-carousel/embla-carousel.umd.js")),
+		// r.Script(r.Src("https://unpkg.com/embla-carousel/embla-carousel.umd.js")),
 	)}
 
 	return head
@@ -266,4 +280,22 @@ func (*Replacer) IsEmpty() bool {
 
 func Replace(element func(items ...r.I) r.Element) *Replacer {
 	return &Replacer{element: element}
+}
+
+type Orientation int
+
+const (
+	OHorizontal = Orientation(iota)
+	OVertical
+)
+
+func (o Orientation) String() string {
+	switch o {
+	case OHorizontal:
+		return "horizontal"
+	case OVertical:
+		return "vertical"
+	default:
+		panic("invalid orientation value")
+	}
 }

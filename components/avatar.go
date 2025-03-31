@@ -9,7 +9,7 @@ import (
 )
 
 func AvatarFallback(props ...r.I) r.Element {
-	props = join(
+	props = Join(
 		props,
 		r.Class("bg-muted flex size-full items-center justify-center rounded-full text-sm"),
 		r.Attr(":class", "!error ? 'hidden' : 'block'"),
@@ -18,7 +18,7 @@ func AvatarFallback(props ...r.I) r.Element {
 }
 
 func AvatarImage(props ...r.I) r.Node {
-	props = join(
+	props = Join(
 		props,
 		r.Class("aspect-square size-full"),
 		r.Attr(":class", "error ? 'hidden' : 'block'"),

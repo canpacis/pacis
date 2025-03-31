@@ -339,8 +339,14 @@
   .h-24 {
     height: calc(var(--spacing) * 24);
   }
+  .h-\[1px\] {
+    height: 1px;
+  }
   .h-dvh {
     height: 100dvh;
+  }
+  .h-full {
+    height: 100%;
   }
   .min-h-4 {
     min-height: calc(var(--spacing) * 4);
@@ -353,6 +359,9 @@
   }
   .w-24 {
     width: calc(var(--spacing) * 24);
+  }
+  .w-\[1px\] {
+    width: 1px;
   }
   .w-dvw {
     width: 100dvw;
@@ -508,6 +517,9 @@
   .bg-black\/80 {
     background-color: color-mix(in oklab, var(--color-black) 80%, transparent);
   }
+  .bg-border {
+    background-color: var(--border);
+  }
   .bg-card {
     background-color: var(--card);
   }
@@ -611,6 +623,9 @@
   }
   .text-wrap {
     text-wrap: wrap;
+  }
+  .break-words {
+    overflow-wrap: break-word;
   }
   .whitespace-nowrap {
     white-space: nowrap;
@@ -1091,6 +1106,11 @@
       justify-content: flex-end;
     }
   }
+  .sm\:gap-2\.5 {
+    @media (width >= 40rem) {
+      gap: calc(var(--spacing) * 2.5);
+    }
+  }
   .sm\:space-x-2 {
     @media (width >= 40rem) {
       :where(& > :not(:last-child)) {
@@ -1365,20 +1385,6 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-  }
-  .container {
-    margin-inline: auto;
-    width: 100%;
-    max-width: 90dvw !important;
-    @media (width >= 48rem) {
-      max-width: 760px !important;
-    }
-    @media (width >= 64rem) {
-      max-width: 920px !important;
-    }
-    @media (width >= 80rem) {
-      max-width: 1200px !important;
-    }
   }
 }
 @keyframes enter {
