@@ -8,7 +8,7 @@ func Seperator(orientation Orientation, props ...r.I) r.Element {
 			props,
 			r.Role("none"),
 			r.Data("orientation", orientation.String()),
-			r.Class("bg-border"),
+			r.Class("bg-border my-2"),
 			r.If(orientation == OHorizontal, r.Class("h-[1px] w-full")),
 			r.If(orientation == OVertical, r.Class("h-full w-[1px]")),
 		)...,
