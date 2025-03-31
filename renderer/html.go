@@ -104,6 +104,7 @@ func Address(props ...I) Element    { return El("address", props...) }
 func Progress(props ...I) Element   { return El("progress", props...) }
 func Section(props ...I) Element    { return El("section", props...) }
 func Aside(props ...I) Element      { return El("aside", props...) }
+func Meta(props ...I) Element       { return El("meta", props...) }
 
 // Attributes
 

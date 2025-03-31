@@ -140,12 +140,14 @@ Usage:
 */
 func CreateHead(prefix string) *AppHead {
 	head := &AppHead{prefix: prefix, Fragment: r.Frag(
+		r.Meta(r.Charset("UTF-8")),
+		r.Meta(r.Name("viewport"), r.Content("width=device-width, initial-scale=1.0")),
 		r.Link(r.Href(fmt.Sprintf("%smain.css", prefix)), r.Rel("stylesheet")),
 		r.Script(r.Src(fmt.Sprintf("%smain.js", prefix))),
-		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js")),
-		r.Script(r.Src("https://cdn.jsdelivr.net/npm/@alpinejs/anchor@3.x.x/dist/cdn.min.js")),
-		r.Script(r.Src("https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js")),
-		// r.Script(r.Src("https://unpkg.com/embla-carousel/embla-carousel.umd.js")),
+		r.Script(r.Src(fmt.Sprintf("%scarousel.js", prefix))),
+		r.Script(r.Src(fmt.Sprintf("%sfocus.js", prefix))),
+		r.Script(r.Src(fmt.Sprintf("%sanchor.js", prefix))),
+		r.Script(r.Src(fmt.Sprintf("%salpine.js", prefix))),
 	)}
 
 	return head

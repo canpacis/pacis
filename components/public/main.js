@@ -15,6 +15,22 @@ document.addEventListener("alpine:init", () => {
     },
   }));
 
+  Alpine.data("sheet", () => ({
+    isOpen: false,
+
+    openSheet() {
+      this.isOpen = true;
+      this.$dispatch("open");
+    },
+    closeSheet(dismiss = false) {
+      this.isOpen = false;
+      this.$dispatch("close");
+      if (dismiss) {
+        this.$dispatch("dismiss");
+      }
+    },
+  }));
+
   Alpine.magic("clipboard", () => {
     return (subject) => navigator.clipboard.writeText(subject);
   });
