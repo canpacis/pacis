@@ -257,6 +257,9 @@
       max-width: 96rem;
     }
   }
+  .my-2 {
+    margin-block: calc(var(--spacing) * 2);
+  }
   .ms-auto {
     margin-inline-start: auto;
   }
