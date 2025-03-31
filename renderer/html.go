@@ -25,7 +25,7 @@ func U(props ...I) Element          { return El("u", props...) }
 func Ins(props ...I) Element        { return El("ins", props...) }
 func Small(props ...I) Element      { return El("small", props...) }
 func Sub(props ...I) Element        { return El("sub", props...) }
-func Code(props ...I) Element       { return El("code", props...) }
+func Cde(props ...I) Element        { return El("code", props...) }
 func Samp(props ...I) Element       { return El("samp", props...) }
 func Q(props ...I) Element          { return El("q", props...) }
 func Rt(props ...I) Element         { return El("rt", props...) }

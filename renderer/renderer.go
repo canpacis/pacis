@@ -447,9 +447,16 @@ func Map[T any](items []T, fn func(T, int) Node) Node {
 	return Frag(mapped...)
 }
 
-func If(cond bool, elem Node) Node {
+func If(cond bool, elem Renderer) Renderer {
 	if cond {
 		return elem
+	}
+	return Frag()
+}
+
+func IfFn(cond bool, fn func() Renderer) Renderer {
+	if cond {
+		return fn()
 	}
 	return Frag()
 }
