@@ -234,6 +234,12 @@
   .isolate {
     isolation: isolate;
   }
+  .z-10 {
+    z-index: 10;
+  }
+  .z-20 {
+    z-index: 20;
+  }
   .z-50 {
     z-index: 50;
   }
@@ -787,6 +793,10 @@
     --tw-duration: 200ms;
     transition-duration: 200ms;
   }
+  .duration-300 {
+    --tw-duration: 300ms;
+    transition-duration: 300ms;
+  }
   .ease-in {
     --tw-ease: var(--ease-in);
     transition-timing-function: var(--ease-in);
@@ -794,24 +804,6 @@
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
-  }
-  .animate-in {
-    animation-name: enter;
-    animation-duration: 150ms;
-    --tw-enter-opacity: initial;
-    --tw-enter-scale: initial;
-    --tw-enter-rotate: initial;
-    --tw-enter-translate-x: initial;
-    --tw-enter-translate-y: initial;
-  }
-  .animate-out {
-    animation-name: exit;
-    animation-duration: 150ms;
-    --tw-exit-opacity: initial;
-    --tw-exit-scale: initial;
-    --tw-exit-rotate: initial;
-    --tw-exit-translate-x: initial;
-    --tw-exit-translate-y: initial;
   }
   .outline-none {
     --tw-outline-style: none;
@@ -823,6 +815,9 @@
   }
   .duration-200 {
     animation-duration: 200ms;
+  }
+  .duration-300 {
+    animation-duration: 300ms;
   }
   .ease-in {
     animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
@@ -1112,12 +1107,6 @@
       color: var(--primary-foreground);
     }
   }
-  .data-\[state\=closed\]\:duration-300 {
-    &[data-state="closed"] {
-      --tw-duration: 300ms;
-      transition-duration: 300ms;
-    }
-  }
   .data-\[state\=closed\]\:animate-out {
     &[data-state="closed"] {
       animation-name: exit;
@@ -1127,11 +1116,6 @@
       --tw-exit-rotate: initial;
       --tw-exit-translate-x: initial;
       --tw-exit-translate-y: initial;
-    }
-  }
-  .data-\[state\=closed\]\:duration-300 {
-    &[data-state="closed"] {
-      animation-duration: 300ms;
     }
   }
   .data-\[state\=closed\]\:fade-out-0 {
@@ -1174,12 +1158,6 @@
       color: var(--muted-foreground);
     }
   }
-  .data-\[state\=open\]\:duration-500 {
-    &[data-state="open"] {
-      --tw-duration: 500ms;
-      transition-duration: 500ms;
-    }
-  }
   .data-\[state\=open\]\:animate-in {
     &[data-state="open"] {
       animation-name: enter;
@@ -1189,11 +1167,6 @@
       --tw-enter-rotate: initial;
       --tw-enter-translate-x: initial;
       --tw-enter-translate-y: initial;
-    }
-  }
-  .data-\[state\=open\]\:duration-500 {
-    &[data-state="open"] {
-      animation-duration: 500ms;
     }
   }
   .data-\[state\=open\]\:fade-in-0 {

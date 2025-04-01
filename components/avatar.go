@@ -1,6 +1,7 @@
 package components
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -11,8 +12,7 @@ import (
 func AvatarFallback(props ...r.I) r.Element {
 	props = Join(
 		props,
-		r.Class("bg-muted flex size-full items-center justify-center rounded-full text-sm"),
-		r.Attr(":class", "!error ? 'hidden' : 'block'"),
+		r.Class("bg-muted flex size-full items-center justify-center rounded-full text-sm absolute inset-0 z-10"),
 	)
 	return r.Div(props...)
 }
@@ -20,7 +20,7 @@ func AvatarFallback(props ...r.I) r.Element {
 func AvatarImage(props ...r.I) r.Node {
 	props = Join(
 		props,
-		r.Class("aspect-square size-full"),
+		r.Class("aspect-square size-full relative z-20"),
 		r.Attr(":class", "error ? 'hidden' : 'block'"),
 		r.Attr(":src", "url"),
 		On("error", "error = true"),
@@ -28,7 +28,7 @@ func AvatarImage(props ...r.I) r.Node {
 
 	el := r.Img(props...)
 
-	_, ok := el.GetAttribute("src")
+	url, ok := el.GetAttribute("src")
 	if !ok {
 		errset, ok := el.(r.ErrorSetter)
 		if ok {
@@ -37,8 +37,9 @@ func AvatarImage(props ...r.I) r.Node {
 			panic("avatar image component needs a src attribute")
 		}
 	} else {
-		// TODO: add url value
-		// el.AddAttribute(D{"url": src.GetValue()})
+		var buf bytes.Buffer
+		url.Render(context.Background(), &buf)
+		el.AddAttribute(D{"url": buf.String()})
 	}
 
 	return r.Try(el, ErrorText)
@@ -59,9 +60,9 @@ func (v AvatarSize) Render(ctx context.Context, w io.Writer) error {
 	case AvatarSizeDefault:
 		value = "size-8"
 	case AvatarSizeSm:
-		value = "size-6"
+		value = "size-6 text-sm"
 	case AvatarSizeLg:
-		value = "size-12"
+		value = "size-12 text-lg"
 	default:
 		panic("invalid avatar size property")
 	}
@@ -81,7 +82,7 @@ func Avatar(props ...r.I) r.Element {
 	var size AvatarSize
 
 	ps := []r.I{
-		r.Class("flex shrink-0 overflow-hidden rounded-full"),
+		r.Class("flex shrink-0 overflow-hidden rounded-full relative"),
 		D{"error": false},
 	}
 
