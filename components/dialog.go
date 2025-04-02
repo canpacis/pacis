@@ -9,6 +9,7 @@ func Dialog(props ...r.I) r.Element {
 	props = Join(
 		props,
 		X("data", "dialog"),
+		X("trap.noscroll", "isOpen"),
 		On("keydown.esc.window", "closeDialog"),
 	)
 

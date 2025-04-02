@@ -14,6 +14,22 @@ document.addEventListener("alpine:init", () => {
       }
     },
   }));
+  Alpine.data("dropdown", () => ({
+    isOpen: false,
+    isKeyboard: false,
+
+    openDropdown() {
+      this.isOpen = true;
+      this.$dispatch("open");
+    },
+    closeDropdown(dismiss = false) {
+      this.isOpen = false;
+      this.$dispatch("close");
+      if (dismiss) {
+        this.$dispatch("dismiss");
+      }
+    },
+  }));
 
   Alpine.data("sheet", () => ({
     isOpen: false,
