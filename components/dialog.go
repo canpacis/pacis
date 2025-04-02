@@ -23,7 +23,7 @@ func DialogTrigger(trigger r.Element) r.Element {
 
 func DialogContent(props ...r.I) r.Node {
 	ps := []r.I{
-		r.Class("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg"),
+		r.Class("fixed left-[50%] top-[50%] z-50 grid w-full translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 rounded-lg"),
 		r.Data(":state", "isOpen ? 'open' : 'closed'"),
 		On("click.outside", "closeDialog"),
 		X("show", "isOpen"),
