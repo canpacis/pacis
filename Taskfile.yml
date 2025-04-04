@@ -3,7 +3,7 @@
 version: '3'
 
 tasks:
-  build:
+  build-ui:
     cmds:
-      - go generate icons/icon.go
-      - npx @tailwindcss/cli -i ./components/public/input.css -o ./components/public/main.css
+      - go generate ui/icons/icon.go
+      - npx @tailwindcss/cli -i ./ui/components/public/input.css -o ./ui/components/public/main.css

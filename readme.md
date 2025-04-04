@@ -55,10 +55,10 @@ type Renderer interface {
 }
 ```
 
-- `renderer.I`: an alias to `renderer.Renderer` for ease of use.
+- `rendereh.I`: an alias to `renderer.Renderer` for ease of use.
 
 ```go
-type I Renderer
+type I = Renderer
 ```
 
 - `renderer.Node`: represents an HTML node that is renderable, this can be anything from an element to a text node.
