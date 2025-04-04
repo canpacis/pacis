@@ -14,6 +14,7 @@ document.addEventListener("alpine:init", () => {
       }
     },
   }));
+
   Alpine.data("dropdown", () => ({
     isOpen: false,
     isKeyboard: false,
@@ -53,18 +54,18 @@ document.addEventListener("alpine:init", () => {
 });
 
 window.addEventListener("load", () => {
-  const slotItems = Array.from(document.querySelectorAll("[slot]"))
+  const slotItems = Array.from(document.querySelectorAll("[slot]"));
   for (const item of slotItems) {
-    const id = item.getAttribute("slot")
-    const wrapper = document.querySelector(`#${id}`)
+    const id = item.getAttribute("slot");
+    const wrapper = document.querySelector(`#${id}`);
     if (!wrapper) {
-      return
+      return;
     }
 
-    const slot = wrapper.querySelector(`slot[name='${id}']`)
+    const slot = wrapper.querySelector(`slot[name='${id}']`);
     if (!slot) {
-      return
+      return;
     }
-    slot.replaceWith(item)
+    slot.replaceWith(item);
   }
-})
+});
