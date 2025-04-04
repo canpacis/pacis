@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/fs"
 	"log"
-	"net/http"
 	"strings"
 
 	h "github.com/canpacis/pacis/ui/html"
@@ -113,16 +112,16 @@ type AppHead struct {
 	prefix string
 }
 
-//go:embed public
-var public embed.FS
+//go:embed dist
+var dist embed.FS
 
-// Provides an http handler for public assets
-func (h AppHead) Handler() http.Handler {
-	content, err := fs.Sub(public, "public")
+// Provides the file system to serve statically
+func (h AppHead) FS() fs.FS {
+	content, err := fs.Sub(dist, "dist")
 	if err != nil {
 		panic(err)
 	}
-	return http.FileServer(http.FS(content))
+	return content
 }
 
 /*
@@ -144,10 +143,6 @@ func CreateHead(prefix string) *AppHead {
 		h.Meta(h.Name("viewport"), h.Content("width=device-width, initial-scale=1.0")),
 		h.Link(h.Href(fmt.Sprintf("%smain.css", prefix)), h.Rel("stylesheet")),
 		h.Script(h.Src(fmt.Sprintf("%smain.js", prefix))),
-		h.Script(h.Src(fmt.Sprintf("%scarousel.js", prefix))),
-		h.Script(h.Src(fmt.Sprintf("%sfocus.js", prefix))),
-		h.Script(h.Src(fmt.Sprintf("%sanchor.js", prefix))),
-		h.Script(h.Src(fmt.Sprintf("%salpine.js", prefix))),
 	)}
 
 	return head

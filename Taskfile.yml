@@ -3,7 +3,8 @@
 version: '3'
 
 tasks:
-  build-ui:
+  build:
     cmds:
       - go generate ui/icons/icon.go
-      - npx @tailwindcss/cli -i ./ui/components/public/input.css -o ./ui/components/public/main.css
+      - npx @tailwindcss/cli -i ./ui/components/src/main.css -o ./ui/components/dist/main.css
+      - esbuild ui/components/src/main.ts --bundle --outfile=./ui/components/dist/main.js --minify --sourcemap
