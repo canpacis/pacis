@@ -299,7 +299,7 @@ func El(tag string, items ...I) Element {
 			el.nodes = append(el.nodes, item)
 		default:
 			fmt.Println(tag, item)
-			panic(fmt.Sprintf("unknown item type %t", item))
+			panic(fmt.Sprintf("unknown item type %T", item))
 		}
 	}
 
@@ -325,7 +325,7 @@ func Clone(elem Element, items ...I) Element {
 		case Node:
 			el.nodes = append(el.nodes, item)
 		default:
-			panic(fmt.Sprintf("unknown item type %t", item))
+			panic(fmt.Sprintf("unknown item type %T", item))
 		}
 	}
 
