@@ -33,7 +33,7 @@ type Renderer interface {
 }
 
 // A shorter alias to Renderer
-type I Renderer
+type I = Renderer
 
 // Node type enumerator
 type NodeType int
