@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -29,10 +31,7 @@ func template(name string, content []byte) string {
 		c = append(c, fmt.Sprintf("%d", b))
 	}
 
-	return fmt.Sprintf(`func %s(props ...h.I) h.Node {
-	props = join(props, h.RawUnsafe([]byte{%s}))
-	return Icon(props...) 
-}`, toPascalCase(name), strings.Join(c, ", "))
+	return fmt.Sprintf(`func %s(props ...h.I) h.Node { return Icon(join(props, r([]byte{%s}))...) }`, toPascalCase(name), strings.Join(c, ", "))
 }
 
 type SvgIcon struct {
@@ -53,7 +52,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	program := "package icons\n\nimport h \"github.com/canpacis/pacis/ui/html\"\n\n"
+	program := "package icons\n\nimport h \"github.com/canpacis/pacis/ui/html\"\n\ntype r = h.RawUnsafe\n\n"
 
 	for _, entry := range entries {
 		name := entry.Name()
@@ -71,12 +70,19 @@ func main() {
 		if err := decoder.Decode(&icon); err != nil {
 			log.Fatal(err)
 		}
+		icon.Content = slices.DeleteFunc(icon.Content, func(b byte) bool {
+			return b == 10
+		})
 
 		program += template(strings.TrimSuffix(name, ext), icon.Content)
 		program += "\n"
 	}
 
-	_, err = file.Write([]byte(program))
+	formatted, err := format.Source([]byte(program))
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = file.Write(formatted)
 	if err != nil {
 		log.Fatal(err)
 	}
