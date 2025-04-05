@@ -5,7 +5,7 @@ nixPkgs = ['go']
 cmds = []
 
 [phases.build]
-cmds = ['go build -o ./dist/docs ./docs']
+cmds = ['go build -o ./docs/docs ./docs']
 
 [start]
-cmd = './dist/docs'
+cmd = './docs/docs'
