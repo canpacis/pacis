@@ -19,19 +19,19 @@ type docitem struct {
 
 func main() {
 	docs := []docitem{
-		{"introduction", "docs/app/markup/introduction.md"},
-		{"installation", "docs/app/markup/installation.md"},
-		{"alert", "docs/app/markup/alert.md"},
-		{"avatar", "docs/app/markup/avatar.md"},
-		{"badge", "docs/app/markup/badge.md"},
-		{"button", "docs/app/markup/button.md"},
-		{"card", "docs/app/markup/card.md"},
-		{"checkbox", "docs/app/markup/checkbox.md"},
-		{"collapsible", "docs/app/markup/collapsible.md"},
-		{"dialog", "docs/app/markup/dialog.md"},
-		{"dropdown", "docs/app/markup/dropdown.md"},
-		{"input", "docs/app/markup/input.md"},
-		{"label", "docs/app/markup/label.md"},
+		{"introduction", "./docs/app/markup/introduction.md"},
+		{"installation", "./docs/app/markup/installation.md"},
+		{"alert", "./docs/app/markup/alert.md"},
+		{"avatar", "./docs/app/markup/avatar.md"},
+		{"badge", "./docs/app/markup/badge.md"},
+		{"button", "./docs/app/markup/button.md"},
+		{"card", "./docs/app/markup/card.md"},
+		{"checkbox", "./docs/app/markup/checkbox.md"},
+		{"collapsible", "./docs/app/markup/collapsible.md"},
+		{"dialog", "./docs/app/markup/dialog.md"},
+		{"dropdown", "./docs/app/markup/dropdown.md"},
+		{"input", "./docs/app/markup/input.md"},
+		{"label", "./docs/app/markup/label.md"},
 	}
 
 	router := p.Routes(

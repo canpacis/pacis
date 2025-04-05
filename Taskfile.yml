@@ -7,7 +7,10 @@ tasks:
     cmds:
       - npx @tailwindcss/cli -i ./ui/components/src/main.css -o ./ui/components/dist/main.css
       - esbuild ui/components/src/main.ts --bundle --outfile=./ui/components/dist/main.js --minify --sourcemap
-  build:
+  build-ui:
     cmds:
       - go generate ui/icons/icon.go
       - task build-light
+  build-docs:
+    cmds:
+      - nixpacks build . --name pacis-docs

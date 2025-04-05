@@ -98,7 +98,7 @@ func getNavSections() []NavSection {
 			Label: Text("Getting Started"),
 			Items: []NavLink{
 				{"/docs/introduction", Text("Introduction")},
-				{"/docs/installation", Text("Installation")},
+				// {"/docs/installation", Text("Installation")},
 				// {"/docs/quick-start", Text("Quick Start")},
 				// {"/docs/syntax-usage", Text("Syntax & Usage")},
 				// {"/docs/roadmap", Text("Roadmap")},
