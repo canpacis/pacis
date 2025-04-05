@@ -11,6 +11,9 @@ tasks:
     cmds:
       - go generate ui/icons/icon.go
       - task build-light
-  build-docs:
+  build-docs-docker:
     cmds:
-      - docker build -t pacis-docs .
+      - docker build -t canpacis/pacis-docs .
+  build-docs-nixpacks:
+    cmds:
+      - nixpacks build . --name pacis-docs

@@ -1,0 +1,5 @@
+[phases.build]
+cmds = ['go build -o pacis-docs ./docs']
+
+[start]
+cmd = './pacis-docs'
