@@ -197,7 +197,7 @@ var plates = map[string][]Node{
 				Button(Text("Open Dialog")),
 			),
 			DialogContent(
-				Class("max-w-[90vw]"),
+				Class("max-w-[92dvw] sm:max-w-[420px]"),
 
 				DialogHeader(
 					DialogTitle(Text("Are you absolutely sure?")),
@@ -210,7 +210,7 @@ var plates = map[string][]Node{
 				Button(Text("Open Dialog")),
 			),
 			DialogContent(
-				Class("sm:max-w-[425px] max-w-[90vw]"),
+				Class("max-w-[92dvw] sm:max-w-[420px]"),
 
 				DialogHeader(
 					DialogTitle(Text("Edit profile")),

@@ -525,8 +525,8 @@
   .max-w-2xl {
     max-width: var(--container-2xl);
   }
-  .max-w-\[90vw\] {
-    max-width: 90vw;
+  .max-w-\[92dvw\] {
+    max-width: 92dvw;
   }
   .min-w-32 {
     min-width: calc(var(--spacing) * 32);
@@ -1215,6 +1215,11 @@
   .data-\[disabled\]\:opacity-50 {
     &[data-disabled] {
       opacity: 50%;
+    }
+  }
+  .sm\:max-w-\[420px\] {
+    @media (width >= 40rem) {
+      max-width: 420px;
     }
   }
   .sm\:max-w-\[425px\] {
