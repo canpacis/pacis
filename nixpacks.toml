@@ -2,7 +2,7 @@
 nixPkgs = ['go']
 
 [phases.install]
-cmds = ['cd ./docs', 'go mod tidy']
+cmds = []
 
 [phases.build]
 cmds = ['go build -o ./dist/docs ./docs']
