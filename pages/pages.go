@@ -29,7 +29,11 @@ type Context interface {
 	Set(string, any)
 }
 
-func Get[T any](ctx *PageContext, key string) T {
+func Set(ctx context.Context, key string, value any) context.Context {
+	return context.WithValue(ctx, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
+}
+
+func Get[T any](ctx context.Context, key string) T {
 	value := ctx.Value(ctxkey(fmt.Sprintf("%s:%s", "app", key)))
 	cast, ok := value.(T)
 	if !ok {
@@ -153,7 +157,7 @@ func Public(dir fs.FS, root string) *public {
 	return &public{dir: dir, root: root}
 }
 
-type Middleware func(Context) Context
+type Middleware func(http.Handler) http.Handler
 
 func (*route) item()     {}
 func (*public) item()    {}
@@ -187,6 +191,7 @@ func (rt route) register(mux *http.ServeMux, head *c.AppHead) {
 	}
 
 	for _, child := range rt.children {
+		child.middlewares = append(child.middlewares, rt.middlewares...)
 		child.register(mux, head)
 	}
 
@@ -222,9 +227,9 @@ func (rt route) register(mux *http.ServeMux, head *c.AppHead) {
 	}
 
 	if handler != nil {
-		// for _, m := range rt.middlewares {
-		// 	handler = m(handler)
-		// }
+		for _, m := range rt.middlewares {
+			handler = m(handler)
+		}
 
 		mux.Handle("GET "+rt.path, handler)
 	}
