@@ -22,7 +22,7 @@ func Layout(ctx *pages.LayoutContext) I {
 			ctx.Head(),
 			Link(Href("/public/main.css"), Rel("stylesheet")),
 			Link(Href("/public/favicon.png"), Rel("icon"), Type("image/png")),
-			Title(Text("Title")),
+			Title(Text("Pacis | Build great UI's with Go")),
 		),
 		Body(
 			Class("flex flex-col min-h-dvh"),
@@ -98,10 +98,34 @@ func getNavSections() []NavSection {
 			Label: Text("Getting Started"),
 			Items: []NavLink{
 				{"/docs/introduction", Text("Introduction")},
-				// {"/docs/installation", Text("Installation")},
-				// {"/docs/quick-start", Text("Quick Start")},
-				// {"/docs/syntax-usage", Text("Syntax & Usage")},
-				// {"/docs/roadmap", Text("Roadmap")},
+				{"/docs/installation", Text("Installation")},
+				{"/docs/quick-start", Text("Quick Start")},
+				{"/docs/syntax-usage", Text("Syntax & Usage")},
+				{"/docs/roadmap", Text("Roadmap")},
+			},
+		},
+		{
+			Label: Text("Customization"),
+			Items: []NavLink{
+				{"/docs/styling", Text("Styling")},
+			},
+		},
+		{
+			Label: Text("Pages"),
+			Items: []NavLink{
+				{"/docs/routing", Text("Routing")},
+				{"/docs/font", Text("Font")},
+				{"/docs/i18n", Text("I18n")},
+				{"/docs/middlwares", Text("Middlwares")},
+			},
+		},
+		{
+			Label: Text("Renderer"),
+			Items: []NavLink{
+				{"/docs/renderer", Text("Renderer Interface")},
+				{"/docs/nodes-elements", Text("Nodes & Elements")},
+				{"/docs/attributes", Text("Attributes")},
+				{"/docs/utils", Text("Utils")},
 			},
 		},
 		{
@@ -112,23 +136,23 @@ func getNavSections() []NavSection {
 				{"/docs/badge", Text("Badge")},
 				{"/docs/button", Text("Button")},
 				{"/docs/card", Text("Card")},
-				// {"/docs/carousel", Text("Carousel")},
+				{"/docs/carousel", Text("Carousel")},
 				{"/docs/checkbox", Text("Checkbox")},
 				{"/docs/collapsible", Text("Collapsible")},
 				{"/docs/dialog", Text("Dialog")},
 				{"/docs/dropdown", Text("Dropdown")},
 				{"/docs/input", Text("Input")},
 				{"/docs/label", Text("Label")},
-				// {"/docs/radio", Text("Radio")},
-				// {"/docs/select", Text("Select")},
-				// {"/docs/seperator", Text("Seperator")},
-				// {"/docs/sheet", Text("Sheet")},
-				// {"/docs/slider", Text("Slider")},
-				// {"/docs/switch", Text("Switch")},
-				// {"/docs/tabs", Text("Tabs")},
-				// {"/docs/textarea", Text("Textarea")},
-				// {"/docs/toast", Text("Toast")},
-				// {"/docs/tooltip", Text("Tooltip")},
+				{"/docs/radio", Text("Radio")},
+				{"/docs/select", Text("Select")},
+				{"/docs/seperator", Text("Seperator")},
+				{"/docs/sheet", Text("Sheet")},
+				{"/docs/slider", Text("Slider")},
+				{"/docs/switch", Text("Switch")},
+				{"/docs/tabs", Text("Tabs")},
+				{"/docs/textarea", Text("Textarea")},
+				{"/docs/toast", Text("Toast")},
+				{"/docs/tooltip", Text("Tooltip")},
 			},
 		},
 	}
@@ -175,7 +199,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 		Class("container flex flex-1 items-start gap-4"),
 
 		Aside(
-			Class("hidden flex-col gap-2 border-r border-dashed py-4 pr-2 sticky top-[var(--header-height)] h-[calc(100dvh-var(--header-height)-var(--footer-height))] min-w-none lg:flex lg:min-w-[240px]"),
+			Class("hidden flex-col gap-2 border-r border-dashed py-4 pr-2 sticky top-[var(--header-height)] h-[calc(100dvh-var(--header-height)-var(--footer-height))] min-w-none lg:flex lg:min-w-[240px] overflow-auto"),
 
 			Navigation(sections, current),
 		),
@@ -245,8 +269,8 @@ func AppHeader() Element {
 				Class("flex gap-3 items-center"),
 				Href("/"),
 
-				Img(Src("/public/logo.png"), Class("w-7")),
-				P(Class("font-semibold inline"), Text("PacisUI")),
+				Img(Src("/public/logo.png"), Class("w-6")),
+				P(Class("font-semibold inline"), Text("Pacis")),
 			),
 			Ul(
 				Class("hidden gap-4 lg:flex"),

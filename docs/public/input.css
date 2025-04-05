@@ -1,12 +1,12 @@
-@import "tailwindcss";
+@import "tailwindcss" source("../");
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --header-height: 4rem;
   --footer-height: 2.5rem;
-  --font-sans: "Inter";
-  --font-mono: "JetBrains Mono";
+  --font-sans: "Inter", apple-system, Arial, Robot, open-sans;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
