@@ -86,7 +86,7 @@ func (ctx LayoutContext) Outlet() h.I {
 
 type Layout func(*LayoutContext) h.I
 
-type item interface {
+type RouteItem interface {
 	item()
 }
 
@@ -101,10 +101,12 @@ type route struct {
 	middlewares []Middleware
 }
 
-func Route(items ...item) *route {
+func Route(items ...RouteItem) *route {
 	r := &route{path: "/"}
 
-	for _, item := range items {
+	var resolveitem func(RouteItem)
+
+	resolveitem = func(item RouteItem) {
 		switch item := item.(type) {
 		case *route:
 			item.path = normalpath(path.Join(normalpath(r.path), normalpath(item.path)))
@@ -120,6 +122,10 @@ func Route(items ...item) *route {
 			r.children = append(r.children, item)
 		case *public:
 			r.public = item
+		case *Fragment:
+			for _, item := range item.items {
+				resolveitem(item)
+			}
 		case Page:
 			r.page = item
 		case Layout:
@@ -135,10 +141,14 @@ func Route(items ...item) *route {
 		}
 	}
 
+	for _, item := range items {
+		resolveitem(item)
+	}
+
 	return r
 }
 
-func Routes(items ...item) *route {
+func Routes(items ...RouteItem) *route {
 	r := Route(items...)
 	r.root = true
 	return r
@@ -159,8 +169,25 @@ func Public(dir fs.FS, root string) *public {
 
 type Middleware func(http.Handler) http.Handler
 
+type Fragment struct {
+	items []RouteItem
+}
+
+func Frag(items ...RouteItem) *Fragment {
+	return &Fragment{items: items}
+}
+
+func Map[T any](items []T, fn func(T, int) RouteItem) RouteItem {
+	result := []RouteItem{}
+	for i, item := range items {
+		result = append(result, fn(item, i))
+	}
+	return Frag(result...)
+}
+
 func (*route) item()     {}
 func (*public) item()    {}
+func (*Fragment) item()  {}
 func (Page) item()       {}
 func (Layout) item()     {}
 func (Path) item()       {}
