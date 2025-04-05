@@ -117,10 +117,37 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
   body {
     @apply bg-background text-foreground;
+  }
+
+  .hljs {
+    @apply !text-muted-foreground;
+  }
+
+  .hljs-string,
+  .hljs-section,
+  .hljs-selector-class,
+  .hljs-template-variable,
+  .hljs-deletion {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+
+  .hljs-keyword {
+    @apply text-violet-700 dark:text-violet-400;
+  }
+
+  .hljs-type {
+    @apply text-sky-700 dark:text-sky-400;
+  }
+
+  .hljs-literal {
+    @apply text-orange-600 dark:text-orange-500;
+  }
+}
+
+@layer utilities {
+  * {
+    @apply border-border outline-ring/50;
   }
 }

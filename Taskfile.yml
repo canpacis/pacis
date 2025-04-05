@@ -3,8 +3,11 @@
 version: '3'
 
 tasks:
+  build-light:
+    cmds:
+      - npx @tailwindcss/cli -i ./ui/components/src/main.css -o ./ui/components/dist/main.css
+      - esbuild ui/components/src/main.ts --bundle --outfile=./ui/components/dist/main.js --minify --sourcemap
   build:
     cmds:
       - go generate ui/icons/icon.go
-      - npx @tailwindcss/cli -i ./ui/components/src/main.css -o ./ui/components/dist/main.css
-      - esbuild ui/components/src/main.ts --bundle --outfile=./ui/components/dist/main.js --minify --sourcemap
+      - task build-light

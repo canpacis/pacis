@@ -10,6 +10,7 @@
     "@types/alpinejs__persist": "^3.13.4",
     "alpinejs": "^3.14.9",
     "esbuild": "^0.25.2",
+    "highlight.js": "^11.11.1",
     "tailwindcss": "^4.0.17",
     "tailwindcss-animate": "^1.0.7"
   },

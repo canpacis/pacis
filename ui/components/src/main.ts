@@ -1,7 +1,11 @@
+import hljs from "highlight.js/lib/core";
+import go from "highlight.js/lib/languages/go";
 import Alpine from "alpinejs";
 import anchor from "@alpinejs/anchor";
 import focus from "@alpinejs/focus";
 import persist from "@alpinejs/persist";
+
+hljs.registerLanguage("go", go);
 
 Alpine.plugin(persist);
 Alpine.plugin(focus);
@@ -126,4 +130,6 @@ window.addEventListener("load", () => {
     }
     slot.replaceWith(item);
   }
+
+  hljs.highlightAll();
 });
