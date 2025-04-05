@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ['go']
+
+[phases.build]
+cmds = ['go build -o ./dist/docs ./docs']
+
+[start]
+cmd = './dist/docs'
