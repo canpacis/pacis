@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"net/http"
+	"os"
 
 	"github.com/canpacis/pacis/docs/app"
 	p "github.com/canpacis/pacis/pages"
@@ -17,21 +18,28 @@ type docitem struct {
 	markup string
 }
 
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 func main() {
 	docs := []docitem{
-		{"introduction", "./docs/app/markup/introduction.md"},
-		{"installation", "./docs/app/markup/installation.md"},
-		{"alert", "./docs/app/markup/alert.md"},
-		{"avatar", "./docs/app/markup/avatar.md"},
-		{"badge", "./docs/app/markup/badge.md"},
-		{"button", "./docs/app/markup/button.md"},
-		{"card", "./docs/app/markup/card.md"},
-		{"checkbox", "./docs/app/markup/checkbox.md"},
-		{"collapsible", "./docs/app/markup/collapsible.md"},
-		{"dialog", "./docs/app/markup/dialog.md"},
-		{"dropdown", "./docs/app/markup/dropdown.md"},
-		{"input", "./docs/app/markup/input.md"},
-		{"label", "./docs/app/markup/label.md"},
+		{"introduction", "./app/markup/introduction.md"},
+		{"installation", "./app/markup/installation.md"},
+		{"alert", "./app/markup/alert.md"},
+		{"avatar", "./app/markup/avatar.md"},
+		{"badge", "./app/markup/badge.md"},
+		{"button", "./app/markup/button.md"},
+		{"card", "./app/markup/card.md"},
+		{"checkbox", "./app/markup/checkbox.md"},
+		{"collapsible", "./app/markup/collapsible.md"},
+		{"dialog", "./app/markup/dialog.md"},
+		{"dropdown", "./app/markup/dropdown.md"},
+		{"input", "./app/markup/input.md"},
+		{"label", "./app/markup/label.md"},
 	}
 
 	router := p.Routes(
@@ -51,5 +59,5 @@ func main() {
 		),
 	)
 
-	http.ListenAndServe(":8080", router.Handler())
+	http.ListenAndServe(":"+getEnv("PORT", "8080"), router.Handler())
 }

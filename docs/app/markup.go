@@ -17,7 +17,7 @@ func MarkupPage(path string) pages.Page {
 
 	ast := parser.BuildDjotAst(source)
 	nodes := []I{Class("flex-3")}
-	nodes = append(nodes, RenderMarkup(ast[0], strings.TrimSuffix(strings.TrimPrefix(path, "./docs/app/markup/"), ".md")))
+	nodes = append(nodes, RenderMarkup(ast[0], strings.TrimSuffix(strings.TrimPrefix(path, "./app/markup/"), ".md")))
 	headings := ExtractTitles(ast[0])
 
 	return func(pc *pages.PageContext) I {
