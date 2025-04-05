@@ -13,6 +13,9 @@ import (
 //go:embed public
 var public embed.FS
 
+//go:embed app/markup
+var markup embed.FS
+
 type docitem struct {
 	path   string
 	markup string
@@ -27,19 +30,19 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	docs := []docitem{
-		{"introduction", "./app/markup/introduction.md"},
-		{"installation", "./app/markup/installation.md"},
-		{"alert", "./app/markup/alert.md"},
-		{"avatar", "./app/markup/avatar.md"},
-		{"badge", "./app/markup/badge.md"},
-		{"button", "./app/markup/button.md"},
-		{"card", "./app/markup/card.md"},
-		{"checkbox", "./app/markup/checkbox.md"},
-		{"collapsible", "./app/markup/collapsible.md"},
-		{"dialog", "./app/markup/dialog.md"},
-		{"dropdown", "./app/markup/dropdown.md"},
-		{"input", "./app/markup/input.md"},
-		{"label", "./app/markup/label.md"},
+		{"introduction", "app/markup/introduction.md"},
+		{"installation", "app/markup/installation.md"},
+		{"alert", "app/markup/alert.md"},
+		{"avatar", "app/markup/avatar.md"},
+		{"badge", "app/markup/badge.md"},
+		{"button", "app/markup/button.md"},
+		{"card", "app/markup/card.md"},
+		{"checkbox", "app/markup/checkbox.md"},
+		{"collapsible", "app/markup/collapsible.md"},
+		{"dialog", "app/markup/dialog.md"},
+		{"dropdown", "app/markup/dropdown.md"},
+		{"input", "app/markup/input.md"},
+		{"label", "app/markup/label.md"},
 	}
 
 	router := p.Routes(
@@ -54,7 +57,7 @@ func main() {
 
 			p.Route(p.Path("components"), p.Redirect("/docs/alert")),
 			p.Map(docs, func(doc docitem, i int) p.RouteItem {
-				return p.Route(p.Path(doc.path), p.Page(app.MarkupPage(doc.markup)))
+				return p.Route(p.Path(doc.path), p.Page(app.MarkupPage(markup, doc.markup)))
 			}),
 		),
 	)

@@ -13,4 +13,4 @@ tasks:
       - task build-light
   build-docs:
     cmds:
-      - nixpacks build . --name pacis-docs
+      - docker build -t pacis-docs .

@@ -1,7 +1,9 @@
 package app
 
 import (
-	"os"
+	"io"
+	"io/fs"
+	"path"
 	"strings"
 
 	"github.com/canpacis/pacis/pages"
@@ -9,15 +11,21 @@ import (
 	parser "github.com/sivukhin/godjot/djot_parser"
 )
 
-func MarkupPage(path string) pages.Page {
-	source, err := os.ReadFile(path)
+func MarkupPage(fs fs.FS, name string) pages.Page {
+	file, err := fs.Open(name)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	source, err := io.ReadAll(file)
 	if err != nil {
 		panic(err)
 	}
 
 	ast := parser.BuildDjotAst(source)
 	nodes := []I{Class("flex-3")}
-	nodes = append(nodes, RenderMarkup(ast[0], strings.TrimSuffix(strings.TrimPrefix(path, "./app/markup/"), ".md")))
+	nodes = append(nodes, RenderMarkup(ast[0], strings.TrimSuffix(path.Base(name), path.Ext(name))))
 	headings := ExtractTitles(ast[0])
 
 	return func(pc *pages.PageContext) I {
