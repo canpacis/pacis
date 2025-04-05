@@ -21,7 +21,7 @@ tmp_dir = "tmp"
   poll = false
   poll_interval = 0
   post_cmd = []
-  pre_cmd = ["npx @tailwindcss/cli -i ./docs/public/input.css -o ./docs/public/main.css"]
+  pre_cmd = ["npx @tailwindcss/cli -i ./docs/public/input.css -o ./docs/public/main.css", "esbuild ui/components/src/main.ts --bundle --outfile=./ui/components/dist/main.js --minify --sourcemap"]
   rerun = false
   rerun_delay = 500
   send_interrupt = false
