@@ -82,6 +82,9 @@ func On(event string, handler string) h.Attribute {
 	return h.Attr(fmt.Sprintf("x-on:%s", event), handler)
 }
 
+// Toggles color scheme upon a click event
+var ToggleColorScheme = On("click", "$store.colorScheme.toggle()")
+
 /*
 An error handler element that you can use with error boundaries
 

@@ -1,18 +1,36 @@
 import Alpine from "alpinejs";
 import anchor from "@alpinejs/anchor";
 import focus from "@alpinejs/focus";
+import persist from "@alpinejs/persist";
 
+Alpine.plugin(persist);
 Alpine.plugin(focus);
 Alpine.plugin(anchor);
 
 declare global {
   interface Window {
-    Alpine: typeof Alpine
+    Alpine: typeof Alpine;
   }
 }
 
-window.Alpine = Alpine;
+const cookieStorage = {
+  getItem(key: string) {
+    let cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i].split("=");
+      if (key == cookie[0].trim()) {
+        return JSON.stringify(decodeURIComponent(cookie[1]));
+      }
+    }
+    return null;
+  },
+  setItem(key: string, value: string) {
+    document.cookie =
+      key + " = " + encodeURIComponent(JSON.parse(value)) + "; path=/";
+  },
+};
 
+window.Alpine = Alpine;
 
 Alpine.data("dropdown", () => ({
   isOpen: false,
@@ -63,11 +81,33 @@ Alpine.data("sheet", () => ({
   },
 }));
 
-Alpine.data("clipboard", () => ({
-  copyToClipboard(subject: string) {
-    navigator.clipboard.writeText(subject);
+Alpine.magic("clipboard", () => {
+  return (data: string) => navigator.clipboard.writeText(data);
+});
+
+const scheme = document.querySelector("html")!.classList.contains("light")
+  ? "light"
+  : "dark";
+
+Alpine.store("colorScheme", {
+  value: Alpine.$persist(scheme).as("pacis_color_scheme").using(cookieStorage),
+
+  toggle() {
+    const html = document.querySelector("html");
+    if (!html) {
+      return;
+    }
+    if (this.value === "dark") {
+      html.classList.remove("dark");
+      html.classList.add("light");
+      this.value = "light";
+    } else {
+      html.classList.remove("light");
+      html.classList.add("dark");
+      this.value = "dark";
+    }
   },
-}));
+});
 
 Alpine.start();
 
