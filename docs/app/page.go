@@ -41,15 +41,3 @@ func HomePage(ctx *pages.PageContext) I {
 		),
 	)
 }
-
-func Introduction(ctx *pages.PageContext) I {
-	return Main(Text("Introduction"))
-}
-
-func Installation(ctx *pages.PageContext) I {
-	return Main(Text("Installation"))
-}
-
-func AlertPage(ctx *pages.PageContext) I {
-	return Main(Text("AlertPage"))
-}

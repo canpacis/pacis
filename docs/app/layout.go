@@ -5,24 +5,23 @@ import (
 
 	. "github.com/canpacis/pacis/docs/components"
 	"github.com/canpacis/pacis/pages"
+	fonts "github.com/canpacis/pacis/pages/font"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
 )
+
+var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 
 func Layout(ctx *pages.LayoutContext) I {
 	return Html(
 		Class(pages.Get[string](ctx, "theme")),
 
 		Head(
-			// mono,
-			// font,
-			// font.Use(),
+			fonts.Head(sans),
 			ctx.Head(),
 			Link(Href("/public/main.css"), Rel("stylesheet")),
 			Link(Href("/public/favicon.png"), Rel("icon"), Type("image/png")),
-			Script(Src("https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/prism.min.js")),
-			Script(Src("https://cdnjs.cloudflare.com/ajax/libs/prism/9000.0.1/components/prism-go.min.js")),
 			Title(Text("Title")),
 		),
 		Body(
@@ -194,7 +193,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 			}),
 			ctx.Outlet(),
 			Div(
-				Class("flex gap-8"),
+				Class("flex gap-8 mb-[var(--footer-height)]"),
 
 				Div(
 					Class("flex mt-12 flex-3 w-full xl:w-fit"),
@@ -301,7 +300,7 @@ func GithubIcon(props ...I) Element {
 
 func AppFooter() Element {
 	return Footer(
-		Class("border-t border-dashed py-2 text-center h-[var(--footer-height)]"),
+		Class("border-t border-dashed py-2 text-center h-[var(--footer-height)] fixed bottom-0 w-dvw bg-background"),
 
 		P(Class("text-sm text-muted-foreground"), Text("Built by "), Knot(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
 	)

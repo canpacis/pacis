@@ -1,0 +1,6 @@
+github.com/gosimple/slug v1.15.0 h1:wRZHsRrRcs6b0XnxMUBM6WK1U1Vg5B0R7VkIf1Xzobo=
+github.com/gosimple/slug v1.15.0/go.mod h1:UiRaFH+GEilHstLUmcBgWcI42viBN7mAb818JrYOeFQ=
+github.com/gosimple/unidecode v1.0.1 h1:hZzFTMMqSswvf0LBJZCZgThIZrpDHFXux9KeGmn6T/o=
+github.com/gosimple/unidecode v1.0.1/go.mod h1:CP0Cr1Y1kogOtx0bJblKzsVWrqYaqfNOnHzpgWw4Awc=
+github.com/sivukhin/godjot v1.0.6 h1:yoRD+hlcDbSxP9Gd/KRVlEFXgtGyZyt0CHwhY6Gk3EQ=
+github.com/sivukhin/godjot v1.0.6/go.mod h1:wA6KdR4Z+XpwdwyViPDLWYYxT72pKjNc6XGA9I025gM=
