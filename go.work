@@ -1,0 +1,5 @@
+go 1.24.1
+
+use ./ui
+use ./pages
+use ./docs
