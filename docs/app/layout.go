@@ -6,6 +6,7 @@ import (
 	. "github.com/canpacis/pacis/docs/components"
 	"github.com/canpacis/pacis/pages"
 	fonts "github.com/canpacis/pacis/pages/font"
+	"github.com/canpacis/pacis/pages/i18n"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
@@ -18,11 +19,31 @@ func Layout(ctx *pages.LayoutContext) I {
 		Class(pages.Get[string](ctx, "theme")),
 
 		Head(
+			Meta(Name("title"), Content(i18n.Text("title").String(ctx))),
+			Meta(Name("description"), Content(i18n.Text("desc").String(ctx))),
+			Meta(Name("keywords"), Content(i18n.Text("keywords").String(ctx))),
+			Meta(Name("robots"), Content("index, follow")),
+			Meta(HttpEquiv("Content-Type"), Content("text/html; charset=utf-8")),
+			Meta(HttpEquiv("language"), Content("English")),
+			Meta(HttpEquiv("author"), Content("canpacis")),
+
+			Meta(Property("og:type"), Content("website")),
+			Meta(Property("og:url"), Content("https://ui.canpacis.com")),
+			Meta(Property("og:title"), Content(i18n.Text("title").String(ctx))),
+			Meta(Property("og:description"), Content(i18n.Text("desc").String(ctx))),
+			Meta(Property("og:image"), Content("/public/banner.png")),
+
+			Meta(Property("twitter:card"), Content("summary_large_image")),
+			Meta(Property("twitter:url"), Content("https://ui.canpacis.com")),
+			Meta(Property("twitter:title"), Content(i18n.Text("title").String(ctx))),
+			Meta(Property("twitter:description"), Content(i18n.Text("desc").String(ctx))),
+			Meta(Property("twitter:image"), Content("/public/banner.png")),
+
 			fonts.Head(sans),
 			ctx.Head(),
 			Link(Href("/public/main.css"), Rel("stylesheet")),
 			Link(Href("/public/favicon.png"), Rel("icon"), Type("image/png")),
-			Title(Text("Pacis | Build great UI's with Go")),
+			Title(i18n.Text("title")),
 		),
 		Body(
 			Class("flex flex-col min-h-dvh"),

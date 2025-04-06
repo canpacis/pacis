@@ -2,16 +2,22 @@ package main
 
 import (
 	"embed"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/canpacis/pacis/docs/app"
 	p "github.com/canpacis/pacis/pages"
+	"github.com/canpacis/pacis/pages/i18n"
 	"github.com/canpacis/pacis/pages/middleware"
+	"golang.org/x/text/language"
 )
 
 //go:embed public
 var public embed.FS
+
+//go:embed messages
+var messages embed.FS
 
 //go:embed app/markup
 var markup embed.FS
@@ -29,6 +35,11 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	bundle, err := i18n.Setup(messages, language.English)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	docs := []docitem{
 		{"introduction", "app/markup/introduction.md"},
 		{"installation", "app/markup/installation.md"},
@@ -49,6 +60,7 @@ func main() {
 		p.Public(public, "public"),
 		p.Layout(app.Layout),
 		p.Middleware(middleware.Theme),
+		p.Middleware(middleware.Locale(bundle, language.English)),
 		p.Page(app.HomePage),
 
 		p.Route(
