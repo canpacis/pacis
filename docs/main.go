@@ -22,16 +22,30 @@ var messages embed.FS
 //go:embed app/markup
 var markup embed.FS
 
-type docitem struct {
-	path   string
-	markup string
-}
+//go:embed app/robots.txt
+var robots []byte
+
+//go:embed app/sitemap.xml
+var sitemap []byte
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
 	return fallback
+}
+
+func fileServer(data []byte, contenttyp string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", contenttyp)
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+}
+
+type docitem struct {
+	path   string
+	markup string
 }
 
 func main() {
@@ -74,5 +88,9 @@ func main() {
 		),
 	)
 
-	http.ListenAndServe(":"+getEnv("PORT", "8080"), router.Handler())
+	mux := router.Handler().(*http.ServeMux)
+	mux.Handle("GET /robots.txt", fileServer(robots, "text/plain; charset=utf-8"))
+	mux.Handle("GET /sitemap.xml", fileServer(sitemap, "application/xml"))
+
+	http.ListenAndServe(":"+getEnv("PORT", "8080"), mux)
 }
