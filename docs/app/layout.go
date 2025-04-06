@@ -22,7 +22,7 @@ func Layout(ctx *pages.LayoutContext) I {
 			ctx.Head(),
 			Link(Href("/public/main.css"), Rel("stylesheet")),
 			Link(Href("/public/favicon.png"), Rel("icon"), Type("image/png")),
-			Title(Text("Title")),
+			Title(Text("Pacis | Build great UI's with Go")),
 		),
 		Body(
 			Class("flex flex-col min-h-dvh"),
@@ -245,8 +245,8 @@ func AppHeader() Element {
 				Class("flex gap-3 items-center"),
 				Href("/"),
 
-				Img(Src("/public/logo.png"), Class("w-7")),
-				P(Class("font-semibold inline"), Text("PacisUI")),
+				Img(Src("/public/logo.png"), Class("w-6")),
+				P(Class("font-semibold inline"), Text("Pacis")),
 			),
 			Ul(
 				Class("hidden gap-4 lg:flex"),
