@@ -197,3 +197,4 @@ func Value(value string) Attribute          { return Attr("value", value) }
 func Shadowrootmode(value string) Attribute { return Attr("shadowrootmode", value) }
 func SlotAttr(value string) Attribute       { return Attr("slot", value) }
 func Target(value string) Attribute         { return Attr("target", value) }
+func Property(value string) Attribute       { return Attr("property", value) }
