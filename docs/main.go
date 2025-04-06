@@ -2,24 +2,31 @@ package main
 
 import (
 	"embed"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/canpacis/pacis/docs/app"
 	p "github.com/canpacis/pacis/pages"
+	"github.com/canpacis/pacis/pages/i18n"
 	"github.com/canpacis/pacis/pages/middleware"
+	"golang.org/x/text/language"
 )
 
 //go:embed public
 var public embed.FS
 
+//go:embed messages
+var messages embed.FS
+
 //go:embed app/markup
 var markup embed.FS
 
-type docitem struct {
-	path   string
-	markup string
-}
+//go:embed app/robots.txt
+var robots []byte
+
+//go:embed app/sitemap.xml
+var sitemap []byte
 
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -28,7 +35,25 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+func fileServer(data []byte, contenttyp string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", contenttyp)
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+	})
+}
+
+type docitem struct {
+	path   string
+	markup string
+}
+
 func main() {
+	bundle, err := i18n.Setup(messages, language.English)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	docs := []docitem{
 		{"introduction", "app/markup/introduction.md"},
 		{"installation", "app/markup/installation.md"},
@@ -49,6 +74,7 @@ func main() {
 		p.Public(public, "public"),
 		p.Layout(app.Layout),
 		p.Middleware(middleware.Theme),
+		p.Middleware(middleware.Locale(bundle, language.English)),
 		p.Page(app.HomePage),
 
 		p.Route(
@@ -62,5 +88,9 @@ func main() {
 		),
 	)
 
-	http.ListenAndServe(":"+getEnv("PORT", "8080"), router.Handler())
+	mux := router.Handler().(*http.ServeMux)
+	mux.Handle("GET /robots.txt", fileServer(robots, "text/plain; charset=utf-8"))
+	mux.Handle("GET /sitemap.xml", fileServer(sitemap, "application/xml"))
+
+	http.ListenAndServe(":"+getEnv("PORT", "8080"), mux)
 }

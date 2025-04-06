@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /public/banner.png
+Allow: /public/logo.png
+Allow: /
+Disallow: /public/
+
+Sitemap: https://ui.canpacis.com/sitemap.xml
