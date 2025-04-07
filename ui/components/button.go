@@ -61,7 +61,7 @@ func (v ButtonVariant) Render(ctx context.Context, w io.Writer) error {
 	case ButtonVariantDefault:
 		value = "shadow-xs bg-primary text-primary-foreground hover:bg-primary/90"
 	case ButtonVariantDestructive:
-		value = "text-white shadow-xs bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60"
+		value = "text-white shadow-xs bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40"
 	case ButtonVariantOutline:
 		value = "border shadow-xs bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50"
 	case ButtonVariantSecondary:

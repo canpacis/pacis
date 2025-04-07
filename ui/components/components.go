@@ -2,7 +2,9 @@ package components
 
 import (
 	"context"
+	"crypto/rand"
 	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +14,12 @@ import (
 
 	h "github.com/canpacis/pacis/ui/html"
 )
+
+func id() string {
+	buf := make([]byte, 8)
+	rand.Read(buf)
+	return "pacis-" + hex.EncodeToString(buf)
+}
 
 /*
 	Joins a prop list with rest. Puts the props at the end for correct attribute deduplication.

@@ -10,7 +10,6 @@ import (
 func AlertTitle(props ...h.I) h.Element {
 	ps := []h.I{
 		h.Class("col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight"),
-		h.Role("alert-title"),
 	}
 	ps = append(ps, props...)
 
@@ -20,7 +19,6 @@ func AlertTitle(props ...h.I) h.Element {
 func AlertDescription(props ...h.I) h.Element {
 	ps := []h.I{
 		h.Class("text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed"),
-		h.Role("alert-description"),
 	}
 	ps = append(ps, props...)
 
