@@ -106,7 +106,9 @@ var plates = map[string][]Node{
 		Button(
 			ButtonSizeIcon,
 			ButtonVariantOutline,
+
 			icons.EllipsisVertical(),
+			Span(Text("Icon Button"), Class("sr-only")),
 		),
 		Button(
 			Replace(A),
@@ -146,7 +148,7 @@ var plates = map[string][]Node{
 							Text("Send notifications to device."),
 						),
 					),
-					Checkbox(),
+					Checkbox(Name("Enable Notifications"), Span(Class("sr-only"), Text("Enable Notifications"))),
 				),
 				Div(
 					Map(notifications, func(n notification, i int) Node {
@@ -176,7 +178,7 @@ var plates = map[string][]Node{
 	},
 	"checkbox": {
 		Checkbox(),
-		Checkbox(Text("Label")),
+		Label("Label", Checkbox()),
 		Checkbox(On("changed", "alert($event.detail.value)")),
 	},
 	"collapsible": {
@@ -222,13 +224,13 @@ var plates = map[string][]Node{
 					Div(
 						Class("grid grid-cols-4 items-center gap-4"),
 
-						Label(HtmlFor("name"), Class("text-right"), Text("Name")),
+						Label("Name", HtmlFor("name"), Class("text-right")),
 						Input(ID("name"), Class("col-span-3")),
 					),
 					Div(
 						Class("grid grid-cols-4 items-center gap-4"),
 
-						Label(HtmlFor("username"), Class("text-right"), Text("Username")),
+						Label("Username", HtmlFor("username"), Class("text-right")),
 						Input(ID("username"), Class("col-span-3")),
 					),
 				),
@@ -298,7 +300,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 		}
 		return Textf("Unknown plate %d in %s", idx, name)
 	case parser.LinkNode:
-		return A(Join(children, Class("text-sky-500 hover:text-sky-600 hover:underline"), Href(node.Attributes.Get("href")))...)
+		return A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
 	case parser.CodeNode:
 		return Code(string(node.FullText()), node.Attributes.Get("class"), Class("my-8"))
 	case parser.StrongNode:
