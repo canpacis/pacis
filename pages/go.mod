@@ -6,3 +6,5 @@ require (
 	github.com/nicksnyder/go-i18n/v2 v2.5.1
 	golang.org/x/text v0.23.0
 )
+
+require github.com/NYTimes/gziphandler v1.1.1 // indirect

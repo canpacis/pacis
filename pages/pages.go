@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/NYTimes/gziphandler"
 	c "github.com/canpacis/pacis/ui/components"
 	h "github.com/canpacis/pacis/ui/html"
 )
@@ -102,7 +103,7 @@ type route struct {
 }
 
 func Route(items ...RouteItem) *route {
-	r := &route{path: "/"}
+	r := &route{path: "/", middlewares: []Middleware{gziphandler.GzipHandler}}
 
 	var resolveitem func(RouteItem)
 
@@ -206,7 +207,7 @@ func default404(_ *PageContext) h.I {
 
 func (rt route) register(mux *http.ServeMux, head *c.AppHead) {
 	if rt.root {
-		mux.Handle("GET /ui/", http.StripPrefix("/ui/", http.FileServerFS(head.FS())))
+		mux.Handle("GET /ui/", gziphandler.GzipHandler(http.StripPrefix("/ui/", http.FileServerFS(head.FS()))))
 	}
 
 	if rt.public != nil {
@@ -214,7 +215,7 @@ func (rt route) register(mux *http.ServeMux, head *c.AppHead) {
 		if err != nil {
 			panic(err)
 		}
-		mux.Handle("GET /public/", http.StripPrefix("/public/", http.FileServerFS(fs)))
+		mux.Handle("GET /public/", gziphandler.GzipHandler(http.StripPrefix("/public/", http.FileServerFS(fs))))
 	}
 
 	for _, child := range rt.children {
