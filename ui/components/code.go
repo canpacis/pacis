@@ -20,6 +20,7 @@ func Code(code, lang string, props ...I) Element {
 				On("click", fmt.Sprintf("$clipboard(`%s`)", code)),
 
 				icons.Clipboard(Class("size-3")),
+				Span(Class("sr-only"), Text("Copy to Clipboard")),
 			),
 			Pre(
 				Class("p-3 md:p-6 overflow-auto border rounded-lg"),

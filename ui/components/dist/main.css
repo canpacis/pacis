@@ -5,10 +5,10 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-600: oklch(0.577 0.245 27.325);
-    --color-orange-500: oklch(0.705 0.213 47.604);
-    --color-orange-600: oklch(0.646 0.222 41.116);
-    --color-emerald-400: oklch(0.765 0.177 163.223);
-    --color-emerald-600: oklch(0.596 0.145 163.225);
+    --color-orange-400: oklch(0.75 0.183 55.934);
+    --color-orange-700: oklch(0.553 0.195 38.402);
+    --color-emerald-300: oklch(0.845 0.143 164.978);
+    --color-emerald-700: oklch(0.508 0.118 165.612);
     --color-sky-400: oklch(0.746 0.16 232.661);
     --color-sky-700: oklch(0.5 0.134 242.749);
     --color-violet-400: oklch(0.702 0.183 293.541);
@@ -1436,9 +1436,9 @@
     color: var(--muted-foreground) !important;
   }
   .hljs-string, .hljs-section, .hljs-selector-class, .hljs-template-variable, .hljs-deletion {
-    color: var(--color-emerald-600);
+    color: var(--color-emerald-700);
     &:is(.dark *) {
-      color: var(--color-emerald-400);
+      color: var(--color-emerald-300);
     }
   }
   .hljs-keyword {
@@ -1454,9 +1454,9 @@
     }
   }
   .hljs-literal {
-    color: var(--color-orange-600);
+    color: var(--color-orange-700);
     &:is(.dark *) {
-      color: var(--color-orange-500);
+      color: var(--color-orange-400);
     }
   }
 }

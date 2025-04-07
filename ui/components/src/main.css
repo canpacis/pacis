@@ -130,7 +130,7 @@
   .hljs-selector-class,
   .hljs-template-variable,
   .hljs-deletion {
-    @apply text-emerald-600 dark:text-emerald-400;
+    @apply text-emerald-700 dark:text-emerald-300;
   }
 
   .hljs-keyword {
@@ -142,7 +142,7 @@
   }
 
   .hljs-literal {
-    @apply text-orange-600 dark:text-orange-500;
+    @apply text-orange-700 dark:text-orange-400;
   }
 }
 

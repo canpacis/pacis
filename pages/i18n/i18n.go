@@ -86,3 +86,12 @@ func Text(key string, data ...any) Message {
 
 	return Message{key: key, data: d}
 }
+
+func Locale(ctx context.Context) (*language.Tag, error) {
+	locale := pages.Get[*language.Tag](ctx, "locale")
+	if locale == nil {
+		return nil, fmt.Errorf("no localizer in the context, have you registered the i18n middleware correctly?")
+	}
+
+	return locale, nil
+}
