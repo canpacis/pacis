@@ -86,11 +86,10 @@ func main() {
 				return p.Route(p.Path(doc.path), p.Page(app.MarkupPage(markup, doc.markup)))
 			}),
 		),
+
+		p.Robots(robots),
+		p.Sitemap(sitemap),
 	)
 
-	mux := router.Handler().(*http.ServeMux)
-	mux.Handle("GET /robots.txt", fileServer(robots, "text/plain; charset=utf-8"))
-	mux.Handle("GET /sitemap.xml", fileServer(sitemap, "application/xml"))
-
-	http.ListenAndServe(":"+getEnv("PORT", "8080"), mux)
+	http.ListenAndServe(":"+getEnv("PORT", "8080"), router.Handler())
 }
