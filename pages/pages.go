@@ -91,6 +91,11 @@ type RouteItem interface {
 	item()
 }
 
+type raw struct {
+	bytes      []byte
+	contenttyp string
+}
+
 type route struct {
 	path        string
 	public      *public
@@ -99,6 +104,7 @@ type route struct {
 	layout      Layout
 	redirect    string
 	children    []*route
+	raw         raw
 	middlewares []Middleware
 }
 
@@ -252,6 +258,12 @@ func (rt route) register(mux *http.ServeMux, head *c.AppHead) {
 		})
 	} else if len(rt.redirect) != 0 {
 		handler = http.RedirectHandler(rt.redirect, http.StatusFound)
+	} else if len(rt.raw.bytes) != 0 {
+		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", rt.raw.contenttyp)
+			w.WriteHeader(200)
+			w.Write(rt.raw.bytes)
+		})
 	}
 
 	if handler != nil {
@@ -268,4 +280,24 @@ func (rt route) Handler() http.Handler {
 	head := c.CreateHead("/ui/")
 	rt.register(mux, head)
 	return mux
+}
+
+func Robots(robots []byte) RouteItem {
+	return &route{
+		path: "/robots.txt",
+		raw: raw{
+			bytes:      robots,
+			contenttyp: "plain/text; charset=utf-8",
+		},
+	}
+}
+
+func Sitemap(sitemap []byte) RouteItem {
+	return &route{
+		path: "sitemap.xml",
+		raw: raw{
+			bytes:      sitemap,
+			contenttyp: "application/xml",
+		},
+	}
 }
