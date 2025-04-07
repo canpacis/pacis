@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/canpacis/pacis/pages"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -43,16 +44,30 @@ func Theme(h http.Handler) http.Handler {
 func Locale(bundle *i18n.Bundle, defaultlang language.Tag) func(h http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			langs := []string{}
-
+			var locale string
 			cookie, err := r.Cookie("pacis_app_locale")
 			if err == nil {
-				langs = append(langs, cookie.Value)
+				locale = cookie.Value
+			} else {
+				header := r.Header.Get("Accept-Language")
+				switch {
+				case len(r.FormValue("lang")) > 0:
+					locale = r.FormValue("lang")
+				case len(header) > 0:
+					locale = strings.Split(header, ",")[0]
+				default:
+					locale = defaultlang.String()
+				}
 			}
-			langs = append(langs, r.FormValue("lang"), r.Header.Get("Accept-Language"), defaultlang.String())
-			localizer := i18n.NewLocalizer(bundle, langs...)
+			tag, err := language.Parse(locale)
+			if err != nil {
+				tag = defaultlang
+			}
 
-			h.ServeHTTP(w, r.Clone(pages.Set(r.Context(), "localizer", localizer)))
+			localizer := i18n.NewLocalizer(bundle, tag.String())
+			r = r.Clone(pages.Set(r.Context(), "localizer", localizer))
+			r = r.Clone(pages.Set(r.Context(), "locale", &tag))
+			h.ServeHTTP(w, r)
 		})
 	}
 }
