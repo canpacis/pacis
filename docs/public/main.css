@@ -5,6 +5,7 @@
     --color-red-600: oklch(0.577 0.245 27.325);
     --color-sky-500: oklch(0.685 0.169 237.323);
     --color-sky-600: oklch(0.588 0.158 241.966);
+    --color-sky-700: oklch(0.5 0.134 242.749);
     --color-neutral-800: oklch(0.269 0 0);
     --color-black: #000;
     --color-white: #fff;
@@ -940,8 +941,8 @@
   .text-red-600 {
     color: var(--color-red-600);
   }
-  .text-sky-500 {
-    color: var(--color-sky-500);
+  .text-sky-600 {
+    color: var(--color-sky-600);
   }
   .text-white {
     color: var(--color-white);
@@ -1102,10 +1103,10 @@
       padding-bottom: calc(var(--spacing) * 0);
     }
   }
-  .hover\:text-sky-600 {
+  .hover\:text-sky-700 {
     &:hover {
       @media (hover: hover) {
-        color: var(--color-sky-600);
+        color: var(--color-sky-700);
       }
     }
   }
