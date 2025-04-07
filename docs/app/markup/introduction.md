@@ -7,7 +7,7 @@ I plan to make PacisUI a part of a bigger set of tools that is Pacis, but for no
 
 ## What this is
 
-This is a UI library built with [Go](https://go.dev/), [TailwindCSS](https://tailwindcss.com/) and [Alpine.js](https://alpinejs.dev/) and it comes in two pieces:
+This is a UI library built with [Go Language](https://go.dev/), [TailwindCSS](https://tailwindcss.com/) and [Alpine.js](https://alpinejs.dev/) and it comes in two pieces:
 
 ### The Renderer
 

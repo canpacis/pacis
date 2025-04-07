@@ -4,7 +4,7 @@ import "strings"
 
 // Elements
 
-func Html(props ...I) Element       { return El("html", props...) }
+func Html(props ...I) Node          { return Frag(El("!DOCTYPE", Attr("html")), El("html", props...)) }
 func Head(props ...I) Element       { return El("head", props...) }
 func Link(props ...I) Element       { return El("link", props...) }
 func Body(props ...I) Element       { return El("body", props...) }

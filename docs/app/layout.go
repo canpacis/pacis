@@ -15,8 +15,11 @@ import (
 var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 
 func Layout(ctx *pages.LayoutContext) I {
+	locale, _ := i18n.Locale(ctx)
+
 	return Html(
 		Class(pages.Get[string](ctx, "theme")),
+		Lang(locale.String()),
 
 		Head(
 			Meta(Name("title"), Content(i18n.Text("title").String(ctx))),
@@ -31,18 +34,18 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(Property("og:url"), Content("https://ui.canpacis.com")),
 			Meta(Property("og:title"), Content(i18n.Text("title").String(ctx))),
 			Meta(Property("og:description"), Content(i18n.Text("desc").String(ctx))),
-			Meta(Property("og:image"), Content("/public/banner.png")),
+			Meta(Property("og:image"), Content("/public/banner.webp")),
 
 			Meta(Property("twitter:card"), Content("summary_large_image")),
 			Meta(Property("twitter:url"), Content("https://ui.canpacis.com")),
 			Meta(Property("twitter:title"), Content(i18n.Text("title").String(ctx))),
 			Meta(Property("twitter:description"), Content(i18n.Text("desc").String(ctx))),
-			Meta(Property("twitter:image"), Content("/public/banner.png")),
+			Meta(Property("twitter:image"), Content("/public/banner.webp")),
 
 			fonts.Head(sans),
 			ctx.Head(),
 			Link(Href("/public/main.css"), Rel("stylesheet")),
-			Link(Href("/public/favicon.png"), Rel("icon"), Type("image/png")),
+			Link(Href("/public/favicon.webp"), Rel("icon"), Type("image/png")),
 			Title(i18n.Text("title")),
 		),
 		Body(
@@ -156,6 +159,13 @@ func getNavSections() []NavSection {
 }
 
 func Navigation(sections []NavSection, current *NavLink) Node {
+	iscurr := func(href string) bool {
+		if current == nil {
+			return false
+		}
+		return current.Href == href
+	}
+
 	return Map(sections, func(heading NavSection, i int) Node {
 		return Div(
 			Class("mb-4"),
@@ -169,14 +179,20 @@ func Navigation(sections []NavSection, current *NavLink) Node {
 			Ul(
 				Map(heading.Items, func(item NavLink, i int) Node {
 					return Li(
-						A(
-							Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
-							If(current == nil, Href(item.Href)),
-							IfFn(current != nil, func() Renderer {
-								return If(current.Href != item.Href, Href(item.Href))
-							}),
+						If(!iscurr(item.Href),
+							A(
+								Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
+								Href(item.Href),
 
-							item.Label,
+								item.Label,
+							),
+						),
+						If(iscurr(item.Href),
+							Span(
+								Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
+
+								item.Label,
+							),
 						),
 					)
 				}),
@@ -196,7 +212,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 		Class("container flex flex-1 items-start gap-4"),
 
 		Aside(
-			Class("hidden flex-col gap-2 border-r border-dashed py-4 pr-2 sticky top-[var(--header-height)] h-[calc(100dvh-var(--header-height)-var(--footer-height))] min-w-none lg:flex lg:min-w-[240px]"),
+			Class("hidden flex-col gap-2 border-r border-dashed py-4 pr-2 sticky overflow-auto top-[var(--header-height)] h-[calc(100dvh-var(--header-height)-var(--footer-height))] min-w-none lg:flex lg:min-w-[240px]"),
 
 			Navigation(sections, current),
 		),
@@ -254,6 +270,7 @@ func AppHeader() Element {
 						ButtonVariantGhost,
 
 						icons.PanelLeft(),
+						Span(Class("sr-only"), Text("Toggle Sidebar")),
 					),
 				),
 				SheetContent(
@@ -266,7 +283,7 @@ func AppHeader() Element {
 				Class("flex gap-3 items-center"),
 				Href("/"),
 
-				Img(Src("/public/logo.png"), Class("w-6")),
+				Img(Src("/public/logo.webp"), Width("24"), Height("24"), Class("w-6"), Alt("logo")),
 				P(Class("font-semibold inline"), Text("Pacis")),
 			),
 			Ul(
@@ -290,6 +307,7 @@ func AppHeader() Element {
 					Href("https://github.com/canpacis/pacis-ui"),
 
 					GithubIcon(),
+					Span(Class("sr-only"), Text("Github")),
 				),
 				Button(
 					ButtonSizeIcon,
@@ -297,6 +315,7 @@ func AppHeader() Element {
 					ToggleColorScheme,
 
 					icons.Sun(),
+					Span(Class("sr-only"), Text("Toggle Theme")),
 				),
 			),
 		),

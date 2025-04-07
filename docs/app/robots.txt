@@ -1,6 +1,6 @@
 User-agent: *
-Allow: /public/banner.png
-Allow: /public/logo.png
+Allow: /public/banner.webp
+Allow: /public/logo.webp
 Allow: /
 Disallow: /public/
 
