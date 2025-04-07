@@ -198,3 +198,4 @@ func Shadowrootmode(value string) Attribute { return Attr("shadowrootmode", valu
 func SlotAttr(value string) Attribute       { return Attr("slot", value) }
 func Target(value string) Attribute         { return Attr("target", value) }
 func Property(value string) Attribute       { return Attr("property", value) }
+func StyleAttr(value string) Attribute      { return Attr("style", value) }
