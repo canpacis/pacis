@@ -83,7 +83,7 @@ func Ruby(props ...I) Element       { return El("ruby", props...) }
 func Rp(props ...I) Element         { return El("rp", props...) }
 func Wbr(props ...I) Element        { return El("wbr", props...) }
 func Bdo(props ...I) Element        { return El("bdo", props...) }
-func Table(props ...I) Element      { return El("table", props...) }
+func Tble(props ...I) Element       { return El("table", props...) }
 func Tr(props ...I) Element         { return El("tr", props...) }
 func Th(props ...I) Element         { return El("th", props...) }
 func Tfoot(props ...I) Element      { return El("tfoot", props...) }
@@ -122,14 +122,16 @@ func Aria(name, value string) Attribute {
 	}
 	return Attr("aria-"+name, value)
 }
-func Async(value string) Attribute           { return Attr("async", value) }
-func Autocomplete(value string) Attribute    { return Attr("autocomplete", value) }
-func Autofocus(value string) Attribute       { return Attr("autofocus", value) }
-func Autoplay(value string) Attribute        { return Attr("autoplay", value) }
-func BGColor(value string) Attribute         { return Attr("bgcolor", value) }
-func Border(value string) Attribute          { return Attr("border", value) }
-func Charset(value string) Attribute         { return Attr("charset", value) }
-func Checked(value string) Attribute         { return Attr("checked", value) }
+func Async(value string) Attribute        { return Attr("async", value) }
+func Autocomplete(value string) Attribute { return Attr("autocomplete", value) }
+func Autofocus(value string) Attribute    { return Attr("autofocus", value) }
+func Autoplay(value string) Attribute     { return Attr("autoplay", value) }
+func BGColor(value string) Attribute      { return Attr("bgcolor", value) }
+func Border(value string) Attribute       { return Attr("border", value) }
+func Charset(value string) Attribute      { return Attr("charset", value) }
+
+var Checked = Attr("checked", "")
+
 func CiteAttr_(value string) Attribute       { return Attr("cite", value) }
 func Class(value string) Attribute           { return Attr("class", value) }
 func ColorAttr(value string) Attribute       { return Attr("color", value) }
