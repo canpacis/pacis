@@ -62,9 +62,9 @@ var plates = map[string][]Node{
 	},
 	"badge": {
 		Badge(Text("Badge")),
-		Badge(BadgeVariantSecondary, Text("Badge")),
-		Badge(BadgeVariantOutline, Text("Badge")),
-		Badge(BadgeVariantDestructive, Text("Badge")),
+		Badge(BadgeVariantSecondary, Text("Secondary")),
+		Badge(BadgeVariantOutline, Text("Outline")),
+		Badge(BadgeVariantDestructive, Text("Destructive")),
 	},
 	"button": {
 		Button(
@@ -72,23 +72,23 @@ var plates = map[string][]Node{
 		),
 		Button(
 			ButtonVariantSecondary,
-			Text("Button"),
+			Text("Secondary"),
 		),
 		Button(
 			ButtonVariantOutline,
-			Text("Button"),
+			Text("Outline"),
 		),
 		Button(
 			ButtonVariantDestructive,
-			Text("Button"),
+			Text("Destructive"),
 		),
 		Button(
 			ButtonVariantGhost,
-			Text("Button"),
+			Text("Ghost"),
 		),
 		Button(
 			ButtonVariantLink,
-			Text("Button"),
+			Text("Link"),
 		),
 		Frag(
 			Button(
@@ -178,8 +178,9 @@ var plates = map[string][]Node{
 	},
 	"checkbox": {
 		Checkbox(),
-		Label("Label", Checkbox()),
-		Checkbox(On("changed", "alert($event.detail.value)")),
+		Checkbox(Text("Label")),
+		Checkbox(Checked),
+		Checkbox(On("changed", "alert($event.detail.checked)")),
 	},
 	"collapsible": {
 		Collapsible(
@@ -263,6 +264,24 @@ var plates = map[string][]Node{
 	},
 }
 
+func Preview(code []byte, value string, preview Node) Node {
+	if len(value) == 0 {
+		value = "preview"
+	}
+
+	return Tabs(
+		Value(value),
+
+		TabList(
+			TabTrigger(Text("Code"), Value("code")),
+			TabTrigger(Text("Preview"), Value("preview")),
+		),
+
+		TabContent(Value("code"), Code(string(code), "language-go")),
+		TabContent(Value("preview"), Plate(preview)),
+	)
+}
+
 func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 	children := []I{}
 
@@ -285,9 +304,13 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 	case parser.TextNode:
 		return Text(node.FullText())
 	case parser.ParagraphNode:
+		return P(Join(children, Class(node.Attributes.Get("class")))...)
+	case parser.LinkNode:
+		return A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
+	case parser.CodeNode:
 		plate := node.Attributes.Get("plate")
 		if len(plate) == 0 {
-			return P(Join(children, Class(node.Attributes.Get("class")))...)
+			return Code(string(node.FullText()), node.Attributes.Get("class"), Class("my-8"))
 		}
 		idx, err := strconv.Atoi(plate)
 		if err != nil {
@@ -296,13 +319,9 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 
 		plates, ok := plates[name]
 		if ok {
-			return Plate(plates[idx])
+			return Preview(node.FullText(), node.Attributes.Get("tab"), plates[idx])
 		}
 		return Textf("Unknown plate %d in %s", idx, name)
-	case parser.LinkNode:
-		return A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
-	case parser.CodeNode:
-		return Code(string(node.FullText()), node.Attributes.Get("class"), Class("my-8"))
 	case parser.StrongNode:
 		return Span(Join(children, Class("font-semibold"))...)
 	case parser.UnorderedListNode:
@@ -311,6 +330,14 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 		return Li(children...)
 	case parser.VerbatimNode:
 		return Span(Join(children, Class("px-2 py-1 mx-1 inline bg-secondary font-mono text-sm rounded-sm font-semibold leading-8"))...)
+	case parser.TableNode:
+		return Table(TableBody(children...))
+	case parser.TableRowNode:
+		return TableRow(children...)
+	case parser.TableCellNode:
+		return TableCell(children...)
+	case parser.TableHeaderNode:
+		return TableHeader(children...)
 	case parser.QuoteNode:
 		return Div(
 			Join(children,
@@ -329,7 +356,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 			return H1(Join(children, Class("scroll-m-20 text-3xl font-bold tracking-tight"))...)
 		case 2:
 			return Div(
-				Class("my-4"),
+				Class("my-6"),
 
 				H2(
 					Join(children, ID(id), Class("scroll-m-20 text-xl font-bold tracking-tight"))...,
@@ -337,7 +364,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 				Seperator(OHorizontal),
 			)
 		case 3:
-			return H3(Join(children, ID(id), Class("scroll-m-20 text-lg font-bold mt-6"))...)
+			return H3(Join(children, ID(id), Class("scroll-m-20 text-lg font-bold mt-12"))...)
 		default:
 			return Text("unknown heading")
 		}
