@@ -4,13 +4,15 @@
 Displays a button or a component that looks like a button.
 
 {plate="0"}
-Plate
+```go
+Button(Text("Button"))
+```
 
 ## Usage
 
 ```go
 import (
-	. "github.com/canpacis/pacis-ui/components"
+	. "github.com/canpacis/pacis/ui/components"
 )
 ```
 
@@ -23,8 +25,6 @@ Button(Text("Button"))
 ### Primary variant
 
 {plate=0}
-Plate
-
 ```go
 Button(
 	Text("Button"),
@@ -34,73 +34,61 @@ Button(
 ### Secondary variant
 
 {plate=1}
-Plate
-
 ```go
 Button(
 	ButtonVariantSecondary,
 	
-	Text("Button"),
+	Text("Secondary"),
 )
 ```
 
 ### Outline variant
 
 {plate=2}
-Plate
-
 ```go
 Button(
 	ButtonVariantOutline,
 
-	Text("Button"),
+	Text("Outline"),
 )
 ```
 
 ### Destructive variant
 
 {plate=3}
-Plate
-
 ```go
 Button(
 	ButtonVariantDestructive,
 
-	Text("Button"),
+	Text("Destructive"),
 )
 ```
 
 ### Ghost variant
 
 {plate=4}
-Plate
-
 ```go
 Button(
 	ButtonVariantGhost,
 
-	Text("Button"),
+	Text("Ghost"),
 )
 ```
 
 ### Link variant
 
 {plate=5}
-Plate
-
 ```go
 Button(
 	ButtonVariantLink,
 
-	Text("Button"),
+	Text("Link"),
 )
 ```
 
 ### Sizes
 
 {plate=6}
-Plate
-
 ```go
 Frag( // <- HTML Fragment
 	Button(
@@ -122,8 +110,6 @@ Frag( // <- HTML Fragment
 ### Icon
 
 {plate=7}
-Plate
-
 ```go
 Button(
 	ButtonSizeIcon,
@@ -136,12 +122,10 @@ Button(
 ### Button as link
 
 {plate=8}
-Plate
-
 ```go
 Button(
-	Replace(A),
-	Href("#button-as-link"),
+	Replace(A), // <- Replace with an anchor tag
+	Href("#button-as-link"), // <- Provide an href
 	ButtonVariantOutline,
 
 	Text("This is a link"),
@@ -151,8 +135,6 @@ Button(
 ### With an event handler
 
 {plate=9}
-Plate
-
 ```go
 Button(
 	On("click", "alert('Clicked')"), // <- This comes from the components module
@@ -160,3 +142,9 @@ Button(
 	Text("Press Me!"),
 )
 ```
+
+## API
+
+### Events
+
+> All the events of a regular DOM button element is passed to this node

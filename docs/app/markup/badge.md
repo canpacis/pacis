@@ -4,13 +4,15 @@
 Displays a badge or a component that looks like a badge.
 
 {plate=0}
-Plate
+```go
+Badge(Text("Badge"))
+```
 
 ## Usage
 
 ```go
 import (
-	. "github.com/canpacis/pacis-ui/components"
+	. "github.com/canpacis/pacis/ui/components"
 )
 ```
 
@@ -23,19 +25,27 @@ Badge(Text("Badge"))
 ### Primary
 
 {plate=0}
-Plate
+```go
+Badge(Text("Badge"))
+```
 
 ### Secondary
 
 {plate=1}
-Plate
+```go
+Badge(BadgeVariantSecondary, Text("Secondary"))
+```
 
 ### Outline
 
 {plate=2}
-Plate
+```go
+Badge(BadgeVariantOutline, Text("Outline"))
+```
 
 ### Destructive
 
 {plate=3}
-Plate
+```go
+Badge(BadgeVariantDestructive, Text("Destructive"))
+```

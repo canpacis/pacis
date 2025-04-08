@@ -15,7 +15,7 @@ import (
 	h "github.com/canpacis/pacis/ui/html"
 )
 
-func id() string {
+func randid() string {
 	buf := make([]byte, 8)
 	rand.Read(buf)
 	return "pacis-" + hex.EncodeToString(buf)

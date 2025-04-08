@@ -4,13 +4,34 @@
 Displays a menu to the user — such as a set of actions or functions — triggered by a button.
 
 {plate=0}
-Plate
+```go
+Dropdown(
+  DropdownTrigger(
+    Button(Text("Open Menu")),
+  ),
+  DropdownContent(
+    DropdownItem(
+      ID("profile"),
+
+      icons.User(),
+      Text("Profile"),
+    ),
+    DropdownItem(
+      ID("settings"),
+
+      icons.Settings(),
+      Text("Settings"),
+    ),
+  ),
+)
+```
 
 ## Usage
 
 ```go
 import (
-	. "github.com/canpacis/pacis-ui/components"
+	. "github.com/canpacis/pacis/ui/html"
+	. "github.com/canpacis/pacis/ui/components"
 )
 ```
 
@@ -21,16 +42,9 @@ Dropdown(
   ),
   DropdownContent(
     DropdownItem(
-      ID("item-1"),
+      ID("item-id"),
 
-      icons.User(),
-      Text("Profile"),
-    ),
-    DropdownItem(
-      ID("item-2"),
-
-      icons.Settings(),
-      Text("Settings"),
+      Text("Dropdown Item"),
     ),
   ),
 )

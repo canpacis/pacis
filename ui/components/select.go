@@ -42,7 +42,7 @@ func SelectTrigger(trigger h.Element, selected h.Element) h.Element {
 		h.Class("relative"),
 
 		h.Btn(
-			h.Class("flex flex-1 h-9 w-full items-center whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1"),
+			h.Class("flex flex-1 h-9 w-full items-center whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 pr-16"),
 			X("ref", "anchor"),
 			On("click", "openSelect()"),
 
