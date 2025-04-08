@@ -35,14 +35,6 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func fileServer(data []byte, contenttyp string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", contenttyp)
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
-	})
-}
-
 type docitem struct {
 	path   string
 	markup string
@@ -68,6 +60,8 @@ func main() {
 		{"dropdown", "app/markup/dropdown.md"},
 		{"input", "app/markup/input.md"},
 		{"label", "app/markup/label.md"},
+		{"select", "app/markup/select.md"},
+		{"tabs", "app/markup/tabs.md"},
 	}
 
 	router := p.Routes(

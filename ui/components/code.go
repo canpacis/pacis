@@ -23,7 +23,7 @@ func Code(code, lang string, props ...h.I) h.Element {
 				h.Span(h.Class("sr-only"), h.Text("Copy to Clipboard")),
 			),
 			h.Pre(
-				h.Class("p-3 md:p-6 overflow-auto border rounded-lg"),
+				h.Class("p-3 md:p-6 overflow-auto bg-accent/50 dark:bg-accent/20 rounded-lg"),
 
 				h.Cde(h.Class("font-mono text-left break-normal leading-5 text-sm tabular-nums hyphens-none shadow-none font-medium whitespace-pre-wrap"), h.Class(lang), h.Text(code)),
 			),
