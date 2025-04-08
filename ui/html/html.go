@@ -46,7 +46,7 @@ func Abbr(props ...I) Element       { return El("abbr", props...) }
 func Meter(props ...I) Element      { return El("meter", props...) }
 func Form(props ...I) Element       { return El("form", props...) }
 func Inpt(props ...I) Element       { return El("input", props...) }
-func Select(props ...I) Element     { return El("select", props...) }
+func Slect(props ...I) Element      { return El("select", props...) }
 func Slot(props ...I) Element       { return El("slot", props...) }
 func Option(props ...I) Element     { return El("option", props...) }
 func Lbl(props ...I) Element        { return El("label", props...) }

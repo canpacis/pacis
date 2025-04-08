@@ -53,6 +53,28 @@ Alpine.data("dropdown", () => ({
   },
 }));
 
+Alpine.data("select", () => ({
+  value: null,
+  isOpen: false,
+  isKeyboard: false,
+  clearable: false,
+
+  openSelect() {
+    this.isOpen = true;
+    this.$dispatch("open");
+  },
+  closeSelect(value: string | null, dismiss = false) {
+    this.isOpen = false;
+    if (!dismiss) {
+      this.value = value;
+    }
+    this.$dispatch("close");
+    if (dismiss) {
+      this.$dispatch("dismiss");
+    }
+  },
+}));
+
 Alpine.data("dialog", () => ({
   isOpen: false,
 
