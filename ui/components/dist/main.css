@@ -182,6 +182,12 @@
     container-type: inline-size;
     container-name: card-header;
   }
+  .pointer-events-auto {
+    pointer-events: auto;
+  }
+  .pointer-events-none {
+    pointer-events: none;
+  }
   .sr-only {
     position: absolute;
     width: 1px;
@@ -262,8 +268,17 @@
   .row-start-1 {
     grid-row-start: 1;
   }
+  .-mx-1 {
+    margin-inline: calc(var(--spacing) * -1);
+  }
+  .my-1 {
+    margin-block: calc(var(--spacing) * 1);
+  }
   .my-2 {
     margin-block: calc(var(--spacing) * 2);
+  }
+  .my-auto {
+    margin-block: auto;
   }
   .line-clamp-1 {
     overflow: hidden;
@@ -328,6 +343,9 @@
   .h-4 {
     height: calc(var(--spacing) * 4);
   }
+  .h-5 {
+    height: calc(var(--spacing) * 5);
+  }
   .h-6 {
     height: calc(var(--spacing) * 6);
   }
@@ -349,6 +367,9 @@
   .h-full {
     height: 100%;
   }
+  .h-px {
+    height: 1px;
+  }
   .min-h-4 {
     min-height: calc(var(--spacing) * 4);
   }
@@ -357,6 +378,9 @@
   }
   .w-4 {
     width: calc(var(--spacing) * 4);
+  }
+  .w-5 {
+    width: calc(var(--spacing) * 5);
   }
   .w-6 {
     width: calc(var(--spacing) * 6);
@@ -376,8 +400,14 @@
   .min-w-\[8rem\] {
     min-width: 8rem;
   }
+  .flex-1 {
+    flex: 1;
+  }
   .shrink-0 {
     flex-shrink: 0;
+  }
+  .origin-\[--radix-select-content-transform-origin\] {
+    transform-origin: --radix-select-content-transform-origin;
   }
   .translate-x-\[-50\%\] {
     --tw-translate-x: -50%;
@@ -585,6 +615,12 @@
   .py-6 {
     padding-block: calc(var(--spacing) * 6);
   }
+  .pr-8 {
+    padding-right: calc(var(--spacing) * 8);
+  }
+  .pl-2 {
+    padding-left: calc(var(--spacing) * 2);
+  }
   .text-center {
     text-align: center;
   }
@@ -686,6 +722,9 @@
   }
   .underline-offset-4 {
     text-underline-offset: 4px;
+  }
+  .opacity-50 {
+    opacity: 50%;
   }
   .opacity-70 {
     opacity: 70%;
@@ -876,6 +915,12 @@
       color: var(--accent-foreground);
     }
   }
+  .focus\:ring-1 {
+    &:focus {
+      --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentColor);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+  }
   .focus\:ring-2 {
     &:focus {
       --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentColor);
@@ -1002,9 +1047,26 @@
       opacity: 50%;
     }
   }
+  .data-\[placeholder\]\:text-muted-foreground {
+    &[data-placeholder] {
+      color: var(--muted-foreground);
+    }
+  }
+  .data-\[side\=bottom\]\:translate-y-1 {
+    &[data-side="bottom"] {
+      --tw-translate-y: calc(var(--spacing) * 1);
+      translate: var(--tw-translate-x) var(--tw-translate-y);
+    }
+  }
   .data-\[side\=bottom\]\:slide-in-from-top-2 {
     &[data-side="bottom"] {
       --tw-enter-translate-y: -0.5rem;
+    }
+  }
+  .data-\[side\=left\]\:-translate-x-1 {
+    &[data-side="left"] {
+      --tw-translate-x: calc(var(--spacing) * -1);
+      translate: var(--tw-translate-x) var(--tw-translate-y);
     }
   }
   .data-\[side\=left\]\:slide-in-from-right-2 {
@@ -1012,9 +1074,21 @@
       --tw-enter-translate-x: 0.5rem;
     }
   }
+  .data-\[side\=right\]\:translate-x-1 {
+    &[data-side="right"] {
+      --tw-translate-x: calc(var(--spacing) * 1);
+      translate: var(--tw-translate-x) var(--tw-translate-y);
+    }
+  }
   .data-\[side\=right\]\:slide-in-from-left-2 {
     &[data-side="right"] {
       --tw-enter-translate-x: -0.5rem;
+    }
+  }
+  .data-\[side\=top\]\:-translate-y-1 {
+    &[data-side="top"] {
+      --tw-translate-y: calc(var(--spacing) * -1);
+      translate: var(--tw-translate-x) var(--tw-translate-y);
     }
   }
   .data-\[side\=top\]\:slide-in-from-bottom-2 {
@@ -1275,6 +1349,14 @@
   .\[\.border-t\]\:pt-6 {
     &:is(.border-t) {
       padding-top: calc(var(--spacing) * 6);
+    }
+  }
+  .\[\&\>span\]\:line-clamp-1 {
+    &>span {
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 1;
     }
   }
   .\[\&\>svg\]\:pointer-events-none {

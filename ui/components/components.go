@@ -307,3 +307,26 @@ func (o Orientation) String() string {
 		panic("invalid orientation value")
 	}
 }
+
+type InputAttribute int
+
+func (InputAttribute) Render(context.Context, io.Writer) error {
+	return nil
+}
+
+func (a InputAttribute) GetKey() string {
+	switch a {
+	case Clearable:
+		return "clearable"
+	default:
+		return "invalid-input-attribute"
+	}
+}
+
+func (InputAttribute) IsEmpty() bool {
+	return true
+}
+
+const (
+	Clearable = InputAttribute(iota)
+)
