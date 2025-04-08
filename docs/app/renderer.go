@@ -262,6 +262,63 @@ var plates = map[string][]Node{
 			),
 		),
 	},
+	"input": {
+		Input(Placeholder("Email")),
+	},
+	"label": {
+		Label("Email", Input(Placeholder("canpacis@gmail.com"))),
+	},
+	"select": {
+		Select(
+			Name("library"),
+			Class("min-w-[200px]"),
+
+			SelectTrigger(
+				Span(Text("Select a library")),
+				Span(X("text", "value")),
+			),
+			SelectContent(
+				SelectItem(Text("Templ"), Value("Templ")),
+				SelectItem(Text("Gomponents"), Value("Gomponents")),
+				SelectItem(Text("Pacis"), Value("Pacis")),
+			),
+		),
+		Select(
+			Clearable,
+			Name("library"),
+			Class("min-w-[200px]"),
+
+			SelectTrigger(
+				Span(Text("Select a library")),
+				Span(X("text", "value")),
+			),
+			SelectContent(
+				SelectItem(Text("Templ"), Value("Templ")),
+				SelectItem(Text("Gomponents"), Value("Gomponents")),
+				SelectItem(Text("Pacis"), Value("Pacis")),
+			),
+		),
+	},
+	"tabs": {
+		Tabs(
+			Value("tab-item-1"),
+
+			TabList(
+				TabTrigger(Text("Tab Item 1"), Value("tab-item-1")),
+				TabTrigger(Text("Tab Item 2"), Value("tab-item-2")),
+			),
+			TabContent(
+				Value("tab-item-1"),
+
+				P(Text("Tab item 1 content")),
+			),
+			TabContent(
+				Value("tab-item-2"),
+
+				P(Text("Tab item 2 content")),
+			),
+		),
+	},
 }
 
 func Preview(code []byte, value string, preview Node) Node {
