@@ -105,3 +105,7 @@ func SelectItem(props ...h.I) h.Element {
 func SelectSeperator() h.Element {
 	return h.Span(h.Class("-mx-1 my-1 h-px bg-muted block"))
 }
+
+func SelectLabel(label string, props ...h.I) h.Element {
+	return h.Span(Join(props, h.Class("px-2 py-1.5 text-xs font-semibold text-muted-foreground"), h.Text(label))...)
+}
