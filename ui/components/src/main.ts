@@ -107,6 +107,15 @@ Alpine.data("sheet", () => ({
   },
 }));
 
+Alpine.data("tabs", () => ({
+  value: null,
+
+  setActiveTab(tab: string) {
+    this.value = tab;
+    this.$dispatch("change");
+  },
+}));
+
 Alpine.magic("clipboard", () => {
   return (data: string) => navigator.clipboard.writeText(data);
 });

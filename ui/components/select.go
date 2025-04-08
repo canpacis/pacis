@@ -97,7 +97,7 @@ func SelectItem(props ...h.I) h.Element {
 	}
 	var buf bytes.Buffer
 	value.Render(context.Background(), &buf)
-	el.AddAttribute(On("click", fmt.Sprintf("closeSelect('%s', false)", buf.String())))
+	el.AddAttribute(SelectValue(buf.String()))
 
 	return el
 }
@@ -108,4 +108,8 @@ func SelectSeperator() h.Element {
 
 func SelectLabel(label string, props ...h.I) h.Element {
 	return h.Span(Join(props, h.Class("px-2 py-1.5 text-xs font-semibold text-muted-foreground"), h.Text(label))...)
+}
+
+func SelectValue(value string) h.Attribute {
+	return On("click", fmt.Sprintf("closeSelect('%s', false)", value))
 }
