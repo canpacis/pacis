@@ -549,6 +549,9 @@
   .border-input {
     border-color: var(--input);
   }
+  .bg-accent\/50 {
+    background-color: color-mix(in oklab, var(--accent) 50%, transparent);
+  }
   .bg-background {
     background-color: var(--background);
   }
@@ -1354,6 +1357,11 @@
       border-color: var(--input);
     }
   }
+  .dark\:bg-accent\/20 {
+    &:is(.dark *) {
+      background-color: color-mix(in oklab, var(--accent) 20%, transparent);
+    }
+  }
   .dark\:bg-destructive\/60 {
     &:is(.dark *) {
       background-color: color-mix(in oklab, var(--destructive) 60%, transparent);
@@ -1456,6 +1464,11 @@
     &>[role=checkbox] {
       --tw-translate-y: 2px;
       translate: var(--tw-translate-x) var(--tw-translate-y);
+    }
+  }
+  .\[\&\>input\]\:mt-2 {
+    &>input {
+      margin-top: calc(var(--spacing) * 2);
     }
   }
   .\[\&\>span\]\:line-clamp-1 {
