@@ -36,6 +36,29 @@ const cookieStorage = {
 
 window.Alpine = Alpine;
 
+const checkboxStore = new Map<string, any>();
+
+Alpine.magic("checkbox", () => (id: string) => (checkboxStore.get(id)));
+
+Alpine.data("checkbox", (checked = false, id = null) => ({
+  id: id,
+  checked: checked,
+
+  init() {
+    if (this.id !== null) {
+      checkboxStore.set(this.id, this);
+    }
+    this.$dispatch("init", { checked: this.checked });
+  },
+  toggleCheckbox() {
+    this.checked = !this.checked;
+    this.$dispatch("changed", { checked: this.checked });
+  },
+  isChecked(): boolean {
+    return this.checked;
+  },
+}));
+
 Alpine.data("dropdown", () => ({
   isOpen: false,
   isKeyboard: false,
