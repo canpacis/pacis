@@ -36,9 +36,11 @@ const cookieStorage = {
 
 window.Alpine = Alpine;
 
+// Checkbox
+
 const checkboxStore = new Map<string, any>();
 
-Alpine.magic("checkbox", () => (id: string) => (checkboxStore.get(id)));
+Alpine.magic("checkbox", () => (id: string) => checkboxStore.get(id));
 
 Alpine.data("checkbox", (checked = false, id = null) => ({
   id: id,
@@ -59,20 +61,52 @@ Alpine.data("checkbox", (checked = false, id = null) => ({
   },
 }));
 
-Alpine.data("dropdown", () => ({
-  isOpen: false,
-  isKeyboard: false,
+// Collapsible
+
+const collapsibleStore = new Map<string, any>();
+
+Alpine.magic("collapsible", () => (id: string) => collapsibleStore.get(id));
+
+Alpine.data("collapsible", (open = false, id = null) => ({
+  id: id,
+  open: open,
+
+  init() {
+    if (this.id !== null) {
+      collapsibleStore.set(this.id, this);
+    }
+    this.$dispatch("init", { open: this.open });
+  },
+  toggleCollapsible() {
+    this.open = !this.open;
+    this.$dispatch("changed", { open: this.open });
+  },
+  isOpen(): boolean {
+    return this.open;
+  },
+}));
+
+// Dropdown
+
+const dropdownStore = new Map<string, any>();
+
+Alpine.magic("dropdown", () => (id: string) => dropdownStore.get(id));
+
+Alpine.data("dropdown", (id = null) => ({
+  id: id,
+  open: false,
 
   openDropdown() {
-    this.isOpen = true;
-    this.$dispatch("open");
+    this.open = true;
+    this.$dispatch("opened");
   },
-  closeDropdown(dismiss = false) {
-    this.isOpen = false;
-    this.$dispatch("close");
-    if (dismiss) {
-      this.$dispatch("dismiss");
-    }
+  closeDropdown(value: string) {
+    this.open = false;
+    this.$dispatch("closed", { value: value });
+  },
+  dismissDropdown() {
+    this.open = false;
+    this.$dispatch("dismissed");
   },
 }));
 

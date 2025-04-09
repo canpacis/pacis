@@ -1,14 +1,23 @@
 package components
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 
 	h "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
 )
 
+/*
+	A control that allows the user to toggle between checked and not checked.
+
+Usage:
+
+	Checkbox()
+	// ...
+	Checkbox(Text("Label"))
+	// ...
+	Checkbox(On("changed", "console.log($event)"))
+*/
 func Checkbox(props ...h.I) h.Element {
 	el := h.S(props...)
 	_, checked := el.GetAttribute("checked")
@@ -19,9 +28,7 @@ func Checkbox(props ...h.I) h.Element {
 		id = randid()
 	} else {
 		// TODO: should remove the id from label
-		var buf bytes.Buffer
-		idattr.Render(context.Background(), &buf)
-		id = buf.String()
+		id = readattr(idattr)
 	}
 
 	// TODO: route the checked property to input inside
@@ -51,7 +58,7 @@ func Checkbox(props ...h.I) h.Element {
 		)...)
 }
 
-// Returns an attribte that toggles the related checkbox upon given event
+// Returns an attribute that toggles the related checkbox upon given event
 func ToggleCheckboxOn(event string) h.Attribute {
 	return h.Attr(event, "toggleCheckbox()")
 }

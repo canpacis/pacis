@@ -1,6 +1,7 @@
 package components
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"embed"
@@ -19,6 +20,12 @@ func randid() string {
 	buf := make([]byte, 8)
 	rand.Read(buf)
 	return "pacis-" + hex.EncodeToString(buf)
+}
+
+func readattr(attr h.Attribute) string {
+	var buf bytes.Buffer
+	attr.Render(context.Background(), &buf)
+	return buf.String()
 }
 
 /*

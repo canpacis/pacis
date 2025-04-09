@@ -7,6 +7,7 @@ import (
 	"github.com/canpacis/pacis/ui/icons"
 )
 
+// TODO: Add a prop to include the copy button
 func Code(code, lang string, props ...h.I) h.Element {
 	return h.Div(
 		Join(

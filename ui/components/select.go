@@ -1,8 +1,6 @@
 package components
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 
 	h "github.com/canpacis/pacis/ui/html"
@@ -95,9 +93,7 @@ func SelectItem(props ...h.I) h.Element {
 	if !ok {
 		panic("select item elements need a value attribute")
 	}
-	var buf bytes.Buffer
-	value.Render(context.Background(), &buf)
-	el.AddAttribute(SelectValue(buf.String()))
+	el.AddAttribute(SelectValue(readattr(value)))
 
 	return el
 }

@@ -1,8 +1,6 @@
 package components
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 
 	h "github.com/canpacis/pacis/ui/html"
@@ -12,10 +10,7 @@ func Tabs(props ...h.I) h.Element {
 	el := h.Div(Join(props, X("data", "tabs"))...)
 	value, ok := el.GetAttribute("value")
 	if ok {
-		var buf bytes.Buffer
-		value.Render(context.Background(), &buf)
-
-		el.AddAttribute(X("init", fmt.Sprintf("value = '%s'", buf.String())))
+		el.AddAttribute(X("init", fmt.Sprintf("value = '%s'", readattr(value))))
 	}
 
 	return el
@@ -41,10 +36,9 @@ func TabTrigger(trigger h.Node, props ...h.I) h.Element {
 	if !ok {
 		panic("tab trigger elements need a value attribute")
 	}
-	var buf bytes.Buffer
-	value.Render(context.Background(), &buf)
-	el.AddAttribute(SetActiveTab(buf.String()))
-	el.AddAttribute(X("bind:class", fmt.Sprintf("value === '%s' && 'after:bg-primary !text-primary'", buf.String())))
+	attr := readattr(value)
+	el.AddAttribute(SetActiveTab(attr))
+	el.AddAttribute(X("bind:class", fmt.Sprintf("value === '%s' && 'after:bg-primary !text-primary'", attr)))
 
 	return el
 }
@@ -61,9 +55,7 @@ func TabContent(props ...h.I) h.Element {
 	if !ok {
 		panic("tab content elements need a value attribute")
 	}
-	var buf bytes.Buffer
-	value.Render(context.Background(), &buf)
-	el.AddAttribute(X("show", fmt.Sprintf("value === '%s'", buf.String())))
+	el.AddAttribute(X("show", fmt.Sprintf("value === '%s'", readattr(value))))
 
 	return el
 }
