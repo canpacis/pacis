@@ -45,7 +45,7 @@
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: "Inter";
-    --default-mono-font-family: "JetBrains Mono";
+    --default-mono-font-family: "JetBrains Mono", monospace;
     --header-height: 4rem;
     --footer-height: 2.5rem;
   }
@@ -888,7 +888,7 @@
     vertical-align: middle;
   }
   .font-mono {
-    font-family: "JetBrains Mono";
+    font-family: "JetBrains Mono", monospace;
   }
   .text-2xl {
     font-size: var(--text-2xl);

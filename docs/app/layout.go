@@ -13,6 +13,7 @@ import (
 )
 
 var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
+var mono = fonts.New("JetBrains Mono", fonts.WeightList{fonts.W100, fonts.W800}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 
 func Layout(ctx *pages.LayoutContext) I {
 	locale, _ := i18n.Locale(ctx)
@@ -42,7 +43,7 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(Property("twitter:description"), Content(i18n.Text("desc").String(ctx))),
 			Meta(Property("twitter:image"), Content("/public/banner.webp")),
 
-			fonts.Head(sans),
+			fonts.Head(sans, mono),
 			ctx.Head(),
 			Link(Href("/public/main.css"), Rel("stylesheet")),
 			Link(Href("/public/favicon.webp"), Rel("icon"), Type("image/png")),
