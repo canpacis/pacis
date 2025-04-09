@@ -8,36 +8,44 @@ import (
 
 func HomePage(ctx *pages.PageContext) I {
 	return Main(
-		Class("container my-16 flex-1"),
+		Class("container my-8 lg:my-16 flex-1 flex flex-col lg:flex-row items-start md:items-center gap-8 mt:0 lg:-mt-[var(--footer-height)]"),
 
-		H1(
-			Class("text-2xl font-bold leading-tight tracking-tighter sm:text-3xl md:text-4xl lg:leading-[1.1]"),
-
-			Text("Build great UI's with Go"),
-		),
-		P(
-			Class("max-w-2xl text-base font-light text-foreground sm:text-lg mt-4"),
-
-			Text("Build stunning, modern UIs for Go applications with ease, intuitive components, flexible styling, and seamless performance."),
-		),
 		Div(
-			Class("mt-8 flex gap-2"),
+			Class("flex-0 lg:flex-3"),
 
-			Button(
-				Replace(A),
-				Href("/docs/introduction"),
-				ButtonSizeSm,
+			H1(
+				Class("text-2xl font-bold leading-tight tracking-tighter sm:text-3xl md:text-4xl lg:leading-[1.1]"),
 
-				Text("Get Started"),
+				Text("Build web applications "),
+				Span(Class("relative inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 dark:from-blue-500 dark:via-purple-500 dark:to-pink-500"), Text("with Go")),
 			),
-			Button(
-				ButtonSizeSm,
-				ButtonVariantGhost,
-				Replace(A),
-				Href("/docs/components"),
+			P(
+				Class("max-w-2xl text-base font-light text-foreground sm:text-lg mt-4"),
 
-				Text("See Components"),
+				Text("Build stunning, modern UIs for Go applications with ease, intuitive components, flexible styling, and seamless performance."),
+			),
+			Div(
+				Class("mt-8 flex gap-2"),
+
+				Button(
+					Replace(A),
+					Href("/docs/introduction"),
+					Class("!rounded-full"),
+					ButtonSizeLg,
+
+					Text("Get Started"),
+				),
+				Button(
+					ButtonSizeLg,
+					ButtonVariantGhost,
+					Replace(A),
+					Class("!rounded-full"),
+					Href("/docs/components"),
+
+					Text("See Components"),
+				),
 			),
 		),
+		Div(),
 	)
 }
