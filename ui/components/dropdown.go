@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 )
 
@@ -15,9 +13,17 @@ func Dropdown(props ...h.I) h.Element {
 			DismissDropdownOn("keydown.esc.window"),
 		)...,
 	)
-	open, hasAttr := el.GetAttribute("open")
+	open, hasopen := el.GetAttribute("open")
 	_, ok := open.(ComponentAttribute)
-	el.AddAttribute(X("data", fmt.Sprintf("dropdown(%t)", hasAttr && ok)))
+
+	idattr, hasid := el.GetAttribute("id")
+	var id string
+	if !hasid {
+		id = randid()
+	} else {
+		id = readattr(idattr)
+	}
+	el.AddAttribute(X("data", fn("dropdown", hasopen && ok, id)))
 
 	return el
 }
@@ -50,30 +56,14 @@ func DropdownItem(props ...h.I) h.Node {
 		h.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
 	)
 	el := h.Btn(props...)
-	ok := true
+	idattr, ok := el.GetAttribute("id")
 	if !ok {
-		errset, ok := el.(h.ErrorSetter)
-		if ok {
-			errset.SetError(fmt.Errorf("dropdown items need a unique id attribute"))
-		} else {
-			panic("dropdown items need an id attribute")
-		}
-	} else {
-		el.AddAttribute(
-			// TODO
-			DismissDropdown,
-			// On(
-			// 	"click",
-			// 	fmt.Sprintf(
-			// 		"closeDropdown(), $dispatch('select', { id: '%s' });",
-			// 		"",
-			// 		// id.GetValue(),
-			// 	),
-			// ),
-		)
+		panic("dropdown items need an id attribute")
 	}
+	id := readattr(idattr)
 
-	return h.Try(el, ErrorText)
+	el.AddAttribute(CloseDropdown(id))
+	return el
 }
 
 func OpenDropdownOn(event string) h.Attribute {
@@ -83,7 +73,7 @@ func OpenDropdownOn(event string) h.Attribute {
 var OpenDropdown = OpenDropdownOn("click")
 
 func CloseDropdownOn(event, value string) h.Attribute {
-	return On(event, fmt.Sprintf("closeDropdown('%s')", value))
+	return On(event, fn("closeDropdown", value))
 }
 
 func CloseDropdown(value string) h.Attribute {

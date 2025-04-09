@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 )
 
@@ -23,6 +21,8 @@ Usage:
 func Collapsible(props ...h.I) h.Element {
 	el := h.Div(props...)
 
+	open, hasopen := el.GetAttribute("open")
+	_, ok := open.(ComponentAttribute)
 	idattr, hasid := el.GetAttribute("id")
 	var id string
 	if !hasid {
@@ -32,7 +32,7 @@ func Collapsible(props ...h.I) h.Element {
 		el.RemoveAttribute("id")
 	}
 
-	el.AddAttribute(X("data", fmt.Sprintf("collapsible(false, '%s')", id)))
+	el.AddAttribute(X("data", fn("collapsible", hasopen && ok, id)))
 	return el
 }
 

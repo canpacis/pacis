@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
 )
@@ -107,5 +105,5 @@ func SelectLabel(label string, props ...h.I) h.Element {
 }
 
 func SelectValue(value string) h.Attribute {
-	return On("click", fmt.Sprintf("closeSelect('%s', false)", value))
+	return On("click", fn("closeSelect", value))
 }

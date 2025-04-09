@@ -35,9 +35,10 @@ Alpine.data("checkbox", (checked = false, id = null) => ({
     }
     this.$dispatch("init", { checked: this.checked });
   },
-  toggleCheckbox() {
+  async toggleCheckbox() {
     this.checked = !this.checked;
-    this.$dispatch("changed", { checked: this.checked });
+    await this.$nextTick();
+    this.$dispatch("changed", { checked: this.checked })
   },
   isChecked(): boolean {
     return this.checked;
@@ -60,9 +61,10 @@ Alpine.data("collapsible", (open = false, id = null) => ({
     }
     this.$dispatch("init", { open: this.open });
   },
-  toggleCollapsible() {
+  async toggleCollapsible() {
     this.open = !this.open;
-    this.$dispatch("changed", { open: this.open });
+    await this.$nextTick();
+    this.$dispatch("changed", { open: this.open })
   },
   isOpen(): boolean {
     return this.open;
@@ -84,17 +86,20 @@ Alpine.data("dialog", (open = false, id = null) => ({
     }
     this.$dispatch("init", { open: this.open });
   },
-  openDialog() {
+  async openDialog() {
     this.open = true;
-    this.$dispatch("open");
+    await this.$nextTick();
+    this.$dispatch("opened")
   },
-  closeDialog(value: string) {
+  async closeDialog(value: string) {
     this.open = false;
-    this.$dispatch("close", { value: value });
+    await this.$nextTick();
+    this.$dispatch("closed", { value: value })
   },
-  dismissDialog() {
+  async dismissDialog() {
     this.open = false;
-    this.$dispatch("dismissed");
+    await this.$nextTick();
+    this.$dispatch("dismissed")
   },
 }));
 
@@ -115,17 +120,20 @@ Alpine.data("dropdown", (open = false, id = null) => ({
     }
     this.$dispatch("init", { open: this.open });
   },
-  openDropdown() {
+  async openDropdown() {
     this.open = true;
-    this.$dispatch("opened");
+    await this.$nextTick();
+    this.$dispatch("opened")
   },
-  closeDropdown(value: string) {
+  async closeDropdown(value: string) {
     this.open = false;
-    this.$dispatch("closed", { value: value });
+    await this.$nextTick();
+    this.$dispatch("closed", { value: value })
   },
-  dismissDropdown() {
+  async dismissDropdown() {
     this.open = false;
-    this.$dispatch("dismissed");
+    await this.$nextTick();
+    this.$dispatch("dismissed")
   },
 }));
 

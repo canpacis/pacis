@@ -28,6 +28,29 @@ func readattr(attr h.Attribute) string {
 	return buf.String()
 }
 
+func fn(name string, args ...any) string {
+	list := []string{}
+	for _, arg := range args {
+		switch arg := arg.(type) {
+		case string:
+			if strings.Contains(arg, "\n") {
+				list = append(list, "`"+arg+"`")
+			} else {
+				list = append(list, "'"+arg+"'")
+			}
+		case int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+			list = append(list, fmt.Sprintf("%d", arg))
+		case float32, float64:
+			list = append(list, fmt.Sprintf("%f", arg))
+		case bool:
+			list = append(list, fmt.Sprintf("%t", arg))
+		default:
+			panic(fmt.Sprintf("cannot serialize function argument type %T", arg))
+		}
+	}
+	return fmt.Sprintf("%s(%s)", name, strings.Join(list, ", "))
+}
+
 /*
 	Joins a prop list with rest. Puts the props at the end for correct attribute deduplication.
 
@@ -340,3 +363,23 @@ const (
 	Clearable = ComponentAttribute(iota)
 	Open
 )
+
+func Init(handler string) h.Attribute {
+	return On("init", handler)
+}
+
+func Changed(handler string) h.Attribute {
+	return On("changed", handler)
+}
+
+func Opened(handler string) h.Attribute {
+	return On("opened", handler)
+}
+
+func Closed(handler string) h.Attribute {
+	return On("closed", handler)
+}
+
+func Dismissed(handler string) h.Attribute {
+	return On("dismissed", handler)
+}

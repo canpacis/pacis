@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 	icn "github.com/canpacis/pacis/ui/icons"
 )
@@ -107,7 +105,7 @@ func OpenDialogOn(event string) h.Attribute {
 var OpenDialog = OpenDialogOn("click")
 
 func CloseDialogOn(event, value string) h.Attribute {
-	return On(event, fmt.Sprintf("closeDialog('%s')", value))
+	return On(event, fn("closeDialog", value))
 }
 
 func CloseDialog(value string) h.Attribute {

@@ -61,5 +61,5 @@ func TabContent(props ...h.I) h.Element {
 }
 
 func SetActiveTab(value string) h.Attribute {
-	return On("click", fmt.Sprintf("setActiveTab('%s')", value))
+	return On("click", fn("setActiveTab", value))
 }
