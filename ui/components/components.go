@@ -315,25 +315,28 @@ func (o Orientation) String() string {
 	}
 }
 
-type InputAttribute int
+type ComponentAttribute int
 
-func (InputAttribute) Render(context.Context, io.Writer) error {
+func (ComponentAttribute) Render(context.Context, io.Writer) error {
 	return nil
 }
 
-func (a InputAttribute) GetKey() string {
+func (a ComponentAttribute) GetKey() string {
 	switch a {
 	case Clearable:
 		return "clearable"
+	case Open:
+		return "open"
 	default:
 		return "invalid-input-attribute"
 	}
 }
 
-func (InputAttribute) IsEmpty() bool {
+func (ComponentAttribute) IsEmpty() bool {
 	return true
 }
 
 const (
-	Clearable = InputAttribute(iota)
+	Clearable = ComponentAttribute(iota)
+	Open
 )
