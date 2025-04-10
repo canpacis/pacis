@@ -23,14 +23,7 @@ func Collapsible(props ...h.I) h.Element {
 
 	open, hasopen := el.GetAttribute("open")
 	_, ok := open.(ComponentAttribute)
-	idattr, hasid := el.GetAttribute("id")
-	var id string
-	if !hasid {
-		id = randid()
-	} else {
-		id = readattr(idattr)
-		el.RemoveAttribute("id")
-	}
+	id := getid(el)
 
 	el.AddAttribute(X("data", fn("collapsible", hasopen && ok, id)))
 	return el

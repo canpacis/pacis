@@ -20,13 +20,7 @@ func RadioGroup(name h.Attribute, props ...h.I) h.Element {
 		value = readattr(valueattr)
 	}
 
-	var id string
-	idattr, hasid := el.GetAttribute("id")
-	if !hasid {
-		id = randid()
-	} else {
-		id = readattr(idattr)
-	}
+	id := getid(el)
 
 	el.AddAttribute(X("data", fn("radio", readattr(name), value, id)))
 	return el

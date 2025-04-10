@@ -5,14 +5,7 @@ import h "github.com/canpacis/pacis/ui/html"
 func Switch(props ...h.I) h.Element {
 	el := h.S(props...)
 	_, checked := el.GetAttribute("checked")
-	idattr, hasid := el.GetAttribute("id")
-
-	var id string
-	if !hasid {
-		id = randid()
-	} else {
-		id = readattr(idattr)
-	}
+	id := getid(el)
 
 	return h.Lbl(
 		Join(

@@ -28,6 +28,15 @@ func readattr(attr h.Attribute) string {
 	return buf.String()
 }
 
+func getid(el h.Element) string {
+	idattr, hasid := el.GetAttribute("id")
+	if !hasid {
+		return randid()
+	} else {
+		return readattr(idattr)
+	}
+}
+
 func fn(name string, args ...any) string {
 	list := []string{}
 	for _, arg := range args {

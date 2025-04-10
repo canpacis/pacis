@@ -25,13 +25,7 @@ func Select(name h.Attribute, props ...h.I) h.Element {
 
 	_, clearable := el.GetAttribute("clearable")
 
-	idattr, hasid := el.GetAttribute("id")
-	var id string
-	if !hasid {
-		id = randid()
-	} else {
-		id = readattr(idattr)
-	}
+	id := getid(el)
 
 	el.AddAttribute(X("data", fn("select", value, clearable, id)))
 

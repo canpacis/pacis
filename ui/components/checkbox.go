@@ -19,15 +19,7 @@ Usage:
 func Checkbox(props ...h.I) h.Element {
 	el := h.S(props...)
 	_, checked := el.GetAttribute("checked")
-	idattr, hasid := el.GetAttribute("id")
-
-	var id string
-	if !hasid {
-		id = randid()
-	} else {
-		// TODO: should remove the id from label
-		id = readattr(idattr)
-	}
+	id := getid(el)
 
 	// TODO: route the checked property to input inside
 	return h.Lbl(
