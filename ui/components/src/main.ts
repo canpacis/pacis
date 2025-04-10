@@ -17,28 +17,13 @@ declare global {
   }
 }
 
-const cookieStorage = {
-  getItem(key: string) {
-    let cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      let cookie = cookies[i].split("=");
-      if (key == cookie[0].trim()) {
-        return JSON.stringify(decodeURIComponent(cookie[1]));
-      }
-    }
-    return null;
-  },
-  setItem(key: string, value: string) {
-    document.cookie =
-      key + " = " + encodeURIComponent(JSON.parse(value)) + "; path=/";
-  },
-};
-
 window.Alpine = Alpine;
+
+// Checkbox
 
 const checkboxStore = new Map<string, any>();
 
-Alpine.magic("checkbox", () => (id: string) => (checkboxStore.get(id)));
+Alpine.magic("checkbox", () => (id: string) => checkboxStore.get(id));
 
 Alpine.data("checkbox", (checked = false, id = null) => ({
   id: id,
@@ -50,29 +35,105 @@ Alpine.data("checkbox", (checked = false, id = null) => ({
     }
     this.$dispatch("init", { checked: this.checked });
   },
-  toggleCheckbox() {
+  async toggleCheckbox() {
     this.checked = !this.checked;
-    this.$dispatch("changed", { checked: this.checked });
+    await this.$nextTick();
+    this.$dispatch("changed", { checked: this.checked })
   },
   isChecked(): boolean {
     return this.checked;
   },
 }));
 
-Alpine.data("dropdown", () => ({
-  isOpen: false,
-  isKeyboard: false,
+// Collapsible
 
-  openDropdown() {
-    this.isOpen = true;
-    this.$dispatch("open");
-  },
-  closeDropdown(dismiss = false) {
-    this.isOpen = false;
-    this.$dispatch("close");
-    if (dismiss) {
-      this.$dispatch("dismiss");
+const collapsibleStore = new Map<string, any>();
+
+Alpine.magic("collapsible", () => (id: string) => collapsibleStore.get(id));
+
+Alpine.data("collapsible", (open = false, id = null) => ({
+  id: id,
+  open: open,
+
+  init() {
+    if (this.id !== null) {
+      collapsibleStore.set(this.id, this);
     }
+    this.$dispatch("init", { open: this.open });
+  },
+  async toggleCollapsible() {
+    this.open = !this.open;
+    await this.$nextTick();
+    this.$dispatch("changed", { open: this.open })
+  },
+  isOpen(): boolean {
+    return this.open;
+  },
+}));
+
+// Dialog
+const dialogStore = new Map<string, any>();
+
+Alpine.magic("dialog", () => (id: string) => dialogStore.get(id));
+
+Alpine.data("dialog", (open = false, id = null) => ({
+  id: id,
+  open: open,
+
+  init() {
+    if (this.id !== null) {
+      dialogStore.set(this.id, this);
+    }
+    this.$dispatch("init", { open: this.open });
+  },
+  async openDialog() {
+    this.open = true;
+    await this.$nextTick();
+    this.$dispatch("opened")
+  },
+  async closeDialog(value: string) {
+    this.open = false;
+    await this.$nextTick();
+    this.$dispatch("closed", { value: value })
+  },
+  async dismissDialog() {
+    this.open = false;
+    await this.$nextTick();
+    this.$dispatch("dismissed")
+  },
+}));
+
+// Dropdown
+
+const dropdownStore = new Map<string, any>();
+
+Alpine.magic("dropdown", () => (id: string) => dropdownStore.get(id));
+
+Alpine.data("dropdown", (open = false, id = null) => ({
+  id: id,
+  open: open,
+  usedKeyboard: false,
+
+  init() {
+    if (this.id !== null) {
+      dropdownStore.set(this.id, this);
+    }
+    this.$dispatch("init", { open: this.open });
+  },
+  async openDropdown() {
+    this.open = true;
+    await this.$nextTick();
+    this.$dispatch("opened")
+  },
+  async closeDropdown(value: string) {
+    this.open = false;
+    await this.$nextTick();
+    this.$dispatch("closed", { value: value })
+  },
+  async dismissDropdown() {
+    this.open = false;
+    await this.$nextTick();
+    this.$dispatch("dismissed")
   },
 }));
 
@@ -91,22 +152,6 @@ Alpine.data("select", () => ({
     if (!dismiss) {
       this.value = value;
     }
-    this.$dispatch("close");
-    if (dismiss) {
-      this.$dispatch("dismiss");
-    }
-  },
-}));
-
-Alpine.data("dialog", () => ({
-  isOpen: false,
-
-  openDialog() {
-    this.isOpen = true;
-    this.$dispatch("open");
-  },
-  closeDialog(dismiss = false) {
-    this.isOpen = false;
     this.$dispatch("close");
     if (dismiss) {
       this.$dispatch("dismiss");
@@ -142,6 +187,23 @@ Alpine.data("tabs", () => ({
 Alpine.magic("clipboard", () => {
   return (data: string) => navigator.clipboard.writeText(data);
 });
+
+const cookieStorage = {
+  getItem(key: string) {
+    let cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      let cookie = cookies[i].split("=");
+      if (key == cookie[0].trim()) {
+        return JSON.stringify(decodeURIComponent(cookie[1]));
+      }
+    }
+    return null;
+  },
+  setItem(key: string, value: string) {
+    document.cookie =
+      key + " = " + encodeURIComponent(JSON.parse(value)) + "; path=/";
+  },
+};
 
 const scheme = document.querySelector("html")!.classList.contains("light")
   ? "light"

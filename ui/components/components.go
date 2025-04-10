@@ -1,6 +1,7 @@
 package components
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"embed"
@@ -19,6 +20,35 @@ func randid() string {
 	buf := make([]byte, 8)
 	rand.Read(buf)
 	return "pacis-" + hex.EncodeToString(buf)
+}
+
+func readattr(attr h.Attribute) string {
+	var buf bytes.Buffer
+	attr.Render(context.Background(), &buf)
+	return buf.String()
+}
+
+func fn(name string, args ...any) string {
+	list := []string{}
+	for _, arg := range args {
+		switch arg := arg.(type) {
+		case string:
+			if strings.Contains(arg, "\n") {
+				list = append(list, "`"+arg+"`")
+			} else {
+				list = append(list, "'"+arg+"'")
+			}
+		case int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+			list = append(list, fmt.Sprintf("%d", arg))
+		case float32, float64:
+			list = append(list, fmt.Sprintf("%f", arg))
+		case bool:
+			list = append(list, fmt.Sprintf("%t", arg))
+		default:
+			panic(fmt.Sprintf("cannot serialize function argument type %T", arg))
+		}
+	}
+	return fmt.Sprintf("%s(%s)", name, strings.Join(list, ", "))
 }
 
 /*
@@ -308,25 +338,48 @@ func (o Orientation) String() string {
 	}
 }
 
-type InputAttribute int
+type ComponentAttribute int
 
-func (InputAttribute) Render(context.Context, io.Writer) error {
+func (ComponentAttribute) Render(context.Context, io.Writer) error {
 	return nil
 }
 
-func (a InputAttribute) GetKey() string {
+func (a ComponentAttribute) GetKey() string {
 	switch a {
 	case Clearable:
 		return "clearable"
+	case Open:
+		return "open"
 	default:
 		return "invalid-input-attribute"
 	}
 }
 
-func (InputAttribute) IsEmpty() bool {
+func (ComponentAttribute) IsEmpty() bool {
 	return true
 }
 
 const (
-	Clearable = InputAttribute(iota)
+	Clearable = ComponentAttribute(iota)
+	Open
 )
+
+func Init(handler string) h.Attribute {
+	return On("init", handler)
+}
+
+func Changed(handler string) h.Attribute {
+	return On("changed", handler)
+}
+
+func Opened(handler string) h.Attribute {
+	return On("opened", handler)
+}
+
+func Closed(handler string) h.Attribute {
+	return On("closed", handler)
+}
+
+func Dismissed(handler string) h.Attribute {
+	return On("dismissed", handler)
+}
