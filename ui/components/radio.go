@@ -38,7 +38,7 @@ func RadioGroupItem(value h.Attribute, props ...h.I) h.Element {
 	return h.Lbl(
 		Join(
 			props,
-			h.Class("flex flex-row-reverse gap-2 text-sm cursor-pointer items-center justify-end"),
+			h.Class("flex gap-2 text-sm cursor-pointer items-center"),
 			h.Div(
 				h.Class("aspect-square h-4 w-4 rounded-full flex justify-center items-center border border-primary text-primary shadow focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"),
 

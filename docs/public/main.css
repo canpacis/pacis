@@ -664,9 +664,6 @@
   .flex-col-reverse {
     flex-direction: column-reverse;
   }
-  .flex-row-reverse {
-    flex-direction: row-reverse;
-  }
   .flex-wrap {
     flex-wrap: wrap;
   }
@@ -681,9 +678,6 @@
   }
   .justify-center {
     justify-content: center;
-  }
-  .justify-end {
-    justify-content: flex-end;
   }
   .justify-start {
     justify-content: flex-start;

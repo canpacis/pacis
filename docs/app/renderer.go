@@ -442,9 +442,9 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 		return TableHeader(children...)
 	case parser.QuoteNode:
 		return Div(
-			Join(children,
+			Join(
+				children,
 				icons.Info(Class("size-4 shrink-0")),
-
 				Class("border rounded-md p-4 text-sm flex gap-2 text-muted-foreground items-center my-4"),
 			)...,
 		)

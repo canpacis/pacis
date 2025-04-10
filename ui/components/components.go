@@ -113,8 +113,8 @@ Usage:
 */
 func Join(props []h.I, rest ...h.I) []h.I {
 	source := []h.I{}
-	source = append(source, props...)
 	source = append(source, rest...)
+	source = append(source, props...)
 
 	result := []h.I{}
 
