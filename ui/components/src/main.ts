@@ -38,7 +38,7 @@ Alpine.data("checkbox", (checked = false, id = null) => ({
   async toggleCheckbox() {
     this.checked = !this.checked;
     await this.$nextTick();
-    this.$dispatch("changed", { checked: this.checked })
+    this.$dispatch("changed", { checked: this.checked });
   },
   isChecked(): boolean {
     return this.checked;
@@ -64,7 +64,7 @@ Alpine.data("switch_", (checked = false, id = null) => ({
   async toggleSwitch() {
     this.checked = !this.checked;
     await this.$nextTick();
-    this.$dispatch("changed", { checked: this.checked })
+    this.$dispatch("changed", { checked: this.checked });
   },
   isChecked(): boolean {
     return this.checked;
@@ -90,7 +90,7 @@ Alpine.data("collapsible", (open = false, id = null) => ({
   async toggleCollapsible() {
     this.open = !this.open;
     await this.$nextTick();
-    this.$dispatch("changed", { open: this.open })
+    this.$dispatch("changed", { open: this.open });
   },
   isOpen(): boolean {
     return this.open;
@@ -115,17 +115,17 @@ Alpine.data("dialog", (open = false, id = null) => ({
   async openDialog() {
     this.open = true;
     await this.$nextTick();
-    this.$dispatch("opened")
+    this.$dispatch("opened");
   },
   async closeDialog(value: string) {
     this.open = false;
     await this.$nextTick();
-    this.$dispatch("closed", { value: value })
+    this.$dispatch("closed", { value: value });
   },
   async dismissDialog() {
     this.open = false;
     await this.$nextTick();
-    this.$dispatch("dismissed")
+    this.$dispatch("dismissed");
   },
 }));
 
@@ -149,40 +149,54 @@ Alpine.data("dropdown", (open = false, id = null) => ({
   async openDropdown() {
     this.open = true;
     await this.$nextTick();
-    this.$dispatch("opened")
+    this.$dispatch("opened");
   },
   async closeDropdown(value: string) {
     this.open = false;
     await this.$nextTick();
-    this.$dispatch("closed", { value: value })
+    this.$dispatch("closed", { value: value });
   },
   async dismissDropdown() {
     this.open = false;
     await this.$nextTick();
-    this.$dispatch("dismissed")
+    this.$dispatch("dismissed");
   },
 }));
 
-Alpine.data("select", () => ({
-  value: null,
-  isOpen: false,
-  isKeyboard: false,
-  clearable: false,
+// Select
 
-  openSelect() {
-    this.isOpen = true;
-    this.$dispatch("open");
+const selectStore = new Map<string, any>();
+
+Alpine.magic("select", () => (id: string) => selectStore.get(id));
+
+Alpine.data("select", (value: string | null = null, clearable = false, id = null) => ({
+  id: id,
+  value: value?.length == 0 ? null : value,
+  open: false,
+  usedKeyboard: false,
+  clearable: clearable,
+
+  async openSelect() {
+    this.open = true;
+    await this.$nextTick();
+    this.$dispatch("opened");
   },
-  closeSelect(value: string | null, dismiss = false) {
-    this.isOpen = false;
-    if (!dismiss) {
-      this.value = value;
-    }
-    this.$dispatch("close");
-    if (dismiss) {
-      this.$dispatch("dismiss");
-    }
+  async closeSelect(value: string) {
+    this.open = false;
+    this.value = value;
+    this.$dispatch("changed", { value: this.value });
+    await this.$nextTick();
+    this.$dispatch("closed", { value: this.value });
   },
+  async dismissSelect() {
+    this.open = false;
+    await this.$nextTick();
+    this.$dispatch("dismissed");
+  },
+  async setSelect(value: string) {
+    this.value = value;
+    this.$dispatch("changed", { value: this.value });
+  }
 }));
 
 Alpine.data("sheet", () => ({
@@ -207,6 +221,33 @@ Alpine.data("tabs", () => ({
   setActiveTab(tab: string) {
     this.value = tab;
     this.$dispatch("change");
+  },
+}));
+
+// Radio
+
+const radioStore = new Map<string, any>();
+
+Alpine.magic("radio", () => (id: string) => radioStore.get(id));
+
+Alpine.data("radio", (name: string, value = null, id = null) => ({
+  id: id,
+  value: value,
+  name: name,
+
+  init() {
+    if (this.id !== null) {
+      radioStore.set(this.id, this);
+    }
+    this.$dispatch("init", { value: this.value });
+  },
+  async setRadioValue(value: string | null) {
+    this.value = value;
+    await this.$nextTick();
+    this.$dispatch("changed", { value: this.value });
+  },
+  getCheckedValue(): string | null {
+    return this.value;
   },
 }));
 
