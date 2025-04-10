@@ -299,6 +299,12 @@ var plates = map[string][]Node{
 			),
 		),
 	},
+	"switch": {
+		Switch(),
+		Switch(Text("Label")),
+		Switch(Checked),
+		Switch(On("changed", "alert($event.detail.checked)")),
+	},
 	"tabs": {
 		Tabs(
 			Value("tab-item-1"),

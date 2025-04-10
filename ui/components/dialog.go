@@ -2,7 +2,7 @@ package components
 
 import (
 	h "github.com/canpacis/pacis/ui/html"
-	icn "github.com/canpacis/pacis/ui/icons"
+	"github.com/canpacis/pacis/ui/icons"
 )
 
 /*
@@ -57,7 +57,7 @@ func DialogContent(props ...h.I) h.Node {
 				DismissDialog,
 				h.Class("h-6 w-6 rounded-sm"),
 
-				icn.X(h.Class("h-4 w-4")),
+				icons.X(h.Class("h-4 w-4")),
 			),
 		),
 	}

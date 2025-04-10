@@ -61,6 +61,7 @@ func main() {
 		{"input", "app/markup/input.md"},
 		{"label", "app/markup/label.md"},
 		{"select", "app/markup/select.md"},
+		{"switch", "app/markup/switch.md"},
 		{"tabs", "app/markup/tabs.md"},
 	}
 
@@ -80,6 +81,7 @@ func main() {
 				return p.Route(p.Path(doc.path), p.Page(app.MarkupPage(markup, doc.markup)))
 			}),
 		),
+		p.Route(p.Path("test"), p.Page(app.TestPage)),
 
 		p.Robots(robots),
 		p.Sitemap(sitemap),

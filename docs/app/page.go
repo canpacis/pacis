@@ -49,3 +49,11 @@ func HomePage(ctx *pages.PageContext) I {
 		Div(),
 	)
 }
+
+func TestPage(ctx *pages.PageContext) I {
+	return Div(
+		Class("container"),
+
+		Switch(),
+	)
+}

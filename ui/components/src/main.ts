@@ -45,6 +45,32 @@ Alpine.data("checkbox", (checked = false, id = null) => ({
   },
 }));
 
+// Switch
+
+const switchStore = new Map<string, any>();
+
+Alpine.magic("switch_", () => (id: string) => switchStore.get(id));
+
+Alpine.data("switch_", (checked = false, id = null) => ({
+  id: id,
+  checked: checked,
+
+  init() {
+    if (this.id !== null) {
+      switchStore.set(this.id, this);
+    }
+    this.$dispatch("init", { checked: this.checked });
+  },
+  async toggleSwitch() {
+    this.checked = !this.checked;
+    await this.$nextTick();
+    this.$dispatch("changed", { checked: this.checked })
+  },
+  isChecked(): boolean {
+    return this.checked;
+  },
+}));
+
 // Collapsible
 
 const collapsibleStore = new Map<string, any>();

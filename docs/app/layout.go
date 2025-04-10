@@ -149,7 +149,7 @@ func getNavSections() []NavSection {
 				// {"/docs/seperator", Text("Seperator")},
 				// {"/docs/sheet", Text("Sheet")},
 				// {"/docs/slider", Text("Slider")},
-				// {"/docs/switch", Text("Switch")},
+				{"/docs/switch", Text("Switch")},
 				{"/docs/tabs", Text("Tabs")},
 				// {"/docs/textarea", Text("Textarea")},
 				// {"/docs/toast", Text("Toast")},

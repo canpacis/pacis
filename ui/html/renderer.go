@@ -447,16 +447,16 @@ func Map[T any](items []T, fn func(T, int) Node) Node {
 	return Frag(mapped...)
 }
 
-type SwitchCase[T comparable] struct {
+type case_[T comparable] struct {
 	expr T
 	node Node
 }
 
-func Case[T comparable](expr T, node Node) SwitchCase[T] {
-	return SwitchCase[T]{expr, node}
+func Case[T comparable](expr T, node Node) case_[T] {
+	return case_[T]{expr, node}
 }
 
-func Switch[T comparable](expr T, cases ...SwitchCase[T]) I {
+func SwitchCase[T comparable](expr T, cases ...case_[T]) I {
 	for _, c := range cases {
 		if expr == c.expr {
 			return c.node
