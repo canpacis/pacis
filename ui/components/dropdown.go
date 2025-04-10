@@ -50,20 +50,14 @@ func DropdownContent(props ...h.I) h.Element {
 	return h.Div(props...)
 }
 
-func DropdownItem(props ...h.I) h.Node {
-	props = Join(
-		props,
-		h.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
+func DropdownItem(value h.Attribute, props ...h.I) h.Node {
+	return h.Btn(
+		Join(
+			props,
+			CloseDropdown(readattr(value)),
+			h.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
+		)...,
 	)
-	el := h.Btn(props...)
-	idattr, ok := el.GetAttribute("id")
-	if !ok {
-		panic("dropdown items need an id attribute")
-	}
-	id := readattr(idattr)
-
-	el.AddAttribute(CloseDropdown(id))
-	return el
 }
 
 func OpenDropdownOn(event string) h.Attribute {
@@ -72,7 +66,7 @@ func OpenDropdownOn(event string) h.Attribute {
 
 var OpenDropdown = OpenDropdownOn("click")
 
-func CloseDropdownOn(event, value string) h.Attribute {
+func CloseDropdownOn(event string, value any) h.Attribute {
 	return On(event, fn("closeDropdown", value))
 }
 

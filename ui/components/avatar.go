@@ -1,8 +1,6 @@
 package components
 
 import (
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 )
 
@@ -14,30 +12,18 @@ func AvatarFallback(props ...h.I) h.Element {
 	return h.Div(props...)
 }
 
-func AvatarImage(props ...h.I) h.Node {
-	props = Join(
-		props,
-		h.Class("aspect-square size-full relative z-20"),
-		h.Attr(":class", "error ? 'hidden' : 'block'"),
-		h.Attr(":src", "url"),
-		On("error", "error = true"),
+func AvatarImage(src h.Attribute, props ...h.I) h.Node {
+	return h.Img(
+		Join(
+			props,
+			D{"url": readattr(src)},
+			src,
+			h.Class("aspect-square size-full relative z-20"),
+			h.Attr(":class", "error ? 'hidden' : 'block'"),
+			h.Attr(":src", "url"),
+			On("error", "error = true"),
+		)...,
 	)
-
-	el := h.Img(props...)
-
-	url, ok := el.GetAttribute("src")
-	if !ok {
-		errset, ok := el.(h.ErrorSetter)
-		if ok {
-			errset.SetError(fmt.Errorf("avatar image component needs a src attribute"))
-		} else {
-			panic("avatar image component needs a src attribute")
-		}
-	} else {
-		el.AddAttribute(D{"url": readattr(url)})
-	}
-
-	return h.Try(el, ErrorText)
 }
 
 var (

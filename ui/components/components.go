@@ -31,6 +31,10 @@ func readattr(attr h.Attribute) string {
 func fn(name string, args ...any) string {
 	list := []string{}
 	for _, arg := range args {
+		if arg == nil {
+			list = append(list, "null")
+			continue
+		}
 		switch arg := arg.(type) {
 		case string:
 			if strings.Contains(arg, "\n") {
