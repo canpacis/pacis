@@ -268,6 +268,29 @@ var plates = map[string][]Node{
 	"label": {
 		Label("Email", Input(Placeholder("canpacis@gmail.com"))),
 	},
+	"radio": {
+		Div(
+			D{"submitted": ""},
+			Form(
+				On("submit.prevent", "submitted = new FormData($event.target).get('radio-group')"),
+
+				RadioGroup(
+					Name("radio-group"),
+					Value("item-2"),
+
+					RadioGroupItem(Value("item-1"), Text("Radio Item 1")),
+					RadioGroupItem(Value("item-2"), Text("Radio Item 2")),
+					RadioGroupItem(Value("item-3"), Text("Radio Item 3")),
+				),
+				Button(Class("mt-2"), Type("submit"), Text("Submit")),
+			),
+			Div(
+				Class("mt-4"),
+
+				P(X("show", "submitted.length > 0"), Span(Text("Submitted: ")), Span(X("text", "submitted"))),
+			),
+		),
+	},
 	"select": {
 		Select(
 			Name("library"),
@@ -278,24 +301,40 @@ var plates = map[string][]Node{
 				Span(X("text", "value")),
 			),
 			SelectContent(
-				SelectItem(Text("Templ"), Value("Templ")),
-				SelectItem(Text("Gomponents"), Value("Gomponents")),
-				SelectItem(Text("Pacis"), Value("Pacis")),
+				SelectItem(Value("Templ"), Text("Templ")),
+				SelectItem(Value("Gomponents"), Text("Gomponents")),
+				SelectItem(Value("Pacis"), Text("Pacis")),
 			),
 		),
 		Select(
-			Clearable,
 			Name("library"),
 			Class("min-w-[200px]"),
+			Clearable,
 
 			SelectTrigger(
 				Span(Text("Select a library")),
 				Span(X("text", "value")),
 			),
 			SelectContent(
-				SelectItem(Text("Templ"), Value("Templ")),
-				SelectItem(Text("Gomponents"), Value("Gomponents")),
-				SelectItem(Text("Pacis"), Value("Pacis")),
+				SelectItem(Value("Templ"), Text("Templ")),
+				SelectItem(Value("Gomponents"), Text("Gomponents")),
+				SelectItem(Value("Pacis"), Text("Pacis")),
+			),
+		),
+		Select(
+			Name("library"),
+			Class("min-w-[200px]"),
+			Value("Pacis"),
+			Clearable,
+
+			SelectTrigger(
+				Span(Text("Select a library")),
+				Span(X("text", "value")),
+			),
+			SelectContent(
+				SelectItem(Value("Templ"), Text("Templ")),
+				SelectItem(Value("Gomponents"), Text("Gomponents")),
+				SelectItem(Value("Pacis"), Text("Pacis")),
 			),
 		),
 	},

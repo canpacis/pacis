@@ -144,7 +144,7 @@ func getNavSections() []NavSection {
 				{"/docs/dropdown", Text("Dropdown")},
 				{"/docs/input", Text("Input")},
 				{"/docs/label", Text("Label")},
-				// {"/docs/radio", Text("Radio")},
+				{"/docs/radio", Text("Radio")},
 				{"/docs/select", Text("Select")},
 				// {"/docs/seperator", Text("Seperator")},
 				// {"/docs/sheet", Text("Sheet")},

@@ -60,6 +60,7 @@ func main() {
 		{"dropdown", "app/markup/dropdown.md"},
 		{"input", "app/markup/input.md"},
 		{"label", "app/markup/label.md"},
+		{"radio", "app/markup/radio.md"},
 		{"select", "app/markup/select.md"},
 		{"switch", "app/markup/switch.md"},
 		{"tabs", "app/markup/tabs.md"},

@@ -14,9 +14,9 @@ Select(
     Span(X("text", "value")),
   ),
   SelectContent(
-    SelectItem(Text("Templ"), Value("Templ")),
-    SelectItem(Text("Gomponents"), Value("Gomponents")),
-    SelectItem(Text("Pacis"), Value("Pacis")),
+    SelectItem(Value("Templ"), Text("Templ")),
+    SelectItem(Value("Gomponents"), Text("Gomponents")),
+    SelectItem(Value("Pacis"), Text("Pacis")),
   ),
 )
 ```
@@ -32,8 +32,8 @@ Select(
     Span(X("text", "value")), // <- Selected value
   ),
   SelectContent(
-    SelectItem(Text("Item 1"), Value("item-1")),
-    SelectItem(Text("Item 2"), Value("item-2")),
+    SelectItem(Value("item-1"), Text("Item 1")),
+    SelectItem(Value("item-2"), Text("Item 2")),
   ),
 )
 ```
@@ -45,18 +45,40 @@ Select(
 {plate=1}
 ```go
 Select(
-  Clearable
   Name("library"),
   Class("min-w-[200px]"),
+  Clearable
 
   SelectTrigger(
     Span(Text("Select a library")),
     Span(X("text", "value")),
   ),
   SelectContent(
-    SelectItem(Text("Templ"), Value("Templ")),
-    SelectItem(Text("Gomponents"), Value("Gomponents")),
-    SelectItem(Text("Pacis"), Value("Pacis")),
+    SelectItem(Value("Templ"), Text("Templ")),
+    SelectItem(Value("Gomponents"), Text("Gomponents")),
+    SelectItem(Value("Pacis"), Text("Pacis")),
+  ),
+)
+```
+
+### Default value
+
+{plate=2}
+```go
+Select(
+  Name("library"),
+  Value("Pacis"),
+  Class("min-w-[200px]"),
+  Clearable
+
+  SelectTrigger(
+    Span(Text("Select a library")),
+    Span(X("text", "value")),
+  ),
+  SelectContent(
+    SelectItem(Value("Templ"), Text("Templ")),
+    SelectItem(Value("Gomponents"), Text("Gomponents")),
+    SelectItem(Value("Pacis"), Text("Pacis")),
   ),
 )
 ```
