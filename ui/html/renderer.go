@@ -525,3 +525,20 @@ func (ca ContextAttr) GetKey() string {
 func (ContextAttr) IsEmpty() bool {
 	return false
 }
+
+type Class string
+
+func (ca Class) Render(ctx context.Context, w io.Writer) error {
+	_, err := w.Write([]byte(ca))
+	return err
+}
+
+func (ca Class) GetKey() string {
+	return "class"
+}
+
+func (Class) IsEmpty() bool {
+	return false
+}
+
+func (Class) Dedupe() {}

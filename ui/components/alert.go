@@ -1,9 +1,6 @@
 package components
 
 import (
-	"context"
-	"io"
-
 	h "github.com/canpacis/pacis/ui/html"
 )
 
@@ -42,36 +39,41 @@ Usage:
 		AlertDescription(Text("You can us Go tho create great UI's")),
 	)
 */
-type AlertVariant int
+// type AlertVariant int
 
-const (
-	// The default visual
-	AlertVariantDefault = AlertVariant(iota)
-	// The destructive visual
-	AlertVariantDestructive
+// const (
+// 	// The default visual
+// 	AlertVariantDefault = AlertVariant(iota)
+// 	// The destructive visual
+// 	AlertVariantDestructive
+// )
+
+// func (v AlertVariant) Render(ctx context.Context, w io.Writer) error {
+// 	var value string
+// 	switch v {
+// 	case AlertVariantDefault:
+// 		value = "bg-card text-card-foreground"
+// 	case AlertVariantDestructive:
+// 		value = "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
+// 	default:
+// 		panic("invalid alert variant property")
+// 	}
+
+// 	return h.Class(value).Render(ctx, w)
+// }
+
+// func (AlertVariant) GetKey() string {
+// 	return "class"
+// }
+
+// func (v AlertVariant) IsEmpty() bool {
+// 	return false
+// }
+
+var (
+	AlertVariantDefault     = &GroupedClass{"alert", "bg-card text-card-foreground", true}
+	AlertVariantDestructive = &GroupedClass{"alert", "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90", false}
 )
-
-func (v AlertVariant) Render(ctx context.Context, w io.Writer) error {
-	var value string
-	switch v {
-	case AlertVariantDefault:
-		value = "bg-card text-card-foreground"
-	case AlertVariantDestructive:
-		value = "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90"
-	default:
-		panic("invalid alert variant property")
-	}
-
-	return h.Class(value).Render(ctx, w)
-}
-
-func (AlertVariant) GetKey() string {
-	return "class"
-}
-
-func (v AlertVariant) IsEmpty() bool {
-	return false
-}
 
 /*
 	Displays a callout for user attention.
@@ -85,22 +87,30 @@ Usage:
 	)
 */
 func Alert(props ...h.I) h.Element {
-	var variant AlertVariant
 
-	ps := []h.I{
-		h.Class("relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current"),
-		h.Role("alert"),
-	}
+	// var variant AlertVariant
 
-	for _, prop := range props {
-		switch prop := prop.(type) {
-		case AlertVariant:
-			variant = prop
-		default:
-			ps = append(ps, prop)
-		}
-	}
+	// ps := []h.I{
+	// 	h.Class("relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current"),
+	// 	h.Role("alert"),
+	// }
 
-	ps = append(ps, variant)
-	return h.Div(ps...)
+	// for _, prop := range props {
+	// 	switch prop := prop.(type) {
+	// 	case AlertVariant:
+	// 		variant = prop
+	// 	default:
+	// 		ps = append(ps, prop)
+	// 	}
+	// }
+
+	// ps = append(ps, variant)
+	return h.Div(
+		Join(
+			props,
+			AlertVariantDefault,
+			h.Class("relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current"),
+			h.Role("alert"),
+		)...,
+	)
 }
