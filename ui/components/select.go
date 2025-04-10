@@ -1,10 +1,6 @@
 package components
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
 )
@@ -95,9 +91,7 @@ func SelectItem(props ...h.I) h.Element {
 	if !ok {
 		panic("select item elements need a value attribute")
 	}
-	var buf bytes.Buffer
-	value.Render(context.Background(), &buf)
-	el.AddAttribute(SelectValue(buf.String()))
+	el.AddAttribute(SelectValue(readattr(value)))
 
 	return el
 }
@@ -111,5 +105,5 @@ func SelectLabel(label string, props ...h.I) h.Element {
 }
 
 func SelectValue(value string) h.Attribute {
-	return On("click", fmt.Sprintf("closeSelect('%s', false)", value))
+	return On("click", fn("closeSelect", value))
 }

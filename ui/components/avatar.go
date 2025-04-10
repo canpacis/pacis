@@ -1,7 +1,6 @@
 package components
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -37,9 +36,7 @@ func AvatarImage(props ...h.I) h.Node {
 			panic("avatar image component needs a src attribute")
 		}
 	} else {
-		var buf bytes.Buffer
-		url.Render(context.Background(), &buf)
-		el.AddAttribute(D{"url": buf.String()})
+		el.AddAttribute(D{"url": readattr(url)})
 	}
 
 	return h.Try(el, ErrorText)

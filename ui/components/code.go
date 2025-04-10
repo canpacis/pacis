@@ -1,12 +1,11 @@
 package components
 
 import (
-	"fmt"
-
 	h "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
 )
 
+// TODO: Add a prop to include the copy button
 func Code(code, lang string, props ...h.I) h.Element {
 	return h.Div(
 		Join(
@@ -17,7 +16,7 @@ func Code(code, lang string, props ...h.I) h.Element {
 				ButtonSizeIcon,
 				ButtonVariantGhost,
 				h.Class("!size-7 rounded-sm absolute top-2 right-2 md:top-3 md:right-3"),
-				On("click", fmt.Sprintf("$clipboard(`%s`)", code)),
+				On("click", fn("$clipboard", code)),
 
 				icons.Clipboard(h.Class("size-3")),
 				h.Span(h.Class("sr-only"), h.Text("Copy to Clipboard")),

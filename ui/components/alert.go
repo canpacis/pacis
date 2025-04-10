@@ -7,6 +7,7 @@ import (
 	h "github.com/canpacis/pacis/ui/html"
 )
 
+// Title slot for the alert component
 func AlertTitle(props ...h.I) h.Element {
 	ps := []h.I{
 		h.Class("col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight"),
@@ -16,6 +17,7 @@ func AlertTitle(props ...h.I) h.Element {
 	return h.Div(ps...)
 }
 
+// Description slot for the alert component
 func AlertDescription(props ...h.I) h.Element {
 	ps := []h.I{
 		h.Class("text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed"),
@@ -25,10 +27,27 @@ func AlertDescription(props ...h.I) h.Element {
 	return h.Div(ps...)
 }
 
+/*
+	Visual variant for the alert component. There are 2 variants:
+	- AlertVariantDefault: The default visual
+	- AlertVariantDestructive: The destructive visual
+
+Usage:
+
+	Alert(
+		AlertVariantDestructive, // <- Provide the variant
+
+		icons.Code(),
+		AlertTitle(Text("Heads up!")),
+		AlertDescription(Text("You can us Go tho create great UI's")),
+	)
+*/
 type AlertVariant int
 
 const (
+	// The default visual
 	AlertVariantDefault = AlertVariant(iota)
+	// The destructive visual
 	AlertVariantDestructive
 )
 
@@ -54,6 +73,17 @@ func (v AlertVariant) IsEmpty() bool {
 	return false
 }
 
+/*
+	Displays a callout for user attention.
+
+Usage:
+
+	Alert(
+		icons.Code(),
+		AlertTitle(Text("Heads up!")),
+		AlertDescription(Text("You can us Go tho create great UI's")),
+	)
+*/
 func Alert(props ...h.I) h.Element {
 	var variant AlertVariant
 
