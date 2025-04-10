@@ -81,7 +81,6 @@ func main() {
 				return p.Route(p.Path(doc.path), p.Page(app.MarkupPage(markup, doc.markup)))
 			}),
 		),
-		p.Route(p.Path("test"), p.Page(app.TestPage)),
 
 		p.Robots(robots),
 		p.Sitemap(sitemap),
