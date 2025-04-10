@@ -51,6 +51,48 @@ func fn(name string, args ...any) string {
 	return fmt.Sprintf("%s(%s)", name, strings.Join(list, ", "))
 }
 
+type GroupedClass struct {
+	group     string
+	class     h.Class
+	isdefault bool
+}
+
+func (GroupedClass) Render(context.Context, io.Writer) error {
+	return nil
+}
+
+type groupedclasses []GroupedClass
+
+func (list groupedclasses) Render(ctx context.Context, w io.Writer) error {
+	if len(list) == 0 {
+		return nil
+	}
+
+	var def GroupedClass
+	var selected GroupedClass
+	for _, item := range list {
+		if item.isdefault {
+			def = item
+		} else {
+			selected = item
+		}
+	}
+	if selected.group == "" {
+		selected = def
+	}
+	return selected.class.Render(ctx, w)
+}
+
+func (groupedclasses) GetKey() string {
+	return "class"
+}
+
+func (a groupedclasses) IsEmpty() bool {
+	return false
+}
+
+func (groupedclasses) Dedupe() {}
+
 /*
 	Joins a prop list with rest. Puts the props at the end for correct attribute deduplication.
 
@@ -66,7 +108,27 @@ Usage:
 	}
 */
 func Join(props []h.I, rest ...h.I) []h.I {
-	return append(rest, props...)
+	source := []h.I{}
+	source = append(source, props...)
+	source = append(source, rest...)
+
+	result := []h.I{}
+
+	groups := map[string]groupedclasses{}
+
+	for _, prop := range source {
+		grouped, ok := prop.(*GroupedClass)
+		if ok {
+			groups[grouped.group] = append(groups[grouped.group], *grouped)
+		} else {
+			result = append(result, prop)
+		}
+	}
+	for _, group := range groups {
+		result = append(result, &group)
+	}
+
+	return result
 }
 
 /*

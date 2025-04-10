@@ -133,7 +133,6 @@ func Charset(value string) Attribute      { return Attr("charset", value) }
 var Checked = Attr("checked", "")
 
 func CiteAttr_(value string) Attribute       { return Attr("cite", value) }
-func Class(value string) Attribute           { return Attr("class", value) }
 func ColorAttr(value string) Attribute       { return Attr("color", value) }
 func Cols(value string) Attribute            { return Attr("cols", value) }
 func Colspan(value string) Attribute         { return Attr("colspan", value) }

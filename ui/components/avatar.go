@@ -1,9 +1,7 @@
 package components
 
 import (
-	"context"
 	"fmt"
-	"io"
 
 	h "github.com/canpacis/pacis/ui/html"
 )
@@ -42,56 +40,17 @@ func AvatarImage(props ...h.I) h.Node {
 	return h.Try(el, ErrorText)
 }
 
-type AvatarSize int
-
-const (
-	AvatarSizeDefault = AvatarSize(iota)
-	AvatarSizeSm
-	AvatarSizeLg
+var (
+	AvatarSizeDefault = &GroupedClass{"avatar-size", "size-8", true}
+	AvatarSizeSm      = &GroupedClass{"avatar-size", "size-6 text-sm", false}
+	AvatarSizeLg      = &GroupedClass{"avatar-size", "size-12 text-lg", false}
 )
 
-func (v AvatarSize) Render(ctx context.Context, w io.Writer) error {
-	var value string
-
-	switch v {
-	case AvatarSizeDefault:
-		value = "size-8"
-	case AvatarSizeSm:
-		value = "size-6 text-sm"
-	case AvatarSizeLg:
-		value = "size-12 text-lg"
-	default:
-		panic("invalid avatar size property")
-	}
-
-	return h.Class(value).Render(ctx, w)
-}
-
-func (AvatarSize) GetKey() string {
-	return "class"
-}
-
-func (v AvatarSize) IsEmpty() bool {
-	return false
-}
-
 func Avatar(props ...h.I) h.Element {
-	var size AvatarSize
-
-	ps := []h.I{
+	return h.Div(Join(
+		props,
+		AvatarSizeDefault,
 		h.Class("flex shrink-0 overflow-hidden rounded-full relative"),
 		D{"error": false},
-	}
-
-	for _, prop := range props {
-		switch prop := prop.(type) {
-		case AvatarSize:
-			size = prop
-		default:
-			ps = append(ps, prop)
-		}
-	}
-	ps = append(ps, size)
-
-	return h.Div(ps...)
+	)...)
 }
