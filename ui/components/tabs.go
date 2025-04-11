@@ -7,11 +7,14 @@ import (
 )
 
 func Tabs(props ...h.I) h.Element {
-	el := h.Div(Join(props, X("data", "tabs"))...)
-	value, ok := el.GetAttribute("value")
-	if ok {
-		el.AddAttribute(X("init", fmt.Sprintf("value = '%s'", readattr(value))))
+	el := h.Div(props...)
+	valueattr, _ := el.GetAttribute("value")
+	var value any
+	if valueattr != nil {
+		value = readattr(valueattr)
 	}
+	id := getid(el)
+	el.AddAttribute(X("data", fn("tabs", value, id)))
 
 	return el
 }
@@ -32,13 +35,13 @@ func TabTrigger(trigger h.Node, props ...h.I) h.Element {
 			trigger,
 		)...,
 	)
-	value, ok := el.GetAttribute("value")
+	valueattr, ok := el.GetAttribute("value")
 	if !ok {
 		panic("tab trigger elements need a value attribute")
 	}
-	attr := readattr(value)
-	el.AddAttribute(SetActiveTab(attr))
-	el.AddAttribute(X("bind:class", fmt.Sprintf("value === '%s' && 'after:bg-primary !text-primary'", attr)))
+	value := readattr(valueattr)
+	el.AddAttribute(SetTab(value))
+	el.AddAttribute(X("bind:class", fmt.Sprintf("value === '%s' && 'after:bg-primary !text-primary'", value)))
 
 	return el
 }
@@ -60,6 +63,10 @@ func TabContent(props ...h.I) h.Element {
 	return el
 }
 
-func SetActiveTab(value string) h.Attribute {
-	return On("click", fn("setActiveTab", value))
+func SetTabOn(event string, value any) h.Attribute {
+	return On(event, fn("setTab", value))
+}
+
+func SetTab(value any) h.Attribute {
+	return SetTabOn("click", value)
 }

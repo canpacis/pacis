@@ -49,9 +49,9 @@ Alpine.data("checkbox", (checked = false, id = null) => ({
 
 const switchStore = new Map<string, any>();
 
-Alpine.magic("switch_", () => (id: string) => switchStore.get(id));
+Alpine.magic("appswitch", () => (id: string) => switchStore.get(id));
 
-Alpine.data("switch_", (checked = false, id = null) => ({
+Alpine.data("appswitch", (checked = false, id = null) => ({
   id: id,
   checked: checked,
 
@@ -98,6 +98,7 @@ Alpine.data("collapsible", (open = false, id = null) => ({
 }));
 
 // Dialog
+
 const dialogStore = new Map<string, any>();
 
 Alpine.magic("dialog", () => (id: string) => dialogStore.get(id));
@@ -169,58 +170,99 @@ const selectStore = new Map<string, any>();
 
 Alpine.magic("select", () => (id: string) => selectStore.get(id));
 
-Alpine.data("select", (value: string | null = null, clearable = false, id = null) => ({
-  id: id,
-  value: value?.length == 0 ? null : value,
-  open: false,
-  usedKeyboard: false,
-  clearable: clearable,
+Alpine.data(
+  "select",
+  (value: string | null = null, clearable = false, id = null) => ({
+    id: id,
+    value: value?.length == 0 ? null : value,
+    open: false,
+    usedKeyboard: false,
+    clearable: clearable,
 
-  async openSelect() {
+    init() {
+      if (this.id !== null) {
+        selectStore.set(this.id, this);
+      }
+      this.$dispatch("init", { value: this.value });
+    },
+    async openSelect() {
+      this.open = true;
+      await this.$nextTick();
+      this.$dispatch("opened");
+    },
+    async closeSelect(value: string) {
+      this.open = false;
+      this.value = value;
+      this.$dispatch("changed", { value: this.value });
+      await this.$nextTick();
+      this.$dispatch("closed", { value: this.value });
+    },
+    async dismissSelect() {
+      this.open = false;
+      await this.$nextTick();
+      this.$dispatch("dismissed");
+    },
+    async setSelect(value: string) {
+      this.value = value;
+      this.$dispatch("changed", { value: this.value });
+    },
+  })
+);
+
+// Sheet
+
+const sheetStore = new Map<string, any>();
+
+Alpine.magic("sheet", () => (id: string) => sheetStore.get(id));
+
+Alpine.data("sheet", (open = false, id = null) => ({
+  id: id,
+  open: open,
+
+  init() {
+    if (this.id !== null) {
+      sheetStore.set(this.id, this);
+    }
+    this.$dispatch("init", { open: this.open });
+  },
+  async openSheet() {
     this.open = true;
     await this.$nextTick();
     this.$dispatch("opened");
   },
-  async closeSelect(value: string) {
-    this.open = false;
-    this.value = value;
-    this.$dispatch("changed", { value: this.value });
-    await this.$nextTick();
-    this.$dispatch("closed", { value: this.value });
-  },
-  async dismissSelect() {
+  async closeSheet() {
     this.open = false;
     await this.$nextTick();
-    this.$dispatch("dismissed");
+    this.$dispatch("closed");
   },
-  async setSelect(value: string) {
-    this.value = value;
-    this.$dispatch("changed", { value: this.value });
-  }
+  isOpen(): boolean {
+    return this.open;
+  },
 }));
 
-Alpine.data("sheet", () => ({
-  isOpen: false,
+// Tabs
 
-  openSheet() {
-    this.isOpen = true;
-    this.$dispatch("open");
-  },
-  closeSheet(dismiss = false) {
-    this.isOpen = false;
-    this.$dispatch("close");
-    if (dismiss) {
-      this.$dispatch("dismiss");
+const tabsStore = new Map<string, any>();
+
+Alpine.magic("tabs", () => (id: string) => tabsStore.get(id));
+
+Alpine.data("tabs", (value = null, id = null) => ({
+  id: id,
+  value: value,
+
+  init() {
+    if (this.id !== null) {
+      tabsStore.set(this.id, this);
     }
+    this.$dispatch("init", { value: this.value });
   },
-}));
-
-Alpine.data("tabs", () => ({
-  value: null,
-
-  setActiveTab(tab: string) {
+  async setTab(tab: string) {
     this.value = tab;
-    this.$dispatch("change");
+    await this.$nextTick();
+    this.$dispatch("changed", { value: this.value });
+  },
+  getTab(): string | null {
+    return this.value;
   },
 }));
 

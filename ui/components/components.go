@@ -74,15 +74,23 @@ func (GroupedClass) Render(context.Context, io.Writer) error {
 	return nil
 }
 
-type groupedclasses []GroupedClass
+type groupedclasses []*GroupedClass
 
 func (list groupedclasses) Render(ctx context.Context, w io.Writer) error {
+	selected := list.Candidate()
+	if selected == nil {
+		return nil
+	}
+	return selected.class.Render(ctx, w)
+}
+
+func (list groupedclasses) Candidate() *GroupedClass {
 	if len(list) == 0 {
 		return nil
 	}
+	var def *GroupedClass
+	var selected *GroupedClass
 
-	var def GroupedClass
-	var selected GroupedClass
 	for _, item := range list {
 		if item.isdefault {
 			def = item
@@ -90,10 +98,10 @@ func (list groupedclasses) Render(ctx context.Context, w io.Writer) error {
 			selected = item
 		}
 	}
-	if selected.group == "" {
+	if selected == nil {
 		selected = def
 	}
-	return selected.class.Render(ctx, w)
+	return selected
 }
 
 func (groupedclasses) GetKey() string {
@@ -132,7 +140,7 @@ func Join(props []h.I, rest ...h.I) []h.I {
 	for _, prop := range source {
 		grouped, ok := prop.(*GroupedClass)
 		if ok {
-			groups[grouped.group] = append(groups[grouped.group], *grouped)
+			groups[grouped.group] = append(groups[grouped.group], grouped)
 		} else {
 			result = append(result, prop)
 		}
@@ -182,6 +190,10 @@ Usage:
 */
 func X(key string, value ...any) h.Attribute {
 	return h.Attr(fmt.Sprintf("x-%s", key), value...)
+}
+
+func Textx(value string) h.Attribute {
+	return h.Attr("x-text", value)
 }
 
 /*

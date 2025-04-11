@@ -11,7 +11,7 @@ func Switch(props ...h.I) h.Element {
 		Join(
 			props,
 			h.Class("flex gap-2 text-sm cursor-pointer"),
-			X("data", fn("switch_", checked, id)),
+			X("data", fn("appswitch", checked, id)),
 			h.Div(
 				h.Data(":state", "checked ? 'checked' : 'unchecked'"),
 				h.Class("peer inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input"),
