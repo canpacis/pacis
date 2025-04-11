@@ -243,6 +243,22 @@ type AppHead struct {
 //go:embed dist
 var dist embed.FS
 
+func AppScript() []byte {
+	js, err := dist.ReadFile("dist/main.js")
+	if err != nil {
+		panic(err)
+	}
+	return js
+}
+
+func AppStyle() []byte {
+	css, err := dist.ReadFile("dist/main.css")
+	if err != nil {
+		panic(err)
+	}
+	return css
+}
+
 // Provides the file system to serve statically
 func (h AppHead) FS() fs.FS {
 	content, err := fs.Sub(dist, "dist")
