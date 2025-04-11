@@ -121,6 +121,10 @@
     @apply bg-background text-foreground;
   }
 
+  ::-webkit-resizer {
+    @apply hidden;
+  }
+
   .hljs {
     @apply !text-muted-foreground;
   }

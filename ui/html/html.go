@@ -106,6 +106,7 @@ func Section(props ...I) Element    { return El("section", props...) }
 func Aside(props ...I) Element      { return El("aside", props...) }
 func Meta(props ...I) Element       { return El("meta", props...) }
 func Footer(props ...I) Element     { return El("footer", props...) }
+func Txtarea(props ...I) Element    { return El("textarea", props...) }
 
 // Attributes
 
