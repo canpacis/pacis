@@ -375,12 +375,12 @@ func Preview(code []byte, value string, preview Node) Node {
 		Value(value),
 
 		TabList(
-			TabTrigger(Text("Code"), Value("code")),
 			TabTrigger(Text("Preview"), Value("preview")),
+			TabTrigger(Text("Code"), Value("code")),
 		),
 
-		TabContent(Value("code"), Code(string(code), "language-go")),
 		TabContent(Value("preview"), Plate(preview)),
+		TabContent(Value("code"), Code(string(code), "language-go")),
 	)
 }
 
