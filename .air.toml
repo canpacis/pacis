@@ -4,10 +4,10 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/docs"
-  cmd = "go build -o ./tmp/docs ./docs/"
+  bin = "./tmp/www"
+  cmd = "go build -o ./tmp/www ./www/"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", "ui/lucide"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", "ui/lucide", "www/app/static"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
@@ -21,7 +21,8 @@ tmp_dir = "tmp"
   poll = false
   poll_interval = 0
   post_cmd = []
-  pre_cmd = ["task build-light", "npx @tailwindcss/cli -i ./docs/public/input.css -o ./docs/public/main.css"]
+  pre_cmd = ["go run ./pages/cmd/ www"]
+  # pre_cmd = ["task build-light", "npx @tailwindcss/cli -i ./docs/public/input.css -o ./docs/public/main.css"]
   rerun = false
   rerun_delay = 500
   send_interrupt = false
