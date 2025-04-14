@@ -2,9 +2,11 @@ package app
 
 import (
 	_ "embed"
+	"log"
 
 	"github.com/canpacis/pacis/pages"
 	fonts "github.com/canpacis/pacis/pages/font"
+	"github.com/canpacis/pacis/pages/i18n"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
@@ -21,13 +23,23 @@ var sitemap []byte
 
 //pacis:layout path=/
 func Layout(ctx *pages.LayoutContext) I {
+	locale, err := i18n.Locale(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	title := i18n.Text("title").String(ctx)
+	desc := i18n.Text("desc").String(ctx)
+	keywords := i18n.Text("keywords").String(ctx)
+
 	return Html(
 		Class(pages.Get[string](ctx, "theme")),
+		Lang(locale.String()),
 
 		Head(
-			Meta(Name("title"), Content("Title")),
-			Meta(Name("description"), Content("Description")),
-			Meta(Name("keywords"), Content("Keywords")),
+			Meta(Name("title"), Content(title)),
+			Meta(Name("description"), Content(desc)),
+			Meta(Name("keywords"), Content(keywords)),
 			Meta(Name("robots"), Content("index, follow")),
 			Meta(HttpEquiv("Content-Type"), Content("text/html; charset=utf-8")),
 			Meta(HttpEquiv("language"), Content("English")),
@@ -35,20 +47,20 @@ func Layout(ctx *pages.LayoutContext) I {
 
 			Meta(Property("og:type"), Content("website")),
 			Meta(Property("og:url"), Content("https://ui.canpacis.com")),
-			Meta(Property("og:title"), Content("Title")),
-			Meta(Property("og:description"), Content("Description")),
-			Meta(Property("og:image"), Content("/public/banner.webp")),
+			Meta(Property("og:title"), Content(title)),
+			Meta(Property("og:description"), Content(desc)),
+			Meta(Property("og:image"), Content(pages.Asset("banner.webp"))),
 
 			Meta(Property("twitter:card"), Content("summary_large_image")),
 			Meta(Property("twitter:url"), Content("https://ui.canpacis.com")),
-			Meta(Property("twitter:title"), Content("Title")),
-			Meta(Property("twitter:description"), Content("Description")),
-			Meta(Property("twitter:image"), Content("/public/banner.webp")),
+			Meta(Property("twitter:title"), Content(title)),
+			Meta(Property("twitter:description"), Content(desc)),
+			Meta(Property("twitter:image"), Content(pages.Asset("banner.webp"))),
 
 			fonts.Head(sans, mono),
 			ctx.Head(),
 			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
-			Title(Text("Title")),
+			Title(Text(title)),
 		),
 		Body(
 			Class("flex flex-col min-h-dvh"),
