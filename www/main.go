@@ -15,6 +15,6 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	router := app.Router()
+	router := app.Router(nil)
 	http.ListenAndServe(":"+getEnv("PORT", "8080"), router)
 }

@@ -19,12 +19,6 @@ var robots []byte
 //go:embed sitemap.xml
 var sitemap []byte
 
-//pacis:redirect from=/docs/components to=/docs/alert
-func Init() {
-	pages.Robots(robots)
-	pages.Sitemap(sitemap)
-}
-
 //pacis:layout path=/
 func Layout(ctx *pages.LayoutContext) I {
 	return Html(

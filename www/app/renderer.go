@@ -2,12 +2,13 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
-	. "github.com/canpacis/pacis/docs/components"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
+	. "github.com/canpacis/pacis/www/app/components"
 	"github.com/gosimple/slug"
 	parser "github.com/sivukhin/godjot/djot_parser"
 )
@@ -416,7 +417,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 		}
 		idx, err := strconv.Atoi(plate)
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 
 		plates, ok := plates[name]

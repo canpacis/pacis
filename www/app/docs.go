@@ -112,6 +112,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 var docs embed.FS
 
 //pacis:page path=/docs/{slug}
+//pacis:redirect from=/docs/components to=/docs/alert
 func DocsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	source, err := docs.ReadFile(path.Join("docs", slug+".md"))
