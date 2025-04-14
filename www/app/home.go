@@ -4,65 +4,9 @@ import (
 	_ "embed"
 
 	"github.com/canpacis/pacis/pages"
-	fonts "github.com/canpacis/pacis/pages/font"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 )
-
-var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
-var mono = fonts.New("JetBrains Mono", fonts.WeightList{fonts.W100, fonts.W800}, fonts.Swap, fonts.Latin, fonts.LatinExt)
-
-//go:embed robots.txt
-var robots []byte
-
-//go:embed sitemap.xml
-var sitemap []byte
-
-func Init() {
-	pages.Robots(robots)
-	pages.Sitemap(sitemap)
-}
-
-//pacis:layout path=/
-func HomeLayout(ctx *pages.LayoutContext) I {
-	return Html(
-		Class(pages.Get[string](ctx, "theme")),
-
-		Head(
-			Meta(Name("title"), Content("Title")),
-			Meta(Name("description"), Content("Description")),
-			Meta(Name("keywords"), Content("Keywords")),
-			Meta(Name("robots"), Content("index, follow")),
-			Meta(HttpEquiv("Content-Type"), Content("text/html; charset=utf-8")),
-			Meta(HttpEquiv("language"), Content("English")),
-			Meta(HttpEquiv("author"), Content("canpacis")),
-
-			Meta(Property("og:type"), Content("website")),
-			Meta(Property("og:url"), Content("https://ui.canpacis.com")),
-			Meta(Property("og:title"), Content("Title")),
-			Meta(Property("og:description"), Content("Description")),
-			Meta(Property("og:image"), Content("/public/banner.webp")),
-
-			Meta(Property("twitter:card"), Content("summary_large_image")),
-			Meta(Property("twitter:url"), Content("https://ui.canpacis.com")),
-			Meta(Property("twitter:title"), Content("Title")),
-			Meta(Property("twitter:description"), Content("Description")),
-			Meta(Property("twitter:image"), Content("/public/banner.webp")),
-
-			fonts.Head(sans, mono),
-			ctx.Head(),
-			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
-			Title(Text("Title")),
-		),
-		Body(
-			Class("flex flex-col min-h-dvh"),
-
-			// AppHeader(),
-			ctx.Outlet(),
-			// AppFooter(),
-		),
-	)
-}
 
 //pacis:page path=/
 func HomePage(ctx *pages.PageContext) I {
