@@ -56,6 +56,13 @@ func (ctx *PageContext) Redirect(to string) h.I {
 	return h.Frag()
 }
 
+func (ctx *PageContext) NotFound() h.I {
+	ctx.w.Header().Set("Content-Type", "text/html")
+	ctx.w.WriteHeader(http.StatusNotFound)
+
+	return NotFoundPage(ctx)
+}
+
 func (ctx *PageContext) Set(key string, value any) {
 	c := context.WithValue(ctx, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
 	ctx.r = ctx.r.Clone(c)
@@ -79,22 +86,6 @@ func (ctx LayoutContext) Outlet() h.I {
 
 type Layout func(*LayoutContext) h.I
 
-func defaultNotFound(_ *PageContext) h.I {
-	return h.Main(
-		h.Class("flex justify-center items-center flex-1"),
-
-		h.Div(
-			h.Text("404 | Not Found"),
-		),
-	)
-}
-
-var NotFoundPage Page = defaultNotFound
-
-func SetNotFoundPage(page Page) {
-	NotFoundPage = page
-}
-
 func WrapLayout(layout Layout, rest ...Layout) Layout {
 	switch len(rest) {
 	case 0:
@@ -111,6 +102,14 @@ func WrapLayout(layout Layout, rest ...Layout) Layout {
 		}
 		return WrapLayout(first, rest[1:]...)
 	}
+}
+
+var NotFoundPage Page = func(pc *PageContext) h.I {
+	return h.P(h.Text("Not Found"))
+}
+
+func SetNotFoundPage(page Page) {
+	NotFoundPage = page
 }
 
 var assetmap = map[string]string{}
@@ -130,6 +129,50 @@ func Asset(src string) string {
 type Route interface {
 	http.Handler
 	Path() string
+}
+
+type HomeRoute struct {
+	page        Page
+	layout      Layout
+	head        h.I
+	middlewares []func(http.Handler) http.Handler
+}
+
+func (HomeRoute) Path() string {
+	return "/"
+}
+
+func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+
+		ctx := &PageContext{w: w, r: r}
+		var renderer h.I
+		var page Page
+
+		if r.URL.Path != "/" {
+			w.WriteHeader(http.StatusNotFound)
+			page = NotFoundPage
+		} else {
+			w.WriteHeader(http.StatusOK)
+			page = hr.page
+		}
+
+		if hr.layout != nil {
+			renderer = hr.layout(&LayoutContext{PageContext: ctx, head: hr.head, outlet: page(ctx)})
+		} else {
+			renderer = page(ctx)
+		}
+		renderer.Render(ctx, w)
+	})
+	for _, middleware := range hr.middlewares {
+		handler = middleware(handler)
+	}
+	handler.ServeHTTP(w, r)
+}
+
+func NewHomeRoute(page Page, layout Layout, head h.I, middlewares ...func(http.Handler) http.Handler) *HomeRoute {
+	return &HomeRoute{page: page, layout: layout, head: head, middlewares: middlewares}
 }
 
 type PageRoute struct {
