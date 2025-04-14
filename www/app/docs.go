@@ -77,7 +77,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 			Navigation(sections, current),
 		),
 		Section(
-			Class("py-8 flex-1 w-full ml-0 lg:ml-4 xl:ml-8"),
+			Class("py-8 flex-1 flex flex-col w-full ml-0 lg:ml-4 xl:ml-8"),
 
 			IfFn(current != nil, func() Renderer {
 				return Breadcrumb(
@@ -112,12 +112,13 @@ func DocLayout(ctx *pages.LayoutContext) I {
 var docs embed.FS
 
 //pacis:page path=/docs/{slug}
+//pacis:redirect from=/docs/ to=/docs/introduction
 //pacis:redirect from=/docs/components to=/docs/alert
 func DocsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	source, err := docs.ReadFile(path.Join("docs", slug+".md"))
 	if err != nil {
-		return pages.NotFoundPage(ctx)
+		return ctx.NotFound()
 	}
 
 	ast := parser.BuildDjotAst(source)
