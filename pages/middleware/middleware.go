@@ -1,8 +1,10 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/canpacis/pacis/pages"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -41,7 +43,7 @@ func Theme(h http.Handler) http.Handler {
 	})
 }
 
-func Locale(bundle *i18n.Bundle, defaultlang language.Tag) func(h http.Handler) http.Handler {
+func Locale(bundle *i18n.Bundle, defaultlang language.Tag) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var locale string
@@ -67,6 +69,15 @@ func Locale(bundle *i18n.Bundle, defaultlang language.Tag) func(h http.Handler) 
 			localizer := i18n.NewLocalizer(bundle, tag.String())
 			r = r.Clone(pages.Set(r.Context(), "localizer", localizer))
 			r = r.Clone(pages.Set(r.Context(), "locale", &tag))
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
+func Cache(duration time.Duration) func(http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", int64(duration.Seconds())))
 			h.ServeHTTP(w, r)
 		})
 	}
