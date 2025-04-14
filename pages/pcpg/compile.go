@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"encoding/hex"
 	"errors"
 	"hash/adler32"
@@ -211,6 +212,9 @@ type asset struct {
 	content []byte
 }
 
+//go:embed static
+var static embed.FS
+
 func createassets(dircfg *dirconfig) ([]asset, error) {
 	assets := []asset{}
 
@@ -271,6 +275,25 @@ func createassets(dircfg *dirconfig) ([]asset, error) {
 			name = hash(raw, base+"_", ext)
 			assets = append(assets, asset{base, path.Join(dircfg.static, name), raw})
 		}
+	}
+
+	// TODO: find a solution for local static assets
+	entries, err = static.ReadDir("static")
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		name := entry.Name()
+		ext := path.Ext(name)
+		base, _ := strings.CutSuffix(name, ext)
+
+		raw, err := static.ReadFile(path.Join("static", name))
+		if err != nil {
+			return nil, err
+		}
+		name = hash(raw, base+"_", ext)
+		assets = append(assets, asset{base, path.Join(dircfg.static, name), raw})
 	}
 
 	name = hash(style, "main_", ".css")

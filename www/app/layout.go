@@ -70,6 +70,7 @@ func Layout(ctx *pages.LayoutContext) I {
 			AppHeader(),
 			ctx.Outlet(),
 			AppFooter(),
+			ctx.Body(),
 		),
 	)
 }

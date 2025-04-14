@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"strings"
 
@@ -235,11 +234,6 @@ func ErrorText(err error) h.Node {
 	)
 }
 
-type AppHead struct {
-	*h.Fragment
-	prefix string
-}
-
 //go:embed dist
 var dist embed.FS
 
@@ -257,39 +251,6 @@ func AppStyle() []byte {
 		log.Fatalln(err)
 	}
 	return css
-}
-
-// Provides the file system to serve statically
-func (h AppHead) FS() fs.FS {
-	content, err := fs.Sub(dist, "dist")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return content
-}
-
-/*
-	Place this component inside the head tag and use the handler to add static files to your server
-
-Usage:
-
-	head := CreateHead("/public/") // include the '/' before and after
-	http.Handle("/public/", head.Handler())
-
-	html := Html(
-		Head(head)
-		Body( ... )
-	)
-*/
-func CreateHead(prefix string) *AppHead {
-	head := &AppHead{prefix: prefix, Fragment: h.Frag(
-		h.Meta(h.Charset("UTF-8")),
-		h.Meta(h.Name("viewport"), h.Content("width=device-width, initial-scale=1.0")),
-		h.Link(h.Href(fmt.Sprintf("%smain.css", prefix)), h.Rel("stylesheet")),
-		h.Script(h.Src(fmt.Sprintf("%smain.js", prefix))),
-	)}
-
-	return head
 }
 
 /*

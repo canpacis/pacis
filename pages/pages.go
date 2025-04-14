@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	h "github.com/canpacis/pacis/ui/html"
@@ -28,8 +29,11 @@ func Get[T any](ctx context.Context, key string) T {
 }
 
 type PageContext struct {
-	w http.ResponseWriter
-	r *http.Request
+	w      http.ResponseWriter
+	r      *http.Request
+	chsize atomic.Int32
+	elemch chan h.Element
+	ready  atomic.Bool
 }
 
 func (ctx *PageContext) Deadline() (deadline time.Time, ok bool) {
@@ -45,6 +49,18 @@ func (ctx *PageContext) Value(key any) any {
 
 func (ctx *PageContext) Done() <-chan struct{} {
 	return ctx.r.Context().Done()
+}
+
+func (ctx *PageContext) QueueElement() {
+	ctx.chsize.Add(1)
+}
+
+func (ctx *PageContext) DequeueElement(el h.Element) {
+	ctx.elemch <- el
+}
+
+func (ctx *PageContext) Ready() bool {
+	return ctx.ready.Load()
 }
 
 func (ctx *PageContext) Request() *http.Request {
@@ -73,11 +89,16 @@ type Page func(*PageContext) h.I
 type LayoutContext struct {
 	*PageContext
 	head   h.I
+	body   h.I
 	outlet h.I
 }
 
 func (ctx LayoutContext) Head() h.I {
 	return ctx.head
+}
+
+func (ctx LayoutContext) Body() h.I {
+	return ctx.body
 }
 
 func (ctx LayoutContext) Outlet() h.I {
@@ -126,6 +147,32 @@ func Asset(src string) string {
 	return resolved
 }
 
+func render(item h.I, w http.ResponseWriter, ctx *PageContext) {
+	flusher := w.(http.Flusher)
+
+	// initial render
+	item.Render(ctx, w)
+	flusher.Flush()
+
+	size := int(ctx.chsize.Load())
+	if size == 0 {
+		return
+	}
+
+	ctx.elemch = make(chan h.Element, size)
+	ctx.ready.Store(true)
+
+	for range size {
+		select {
+		case <-ctx.Done():
+			// client disconnected
+		case el := <-ctx.elemch:
+			el.Render(ctx, w)
+			flusher.Flush()
+		}
+	}
+}
+
 type Route interface {
 	http.Handler
 	Path() string
@@ -135,6 +182,7 @@ type HomeRoute struct {
 	page        Page
 	layout      Layout
 	head        h.I
+	body        h.I
 	middlewares []func(http.Handler) http.Handler
 }
 
@@ -159,11 +207,12 @@ func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if hr.layout != nil {
-			renderer = hr.layout(&LayoutContext{PageContext: ctx, head: hr.head, outlet: page(ctx)})
+			renderer = hr.layout(&LayoutContext{PageContext: ctx, head: hr.head, body: hr.body, outlet: page(ctx)})
 		} else {
 			renderer = page(ctx)
 		}
-		renderer.Render(ctx, w)
+
+		render(renderer, w, ctx)
 	})
 	for _, middleware := range hr.middlewares {
 		handler = middleware(handler)
@@ -171,8 +220,8 @@ func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-func NewHomeRoute(page Page, layout Layout, head h.I, middlewares ...func(http.Handler) http.Handler) *HomeRoute {
-	return &HomeRoute{page: page, layout: layout, head: head, middlewares: middlewares}
+func NewHomeRoute(page Page, layout Layout, head, body h.I, middlewares ...func(http.Handler) http.Handler) *HomeRoute {
+	return &HomeRoute{page: page, layout: layout, head: head, body: body, middlewares: middlewares}
 }
 
 type PageRoute struct {
@@ -180,11 +229,12 @@ type PageRoute struct {
 	page        Page
 	layout      Layout
 	head        h.I
+	body        h.I
 	middlewares []func(http.Handler) http.Handler
 }
 
-func NewPageRoute(path string, page Page, layout Layout, head h.I, middlewares ...func(http.Handler) http.Handler) *PageRoute {
-	return &PageRoute{path: path, page: page, layout: layout, head: head, middlewares: middlewares}
+func NewPageRoute(path string, page Page, layout Layout, head, body h.I, middlewares ...func(http.Handler) http.Handler) *PageRoute {
+	return &PageRoute{path: path, page: page, layout: layout, head: head, body: body, middlewares: middlewares}
 }
 
 func (pr PageRoute) Path() string {
@@ -199,11 +249,12 @@ func (pr *PageRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx := &PageContext{w: w, r: r}
 		var renderer h.I
 		if pr.layout != nil {
-			renderer = pr.layout(&LayoutContext{PageContext: ctx, head: pr.head, outlet: pr.page(ctx)})
+			renderer = pr.layout(&LayoutContext{PageContext: ctx, head: pr.head, body: pr.body, outlet: pr.page(ctx)})
 		} else {
 			renderer = pr.page(ctx)
 		}
-		renderer.Render(ctx, w)
+
+		render(renderer, w, ctx)
 	})
 	for _, middleware := range pr.middlewares {
 		handler = middleware(handler)
