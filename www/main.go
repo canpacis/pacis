@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net/http"
 	"os"
 
+	"github.com/canpacis/pacis/pages"
 	"github.com/canpacis/pacis/www/app"
 )
 
@@ -15,6 +15,5 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	router := app.Router(nil)
-	http.ListenAndServe(":"+getEnv("PORT", "8080"), router)
+	pages.Serve(":"+getEnv("PORT", "8080"), app.Router(nil))
 }

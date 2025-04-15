@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	h "github.com/canpacis/pacis/ui/html"
@@ -305,4 +308,29 @@ func (rr *RawRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handler = middleware(handler)
 	}
 	handler.ServeHTTP(w, r)
+}
+
+func Serve(addr string, router http.Handler) {
+	server := &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
 }
