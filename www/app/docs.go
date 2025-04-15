@@ -4,6 +4,7 @@ import (
 	"embed"
 	"path"
 	"slices"
+	"strings"
 
 	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
@@ -109,32 +110,58 @@ func DocLayout(ctx *pages.LayoutContext) I {
 }
 
 //go:embed docs
-var docs embed.FS
+var docsfs embed.FS
+
+type docitem struct {
+	nodes    []I
+	headings []*TableOfContentItem
+}
+
+var docs = map[string]*docitem{}
+
+func InitDocs() error {
+	entries, err := docsfs.ReadDir("docs")
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		name := entry.Name()
+		slug, _ := strings.CutSuffix(name, path.Ext(name))
+		src, err := docsfs.ReadFile(path.Join("docs", entry.Name()))
+		if err != nil {
+			return err
+		}
+		ast := parser.BuildDjotAst(src)
+		nodes := []I{Class("flex-3")}
+		nodes = append(nodes, RenderMarkup(ast[0], slug))
+		headings := ExtractTitles(ast[0])
+
+		docs[slug] = &docitem{nodes, headings}
+	}
+	return nil
+}
 
 //pacis:page path=/docs/{slug}
 //pacis:redirect from=/docs/ to=/docs/introduction
 //pacis:redirect from=/docs/components to=/docs/alert
 func DocsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
-	source, err := docs.ReadFile(path.Join("docs", slug+".md"))
-	if err != nil {
+	doc, ok := docs[slug]
+
+	if !ok {
 		return ctx.NotFound()
 	}
-
-	ast := parser.BuildDjotAst(source)
-	nodes := []I{Class("flex-3")}
-	nodes = append(nodes, RenderMarkup(ast[0], slug))
-	headings := ExtractTitles(ast[0])
 
 	return Div(
 		Class("flex gap-8 flex-col-reverse xl:flex-row"),
 
-		Div(nodes...),
+		Div(doc.nodes...),
 		Div(
 			Class("text-sm flex-1 h-fit leading-6 relative xl:sticky xl:top-[calc(var(--header-height)+2rem)]"),
 
 			P(Class("font-semibold text-primary"), Text("On This Page")),
-			Map(headings, func(item TableOfContentItem, i int) Node {
+			Map(doc.headings, func(item *TableOfContentItem, i int) Node {
 				return P(
 					If(item.Order > 2, Class("ml-4")),
 

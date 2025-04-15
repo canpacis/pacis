@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/canpacis/pacis/pages"
@@ -15,5 +16,8 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	if err := app.InitDocs(); err != nil {
+		log.Fatal(err)
+	}
 	pages.Serve(":"+getEnv("PORT", "8080"), app.Router(nil))
 }

@@ -409,7 +409,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 	case parser.ParagraphNode:
 		return P(Join(children, Class(node.Attributes.Get("class")))...)
 	case parser.LinkNode:
-		return A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
+		return Knot(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
 	case parser.CodeNode:
 		plate := node.Attributes.Get("plate")
 		if len(plate) == 0 {
@@ -482,8 +482,8 @@ type TableOfContentItem struct {
 	Order int
 }
 
-func ExtractTitles(node parser.TreeNode[parser.DjotNode]) []TableOfContentItem {
-	links := []TableOfContentItem{}
+func ExtractTitles(node parser.TreeNode[parser.DjotNode]) []*TableOfContentItem {
+	links := []*TableOfContentItem{}
 
 	switch node.Type {
 	case parser.DocumentNode, parser.SectionNode:
@@ -496,7 +496,7 @@ func ExtractTitles(node parser.TreeNode[parser.DjotNode]) []TableOfContentItem {
 		id := slug.Make(string(txt))
 
 		if order > 1 {
-			links = append(links, TableOfContentItem{Text(txt), fmt.Sprintf("#%s", id), order})
+			links = append(links, &TableOfContentItem{Text(txt), fmt.Sprintf("#%s", id), order})
 		}
 	}
 
