@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/canpacis/pacis/pages"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -81,4 +82,8 @@ func Cache(duration time.Duration) func(http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 		})
 	}
+}
+
+func Gzip(h http.Handler) http.Handler {
+	return gziphandler.GzipHandler(h)
 }
