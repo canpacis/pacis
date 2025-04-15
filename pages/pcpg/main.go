@@ -23,10 +23,11 @@ func main() {
 					}
 
 					target := ctx.Args().First()
-					if err := compile(target); err != nil {
+					assetmap, err := compile(target)
+					if err != nil {
 						return err
 					}
-					gen, err := scan(target)
+					gen, err := scan(target, assetmap)
 					if err != nil {
 						return err
 					}

@@ -48,30 +48,30 @@ func setupdir(target string) (*dirconfig, error) {
 	return cfg, nil
 }
 
-func compile(target string) error {
+func compile(target string) (map[string]string, error) {
 	dircfg, err := setupdir(target)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	os.RemoveAll(dircfg.static)
 	os.Mkdir(dircfg.static, 0o755)
 
-	assets, err := createassets(dircfg)
+	assets, assetmap, err := createassets(dircfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, asset := range assets {
 		file, err := os.OpenFile(asset.name, os.O_CREATE|os.O_RDWR, 0o644)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer file.Close()
 		if _, err := file.Write(asset.content); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return assetmap, nil
 }
 
 type asset struct {
@@ -81,22 +81,28 @@ type asset struct {
 }
 
 //go:embed static
-var static embed.FS
+var staticfs embed.FS
 
-func createassets(dircfg *dirconfig) ([]asset, error) {
+func createassets(dircfg *dirconfig) ([]asset, map[string]string, error) {
 	assets := []asset{}
+	assetmap := map[string]string{}
+
+	static := func(str string) string {
+		return "/static/" + str
+	}
 
 	var name string
 
 	script := components.AppScript()
-	name = hash(script, "main_", ".js")
+	name = hash(script, "app_", ".js")
 	assets = append(assets, asset{name, path.Join(dircfg.static, name), script})
+	assetmap["app.ts"] = static(name)
 
 	style := components.AppStyle()
 
 	entries, err := os.ReadDir(dircfg.assets)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, entry := range entries {
@@ -116,39 +122,43 @@ func createassets(dircfg *dirconfig) ([]asset, error) {
 			})
 
 			if len(result.Errors) != 0 {
-				return nil, errors.New(result.Errors[0].Text)
+				return nil, nil, errors.New(result.Errors[0].Text)
 			}
 			raw := result.OutputFiles[0].Contents
+			old := name
 			name = hash(raw, "main_", ".js")
 			assets = append(assets, asset{name, path.Join(dircfg.static, name), raw})
+			assetmap[old] = static(name)
 		case ".css":
 			if name != "main.css" {
 				continue
 			}
 			raw, err := os.ReadFile(path.Join(dircfg.assets, name))
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			generated, err := stdiotailwind(raw)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			style = append(style, 10)
 			style = append(style, generated...)
 		default:
 			raw, err := os.ReadFile(path.Join(dircfg.assets, name))
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
+			old := name
 			name = hash(raw, base+"_", ext)
 			assets = append(assets, asset{base, path.Join(dircfg.static, name), raw})
+			assetmap[old] = static(name)
 		}
 	}
 
 	// TODO: find a solution for local static assets
-	entries, err = static.ReadDir("static")
+	entries, err = staticfs.ReadDir("static")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, entry := range entries {
@@ -156,18 +166,21 @@ func createassets(dircfg *dirconfig) ([]asset, error) {
 		ext := path.Ext(name)
 		base, _ := strings.CutSuffix(name, ext)
 
-		raw, err := static.ReadFile(path.Join("static", name))
+		raw, err := staticfs.ReadFile(path.Join("static", name))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
+		old := name
 		name = hash(raw, base+"_", ext)
 		assets = append(assets, asset{base, path.Join(dircfg.static, name), raw})
+		assetmap[old] = static(name)
 	}
 
 	name = hash(style, "main_", ".css")
 	assets = append(assets, asset{name, path.Join(dircfg.static, name), style})
+	assetmap["main.css"] = static(name)
 
-	return assets, nil
+	return assets, assetmap, nil
 }
 
 func stdiotailwind(src []byte) ([]byte, error) {

@@ -88,7 +88,7 @@ func scanfile(decls []ast.Decl) ([]def, error) {
 	return defs, nil
 }
 
-func scan(target string) (*generator, error) {
+func scan(target string, assetmap map[string]string) (*generator, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -117,24 +117,20 @@ func scan(target string) (*generator, error) {
 			"golang.org/x/text/language",
 		},
 		embeds: []string{"messages", "static"},
-		assets: map[string]string{
-			"banner.webp":  "/static/banner_276da31c.webp",
-			"favicon.webp": "/static/favicon_83a07746.webp",
-			"logo.webp":    "/static/logo_e8697f93.webp",
-		},
+		assets: map[string]string{},
 		head: []struct {
 			path string
 			typ  string
 		}{
-			{"/static/main_8fa19d51.css", "stylesheet"},
-			{"/static/main_17cb02f6.js", "javascript"},
-			{"/static/main_89277112.js", "javascript"},
+			{`pages.Asset("main.css")`, "stylesheet"},
+			{`pages.Asset("app.ts")`, "javascript"},
+			{`pages.Asset("main.ts")`, "javascript"},
 		},
 		body: []struct {
 			path string
 			typ  string
 		}{
-			{"/static/main_f2e2e9a2.js", "javascript"},
+			{`pages.Asset("stream.js")`, "javascript"},
 		},
 		routes: []route{
 			home("HomePage", "Layout", "locale", "middleware.Theme", "middleware.Gzip"),
@@ -144,6 +140,10 @@ func scan(target string) (*generator, error) {
 			raw("GET /robots.txt", "robots", "text/plain; charset=utf-8", "middleware.Gzip"),
 			raw("GET /sitemap.xml", "sitemap", "application/xml", "middleware.Gzip"),
 		},
+	}
+
+	for key, value := range assetmap {
+		gen.assets[key] = value
 	}
 
 	for _, file := range pkg.Files {

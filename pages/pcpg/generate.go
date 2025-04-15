@@ -32,6 +32,8 @@ const serve = `if mux == nil {
  	mux = http.NewServeMux()
 }
 
+pages.SetNotFoundPage(NotFoundPage)
+
 staticfs, _ := fs.Sub(static, "static")
 yearcache := middleware.Cache(time.Hour * 24 * 365)
 mux.Handle(
@@ -183,9 +185,9 @@ func generate(target string, gen *generator) error {
 	for _, asset := range gen.head {
 		switch asset.typ {
 		case "stylesheet":
-			headfrag.Args = append(headfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Link(html.Rel("stylesheet"), html.Href("%s"))`, asset.path)))
+			headfrag.Args = append(headfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Link(html.Rel("stylesheet"), html.Href(%s))`, asset.path)))
 		case "javascript":
-			headfrag.Args = append(headfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Script(html.Src("%s"))`, asset.path)))
+			headfrag.Args = append(headfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Script(html.Src(%s))`, asset.path)))
 		}
 	}
 	stmt(&ast.AssignStmt{
@@ -201,9 +203,9 @@ func generate(target string, gen *generator) error {
 	for _, asset := range gen.body {
 		switch asset.typ {
 		case "stylesheet":
-			bodyfrag.Args = append(bodyfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Link(html.Rel("stylesheet"), html.Href("%s"))`, asset.path)))
+			bodyfrag.Args = append(bodyfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Link(html.Rel("stylesheet"), html.Href(%s))`, asset.path)))
 		case "javascript":
-			bodyfrag.Args = append(bodyfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Script(html.Src("%s"))`, asset.path)))
+			bodyfrag.Args = append(bodyfrag.Args, ast.NewIdent(fmt.Sprintf(`html.Script(html.Src(%s))`, asset.path)))
 		}
 	}
 	stmt(&ast.AssignStmt{
