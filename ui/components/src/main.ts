@@ -293,6 +293,62 @@ Alpine.data("radio", (name: string, value = null, id = null) => ({
   },
 }));
 
+// Tooltip
+
+const tooltipStore = new Map<string, any>();
+
+Alpine.magic("tooltip", () => (id: string) => tooltipStore.get(id));
+
+Alpine.data("tooltip", (open = false, id = null) => ({
+  id: id,
+  open: open,
+  cancel: new AbortController(),
+
+  init() {
+    if (this.id !== null) {
+      tooltipStore.set(this.id, this);
+    }
+    this.$dispatch("init", { open: this.open });
+  },
+  queueOpenTooltip(delay: number = 0) {
+    if (this.open) {
+      return;
+    }
+    setTimeout(async () => {
+      if (this.open) {
+        return;
+      }
+      if (this.cancel.signal.aborted) {
+        this.cancel = new AbortController();
+        return;
+      }
+      await this.openTooltip();
+      this.cancel = new AbortController();
+    }, delay);
+  },
+  abortTooltip() {
+    this.cancel.abort();
+    if (this.open) {
+      this.open = false;
+      this.cancel = new AbortController();
+    }
+    this.$dispatch("aborted");
+  },
+  async openTooltip() {
+    this.open = true;
+    await this.$nextTick();
+    this.$dispatch("opened");
+  },
+  async closeTooltip() {
+    this.open = false;
+    await this.$nextTick();
+    this.$dispatch("closed");
+  },
+  isOpen(): boolean {
+    return this.open;
+  },
+}));
+
 Alpine.magic("clipboard", () => {
   return (data: string) => navigator.clipboard.writeText(data);
 });

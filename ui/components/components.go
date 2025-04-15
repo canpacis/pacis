@@ -323,10 +323,9 @@ func (a AnchorPosition) GetKey() string {
 	}
 
 	switch a.hpos {
+	case HCenter:
 	case HStart:
 		key += "-start"
-	case HCenter:
-		key += "-center"
 	case HEnd:
 		key += "-end"
 	default:

@@ -126,9 +126,9 @@ func scan(target string) (*generator, error) {
 			path string
 			typ  string
 		}{
-			{"/static/main_c24c0d47.css", "stylesheet"},
+			{"/static/main_8fa19d51.css", "stylesheet"},
 			{"/static/main_17cb02f6.js", "javascript"},
-			{"/static/main_31e66c0b.js", "javascript"},
+			{"/static/main_89277112.js", "javascript"},
 		},
 		body: []struct {
 			path string
