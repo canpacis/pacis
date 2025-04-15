@@ -1,9 +1,9 @@
 package app
 
 import (
-	"slices"
+	_ "embed"
+	"log"
 
-	. "github.com/canpacis/pacis/docs/components"
 	"github.com/canpacis/pacis/pages"
 	fonts "github.com/canpacis/pacis/pages/font"
 	"github.com/canpacis/pacis/pages/i18n"
@@ -15,17 +15,33 @@ import (
 var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 var mono = fonts.New("JetBrains Mono", fonts.WeightList{fonts.W100, fonts.W800}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 
+//pacis:raw path=/robots.txt
+//go:embed robots.txt
+var robots []byte
+
+//pacis:raw path=/sitemap.xml
+//go:embed sitemap.xml
+var sitemap []byte
+
+//pacis:layout path=/
 func Layout(ctx *pages.LayoutContext) I {
-	locale, _ := i18n.Locale(ctx)
+	locale, err := i18n.Locale(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	title := i18n.Text("title").String(ctx)
+	desc := i18n.Text("desc").String(ctx)
+	keywords := i18n.Text("keywords").String(ctx)
 
 	return Html(
 		Class(pages.Get[string](ctx, "theme")),
 		Lang(locale.String()),
 
 		Head(
-			Meta(Name("title"), Content(i18n.Text("title").String(ctx))),
-			Meta(Name("description"), Content(i18n.Text("desc").String(ctx))),
-			Meta(Name("keywords"), Content(i18n.Text("keywords").String(ctx))),
+			Meta(Name("title"), Content(title)),
+			Meta(Name("description"), Content(desc)),
+			Meta(Name("keywords"), Content(keywords)),
 			Meta(Name("robots"), Content("index, follow")),
 			Meta(HttpEquiv("Content-Type"), Content("text/html; charset=utf-8")),
 			Meta(HttpEquiv("language"), Content("English")),
@@ -33,21 +49,20 @@ func Layout(ctx *pages.LayoutContext) I {
 
 			Meta(Property("og:type"), Content("website")),
 			Meta(Property("og:url"), Content("https://ui.canpacis.com")),
-			Meta(Property("og:title"), Content(i18n.Text("title").String(ctx))),
-			Meta(Property("og:description"), Content(i18n.Text("desc").String(ctx))),
-			Meta(Property("og:image"), Content("/public/banner.webp")),
+			Meta(Property("og:title"), Content(title)),
+			Meta(Property("og:description"), Content(desc)),
+			Meta(Property("og:image"), Content(pages.Asset("banner.webp"))),
 
 			Meta(Property("twitter:card"), Content("summary_large_image")),
 			Meta(Property("twitter:url"), Content("https://ui.canpacis.com")),
-			Meta(Property("twitter:title"), Content(i18n.Text("title").String(ctx))),
-			Meta(Property("twitter:description"), Content(i18n.Text("desc").String(ctx))),
-			Meta(Property("twitter:image"), Content("/public/banner.webp")),
+			Meta(Property("twitter:title"), Content(title)),
+			Meta(Property("twitter:description"), Content(desc)),
+			Meta(Property("twitter:image"), Content(pages.Asset("banner.webp"))),
 
 			fonts.Head(sans, mono),
 			ctx.Head(),
-			Link(Href("/public/main.css"), Rel("stylesheet")),
-			Link(Href("/public/favicon.webp"), Rel("icon"), Type("image/png")),
-			Title(i18n.Text("title")),
+			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
+			Title(Text(title)),
 		),
 		Body(
 			Class("flex flex-col min-h-dvh"),
@@ -55,6 +70,7 @@ func Layout(ctx *pages.LayoutContext) I {
 			AppHeader(),
 			ctx.Outlet(),
 			AppFooter(),
+			ctx.Body(),
 		),
 	)
 }
@@ -67,54 +83,6 @@ type NavLink struct {
 type NavSection struct {
 	Label Node
 	Items []NavLink
-}
-
-func getNavItems(sections []NavSection) []NavLink {
-	items := []NavLink{}
-
-	for _, section := range sections {
-		items = append(items, section.Items...)
-	}
-	return items
-}
-
-func getCurrentItem(ctx *pages.LayoutContext, items []NavLink) *NavLink {
-	path := ctx.Request().URL.Path
-
-	idx := slices.IndexFunc(items, func(item NavLink) bool {
-		return item.Href == path
-	})
-	if idx < 0 {
-		return nil
-	}
-	return &items[idx]
-}
-
-func getNextItem(ctx *pages.LayoutContext, items []NavLink) *NavLink {
-	path := ctx.Request().URL.Path
-	idx := slices.IndexFunc(items, func(item NavLink) bool {
-		return item.Href == path
-	})
-	if idx < 0 {
-		return nil
-	}
-	if idx >= len(items)-1 {
-		return nil
-	}
-
-	return &items[idx+1]
-}
-
-func getPrevItem(ctx *pages.LayoutContext, items []NavLink) *NavLink {
-	path := ctx.Request().URL.Path
-	idx := slices.IndexFunc(items, func(item NavLink) bool {
-		return item.Href == path
-	})
-	if idx <= 0 {
-		return nil
-	}
-
-	return &items[idx-1]
 }
 
 func getNavSections() []NavSection {
@@ -202,53 +170,6 @@ func Navigation(sections []NavSection, current *NavLink) Node {
 	})
 }
 
-func DocLayout(ctx *pages.LayoutContext) I {
-	sections := getNavSections()
-	items := getNavItems(sections)
-	current := getCurrentItem(ctx, items)
-	prev := getPrevItem(ctx, items)
-	next := getNextItem(ctx, items)
-
-	return Main(
-		Class("container flex flex-1 items-start gap-4"),
-
-		Aside(
-			Class("hidden flex-col gap-2 border-r border-dashed py-4 pr-2 sticky overflow-auto top-[var(--header-height)] h-[calc(100dvh-var(--header-height)-var(--footer-height))] min-w-none lg:flex lg:min-w-[240px]"),
-
-			Navigation(sections, current),
-		),
-		Section(
-			Class("py-8 flex-1 w-full ml-0 lg:ml-4 xl:ml-8"),
-
-			IfFn(current != nil, func() Renderer {
-				return Breadcrumb(
-					Class("mb-4"),
-
-					BreadcrumbItem(Text("Docs")),
-					BreadcrumbSeperator(),
-					BreadcrumbItem(current.Label),
-				)
-			}),
-			ctx.Outlet(),
-			Div(
-				Class("flex gap-8 mb-[var(--footer-height)]"),
-
-				Div(
-					Class("flex mt-12 flex-3 w-full xl:w-fit"),
-
-					IfFn(prev != nil, func() Renderer {
-						return DocButton(prev.Href, false, prev.Label)
-					}),
-					IfFn(next != nil, func() Renderer {
-						return DocButton(next.Href, true, next.Label)
-					}),
-				),
-				Div(Class("flex-1 hidden xl:block")),
-			),
-		),
-	)
-}
-
 func AppHeader() Element {
 	links := []NavLink{
 		{"/docs/introduction", Text("Docs")},
@@ -284,7 +205,7 @@ func AppHeader() Element {
 				Class("flex gap-3 items-center"),
 				Href("/"),
 
-				Img(Src("/public/logo.webp"), Width("24"), Height("24"), Class("w-6"), Alt("logo")),
+				Img(Src(pages.Asset("logo.webp")), Width("24"), Height("24"), Class("w-6"), Alt("logo")),
 				P(Class("font-semibold inline"), Text("Pacis")),
 			),
 			Ul(
@@ -344,5 +265,24 @@ func AppFooter() Element {
 		Class("border-t border-dashed py-2 text-center h-[var(--footer-height)] fixed bottom-0 w-dvw bg-background"),
 
 		P(Class("text-sm text-muted-foreground"), Text("Built by "), Knot(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
+	)
+}
+
+//pacis:page label=not-found
+func NotFoundPage(ctx *pages.PageContext) I {
+	return Div(
+		Class("flex flex-col gap-6 flex-1 items-center justify-center"),
+
+		P(
+			Class("text-xl container md:text-3xl font-light text-center"),
+			Text("We couldn't find the page you were looking for"),
+		),
+		Button(
+			Replace(A),
+			Href("/"),
+			Class("!rounded-full"),
+
+			Text("Go Home"),
+		),
 	)
 }

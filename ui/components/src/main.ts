@@ -339,22 +339,3 @@ Alpine.store("colorScheme", {
 });
 
 Alpine.start();
-
-window.addEventListener("load", () => {
-  const slotItems = Array.from(document.querySelectorAll("[slot]"));
-  for (const item of slotItems) {
-    const id = item.getAttribute("slot");
-    const wrapper = document.querySelector(`#${id}`);
-    if (!wrapper) {
-      return;
-    }
-
-    const slot = wrapper.querySelector(`slot[name='${id}']`);
-    if (!slot) {
-      return;
-    }
-    slot.replaceWith(item);
-  }
-
-  hljs.highlightAll();
-});

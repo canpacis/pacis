@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"strings"
 
@@ -58,7 +57,7 @@ func fn(name string, args ...any) string {
 		case bool:
 			list = append(list, fmt.Sprintf("%t", arg))
 		default:
-			panic(fmt.Sprintf("cannot serialize function argument type %T", arg))
+			log.Fatalf("cannot serialize function argument type %T", arg)
 		}
 	}
 	return fmt.Sprintf("%s(%s)", name, strings.Join(list, ", "))
@@ -235,45 +234,23 @@ func ErrorText(err error) h.Node {
 	)
 }
 
-type AppHead struct {
-	*h.Fragment
-	prefix string
-}
-
 //go:embed dist
 var dist embed.FS
 
-// Provides the file system to serve statically
-func (h AppHead) FS() fs.FS {
-	content, err := fs.Sub(dist, "dist")
+func AppScript() []byte {
+	js, err := dist.ReadFile("dist/main.js")
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	return content
+	return js
 }
 
-/*
-	Place this component inside the head tag and use the handler to add static files to your server
-
-Usage:
-
-	head := CreateHead("/public/") // include the '/' before and after
-	http.Handle("/public/", head.Handler())
-
-	html := Html(
-		Head(head)
-		Body( ... )
-	)
-*/
-func CreateHead(prefix string) *AppHead {
-	head := &AppHead{prefix: prefix, Fragment: h.Frag(
-		h.Meta(h.Charset("UTF-8")),
-		h.Meta(h.Name("viewport"), h.Content("width=device-width, initial-scale=1.0")),
-		h.Link(h.Href(fmt.Sprintf("%smain.css", prefix)), h.Rel("stylesheet")),
-		h.Script(h.Src(fmt.Sprintf("%smain.js", prefix))),
-	)}
-
-	return head
+func AppStyle() []byte {
+	css, err := dist.ReadFile("dist/main.css")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return css
 }
 
 /*
@@ -342,7 +319,7 @@ func (a AnchorPosition) GetKey() string {
 	case VBottom:
 		key += ".bottom"
 	default:
-		panic("invalid vertical position for anchor")
+		log.Fatalln("invalid vertical position for anchor")
 	}
 
 	switch a.hpos {
@@ -353,7 +330,7 @@ func (a AnchorPosition) GetKey() string {
 	case HEnd:
 		key += "-end"
 	default:
-		panic("invalid horizontal position for anchor")
+		log.Fatalln("invalid horizontal position for anchor")
 	}
 
 	key += fmt.Sprintf(".offset.%d", a.offset)
@@ -421,7 +398,8 @@ func (o Orientation) String() string {
 	case OVertical:
 		return "vertical"
 	default:
-		panic("invalid orientation value")
+		log.Fatalln("invalid orientation value")
+		return ""
 	}
 }
 
@@ -450,10 +428,6 @@ const (
 	Clearable = ComponentAttribute(iota)
 	Open
 )
-
-func Init(handler string) h.Attribute {
-	return On("init", handler)
-}
 
 func Changed(handler string) h.Attribute {
 	return On("changed", handler)

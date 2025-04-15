@@ -22,3 +22,5 @@ dist
 .env
 
 node_modules
+www/app/static
+www/app/*.gen.go
