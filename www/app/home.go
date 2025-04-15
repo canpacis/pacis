@@ -8,6 +8,7 @@ import (
 	. "github.com/canpacis/pacis/ui/html"
 )
 
+//pacis:language default=en
 //pacis:page path=/
 func HomePage(ctx *pages.PageContext) I {
 	return Main(
