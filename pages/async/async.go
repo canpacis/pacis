@@ -31,7 +31,7 @@ func (n *StreamElement) Render(ctx context.Context, w io.Writer) error {
 	}
 
 	id := randid()
-	pctx.QueueElement()
+	dequeue := pctx.QueueElement()
 
 	go func(fn func() h.Element, id string) {
 		for !pctx.Ready() {
@@ -40,7 +40,7 @@ func (n *StreamElement) Render(ctx context.Context, w io.Writer) error {
 		element := fn()
 		element.AddAttribute(h.SlotAttr(id))
 		element.AddAttribute(c.X("show", "false"))
-		pctx.DequeueElement(element)
+		dequeue(element)
 	}(n.fn, id)
 
 	placholder := h.Slot(h.Name(id))

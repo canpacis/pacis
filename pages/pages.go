@@ -54,12 +54,11 @@ func (ctx *PageContext) Done() <-chan struct{} {
 	return ctx.r.Context().Done()
 }
 
-func (ctx *PageContext) QueueElement() {
+func (ctx *PageContext) QueueElement() func(h.Element) {
 	ctx.chsize.Add(1)
-}
-
-func (ctx *PageContext) DequeueElement(el h.Element) {
-	ctx.elemch <- el
+	return func(el h.Element) {
+		ctx.elemch <- el
+	}
 }
 
 func (ctx *PageContext) Ready() bool {
