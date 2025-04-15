@@ -3,6 +3,7 @@ package app
 import (
 	_ "embed"
 	"log"
+	"time"
 
 	"github.com/canpacis/pacis/pages"
 	fonts "github.com/canpacis/pacis/pages/font"
@@ -222,22 +223,30 @@ func AppHeader() Element {
 			Div(
 				Class("flex gap-1 items-center ml-auto"),
 
-				Button(
-					ButtonSizeIcon,
-					ButtonVariantGhost,
-					Replace(Knot),
-					Href("https://github.com/canpacis/pacis-ui"),
+				Tooltip(
+					"Github",
+					time.Second*1,
+					Button(
+						ButtonSizeIcon,
+						ButtonVariantGhost,
+						Replace(Knot),
+						Href("https://github.com/canpacis/pacis-ui"),
 
-					GithubIcon(),
-					Span(Class("sr-only"), Text("Github")),
+						GithubIcon(),
+						Span(Class("sr-only"), Text("Github")),
+					),
 				),
-				Button(
-					ButtonSizeIcon,
-					ButtonVariantGhost,
-					ToggleColorScheme,
+				Tooltip(
+					"Toggle Theme",
+					time.Second*1,
+					Button(
+						ButtonSizeIcon,
+						ButtonVariantGhost,
+						ToggleColorScheme,
 
-					icons.Sun(),
-					Span(Class("sr-only"), Text("Toggle Theme")),
+						icons.Sun(),
+						Span(Class("sr-only"), Text("Toggle Theme")),
+					),
 				),
 			),
 		),
