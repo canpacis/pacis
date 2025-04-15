@@ -22,7 +22,15 @@ func main() {
 						return errors.New("a target directory is required for compiling")
 					}
 
-					return compile(ctx.Args().First())
+					target := ctx.Args().First()
+					if err := compile(target); err != nil {
+						return err
+					}
+					gen, err := scan(target)
+					if err != nil {
+						return err
+					}
+					return generate(target, gen)
 				},
 			},
 			{
