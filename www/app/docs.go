@@ -165,7 +165,7 @@ func DocsPage(ctx *pages.PageContext) I {
 				return P(
 					If(item.Order > 2, Class("ml-4")),
 
-					A(
+					pages.A(
 						Href(item.Href),
 						Class("font-light text-muted-foreground hover:text-primary"),
 

@@ -48,7 +48,7 @@ func Locale(bundle *i18n.Bundle, defaultlang language.Tag) func(http.Handler) ht
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var locale string
-			cookie, err := r.Cookie("pacis_app_locale")
+			cookie, err := r.Cookie("pacis_locale")
 			if err == nil {
 				locale = cookie.Value
 			} else {

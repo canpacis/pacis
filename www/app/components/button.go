@@ -1,6 +1,7 @@
 package components
 
 import (
+	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
@@ -9,7 +10,7 @@ import (
 func DocButton(href string, next bool, label Node) Element {
 	return Button(
 		Href(href),
-		Replace(A),
+		Replace(pages.A),
 		Class("h-fit min-w-32 justify-start"),
 		If(next, Class("ml-auto")),
 		ButtonVariantGhost,

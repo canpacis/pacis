@@ -279,7 +279,7 @@ func BenchmarkRender(b *testing.B) {
 				Footer(
 					Class("border-t border-dashed py-2 text-center h-[var(--footer-height)] fixed bottom-0 w-dvw bg-background"),
 
-					P(Class("text-sm text-muted-foreground"), Text("Built by "), Knot(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
+					P(Class("text-sm text-muted-foreground"), Text("Built by "), A(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
 				),
 			),
 		)

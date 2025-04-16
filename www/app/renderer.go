@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
@@ -409,7 +410,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 	case parser.ParagraphNode:
 		return P(Join(children, Class(node.Attributes.Get("class")))...)
 	case parser.LinkNode:
-		return Knot(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
+		return pages.A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
 	case parser.CodeNode:
 		plate := node.Attributes.Get("plate")
 		if len(plate) == 0 {

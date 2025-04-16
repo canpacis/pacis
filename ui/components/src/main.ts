@@ -5,7 +5,12 @@ import anchor from "@alpinejs/anchor";
 import focus from "@alpinejs/focus";
 import persist from "@alpinejs/persist";
 
+// TODO: make this dynamic
 hljs.registerLanguage("go", go);
+
+document.addEventListener("DOMContentLoaded", () => {
+  hljs.highlightAll();
+});
 
 Alpine.plugin(persist);
 Alpine.plugin(focus);
@@ -370,6 +375,11 @@ const cookieStorage = {
   },
 };
 
+type ColorSchemeStore = {
+  value: "dark" | "light";
+  toggle: () => void;
+};
+
 const scheme = document.querySelector("html")!.classList.contains("light")
   ? "light"
   : "dark";
@@ -393,5 +403,96 @@ Alpine.store("colorScheme", {
     }
   },
 });
+
+type LocaleStore = {
+  value: string;
+  set: (value: string) => void;
+};
+
+const locale = document.querySelector("html")!.getAttribute("lang") || "en";
+
+Alpine.store("locale", {
+  value: Alpine.$persist(locale).as("pacis_locale").using(cookieStorage),
+
+  set(value: string) {
+    this.value = value;
+    const html = document.querySelector("html");
+    if (!html) {
+      return;
+    }
+    html.setAttribute("lang", value);
+  },
+});
+
+const prefetchStore = new Map<string, { doc: Document }>();
+
+function replaceDoc(doc: Document) {
+  const head = document.head;
+  const body = document.body;
+
+  head.innerHTML = doc.head.innerHTML;
+  body.innerHTML = doc.body.innerHTML;
+  document.title = doc.title;
+
+  Alpine.initTree(body);
+  document.dispatchEvent(new Event("DOMContentLoaded"));
+  document.dispatchEvent(new Event("load"));
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener("popstate", (e) => {
+  if (e.state && e.state.page) {
+    const data = prefetchStore.get(e.state.page);
+    if (data) {
+      replaceDoc(data.doc);
+    } else {
+      location.reload();
+    }
+  }
+});
+
+const prefetch = {
+  get: async (url: string) => {
+    if (prefetchStore.has(url)) {
+      return;
+    }
+    const resp = await fetch(url);
+
+    if (!resp.ok) {
+      console.error("Prefetch failed: ", resp);
+      return;
+    }
+    const data = await resp.text();
+    const doc = new DOMParser().parseFromString(data, "text/html");
+    prefetchStore.set(url, { doc });
+  },
+  set: async (url: string, e: MouseEvent) => {
+    const data = prefetchStore.get(url);
+    if (!data) {
+      return;
+    }
+    e.preventDefault();
+
+    window.history.pushState({ page: url }, "", url);
+    replaceDoc(data.doc);
+  },
+  clear: async (url?: string) => {
+    if (url) {
+      prefetchStore.delete(url);
+      return;
+    }
+    for (const key of prefetchStore.keys()) {
+      prefetchStore.delete(key);
+    }
+  },
+};
+
+Alpine.effect(() => {
+  (Alpine.store("colorScheme") as ColorSchemeStore).value;
+  (Alpine.store("locale") as LocaleStore).value;
+  prefetch.clear();
+});
+
+Alpine.magic("prefetch", () => prefetch);
 
 Alpine.start();

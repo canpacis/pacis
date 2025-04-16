@@ -150,7 +150,7 @@ func Navigation(sections []NavSection, current *NavLink) Node {
 				Map(heading.Items, func(item NavLink, i int) Node {
 					return Li(
 						If(!iscurr(item.Href),
-							A(
+							pages.A(
 								Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
 								Href(item.Href),
 
@@ -202,7 +202,7 @@ func AppHeader() Element {
 					Navigation(sections, nil),
 				),
 			),
-			A(
+			pages.A(
 				Class("flex gap-3 items-center"),
 				Href("/"),
 
@@ -216,7 +216,7 @@ func AppHeader() Element {
 					return Li(
 						Class("text-sm text-muted-foreground"),
 
-						A(Href(link.Href), link.Label),
+						pages.A(Href(link.Href), link.Label),
 					)
 				}),
 			),
@@ -229,7 +229,7 @@ func AppHeader() Element {
 					Button(
 						ButtonSizeIcon,
 						ButtonVariantGhost,
-						Replace(Knot),
+						Replace(pages.A),
 						Href("https://github.com/canpacis/pacis-ui"),
 
 						GithubIcon(),
@@ -273,7 +273,7 @@ func AppFooter() Element {
 	return Footer(
 		Class("border-t border-dashed py-2 text-center h-[var(--footer-height)] fixed bottom-0 w-dvw bg-background"),
 
-		P(Class("text-sm text-muted-foreground"), Text("Built by "), Knot(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
+		P(Class("text-sm text-muted-foreground"), Text("Built by "), pages.A(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
 	)
 }
 
@@ -287,7 +287,7 @@ func NotFoundPage(ctx *pages.PageContext) I {
 			Text("We couldn't find the page you were looking for"),
 		),
 		Button(
-			Replace(A),
+			Replace(pages.A),
 			Href("/"),
 			Class("!rounded-full"),
 
