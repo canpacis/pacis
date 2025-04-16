@@ -60,6 +60,9 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(Property("twitter:description"), Content(desc)),
 			Meta(Property("twitter:image"), Content(pages.Asset("banner.webp"))),
 
+			Meta(Charset("UTF-8")),
+			Meta(Name("viewport"), Content("width=device-width, initial-scale=1.0")),
+
 			fonts.Head(sans, mono),
 			ctx.Head(),
 			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
