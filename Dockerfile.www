@@ -6,8 +6,6 @@ WORKDIR /app
 # Copy the source code
 COPY . .
 
-ENV PATH="/usr/local/bin:${PATH}"
-
 # Install dependencies and build
 RUN pcpg i
 RUN pcpg c www
