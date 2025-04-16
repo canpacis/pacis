@@ -205,7 +205,9 @@ func stdiotailwind(src []byte) ([]byte, error) {
 	defer os.Remove(outfile.Name())
 	defer outfile.Close()
 
-	cmd := exec.Command("pcpg_tw", "-i", infile.Name(), "-o", outfile.Name(), "-m")
+	dir := getInstallPath()
+	cmd := exec.Command(path.Join(dir, "pcpg_tw"), "-i", infile.Name(), "-o", outfile.Name(), "-m")
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}

@@ -11,23 +11,38 @@ import (
 	"strings"
 )
 
-func install() error {
-	ros := runtime.GOOS
+func getOsArch() (string, string) {
+	os := runtime.GOOS
 	arch := runtime.GOARCH
 
-	switch ros {
+	switch os {
 	case "darwin":
-		ros = "macos"
+		os = "macos"
 	}
 
+	switch arch {
+	case "amd64":
+		arch = "x64"
+	}
+	return os, arch
+}
+
+func getInstallPath() string {
+	ros, _ := getOsArch()
 	var dir string
+	if ros == "windows" {
+		dir = filepath.Join(os.Getenv("PROGRAMFILES"), "pcpg")
+	} else {
+		dir = "/usr/local/bin"
+	}
+	return dir
+}
+
+func install() error {
+	ros, arch := getOsArch()
+	dir := getInstallPath()
 
 	setup := func() error {
-		if ros == "windows" {
-			dir = filepath.Join(os.Getenv("PROGRAMFILES"), "pcpg")
-		} else {
-			dir = "/usr/local/bin"
-		}
 		// Create install directory if it doesn't exist
 		os.MkdirAll(dir, 0755)
 
