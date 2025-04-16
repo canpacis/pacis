@@ -1,12 +1,15 @@
 package pages
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -32,11 +35,12 @@ func Get[T any](ctx context.Context, key string) T {
 }
 
 type PageContext struct {
-	w      http.ResponseWriter
-	r      *http.Request
-	chsize atomic.Int32
-	elemch chan h.Element
-	ready  atomic.Bool
+	w       http.ResponseWriter
+	r       *http.Request
+	chsize  atomic.Int32
+	elemch  chan h.Element
+	ready   atomic.Bool
+	timings []*ServerTiming
 }
 
 func (ctx *PageContext) Deadline() (deadline time.Time, ok bool) {
@@ -79,6 +83,10 @@ func (ctx *PageContext) NotFound() h.I {
 	ctx.w.WriteHeader(http.StatusNotFound)
 
 	return NotFoundPage(ctx)
+}
+
+func (ctx *PageContext) AddTiming(timing *ServerTiming) {
+	ctx.timings = append(ctx.timings, timing)
 }
 
 func (ctx *PageContext) Set(key string, value any) {
@@ -149,11 +157,20 @@ func Asset(src string) string {
 	return resolved
 }
 
-func render(item h.I, w http.ResponseWriter, ctx *PageContext) {
+func render(item h.I, w http.ResponseWriter, ctx *PageContext, timing *Timing) {
 	flusher := w.(http.Flusher)
+	buf := new(bytes.Buffer)
 
-	// initial render
-	item.Render(ctx, w)
+	item.Render(ctx, buf)
+	timing.Done(ctx)
+
+	timings := []string{}
+	for _, timing := range ctx.timings {
+		timings = append(timings, timing.String())
+	}
+	w.Header().Set("Server-Timing", strings.Join(timings, ","))
+
+	io.Copy(w, buf)
 	flusher.Flush()
 
 	size := int(ctx.chsize.Load())
@@ -195,6 +212,7 @@ func (HomeRoute) Path() string {
 func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
+		rt := NewTiming("render", "Document rendered")
 
 		ctx := &PageContext{w: w, r: r}
 		var renderer h.I
@@ -209,12 +227,19 @@ func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if hr.layout != nil {
-			renderer = hr.layout(&LayoutContext{PageContext: ctx, head: hr.head, body: hr.body, outlet: page(ctx)})
+			pt := NewTiming("page", "Page prepared")
+			outlet := page(ctx)
+			pt.Done(ctx)
+			lt := NewTiming("layout", "Layout prepared")
+			renderer = hr.layout(&LayoutContext{PageContext: ctx, head: hr.head, body: hr.body, outlet: outlet})
+			lt.Done(ctx)
 		} else {
+			pt := NewTiming("page", "Page prepared")
 			renderer = page(ctx)
+			pt.Done(ctx)
 		}
 
-		render(renderer, w, ctx)
+		render(renderer, w, ctx, rt)
 	})
 	for _, middleware := range hr.middlewares {
 		handler = middleware(handler)
@@ -247,16 +272,24 @@ func (pr *PageRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
+		rt := NewTiming("render", "Document rendered")
 
 		ctx := &PageContext{w: w, r: r}
 		var renderer h.I
 		if pr.layout != nil {
-			renderer = pr.layout(&LayoutContext{PageContext: ctx, head: pr.head, body: pr.body, outlet: pr.page(ctx)})
+			pt := NewTiming("page", "Page prepared")
+			outlet := pr.page(ctx)
+			pt.Done(ctx)
+			lt := NewTiming("layout", "Layout prepared")
+			renderer = pr.layout(&LayoutContext{PageContext: ctx, head: pr.head, body: pr.body, outlet: outlet})
+			lt.Done(ctx)
 		} else {
+			pt := NewTiming("page", "Page prepared")
 			renderer = pr.page(ctx)
+			pt.Done(ctx)
 		}
 
-		render(renderer, w, ctx)
+		render(renderer, w, ctx, rt)
 	})
 	for _, middleware := range pr.middlewares {
 		handler = middleware(handler)
