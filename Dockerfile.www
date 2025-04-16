@@ -11,7 +11,7 @@ RUN /usr/local/bin/pcpg i
 RUN /usr/local/bin/pcpg c www
 RUN go build -o pacis-www ./www
 
-ENV PATH="/app/bin:${PATH}"
+ENV PATH="/usr/local/bin:${PATH}"
 
 EXPOSE 8080
 
