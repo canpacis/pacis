@@ -1,19 +1,24 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 tasks:
-  build-light:
+  build-ui-assets:
     cmds:
       - npx @tailwindcss/cli -i ./ui/components/src/main.css -o ./ui/components/dist/main.css
       - esbuild ui/components/src/main.ts --bundle --outfile=./ui/components/dist/main.js --minify --sourcemap
-  build-ui:
+  build-ui-icons:
     cmds:
       - go generate ui/icons/icon.go
-      - task build-light
-  build-docs-docker:
+  build-ui:
     cmds:
-      - docker build -t canpacis/pacis-docs .
-  build-docs-nixpacks:
+      - task build-ui-icons
+      - task build-ui-assets
+  build-base-docker:
     cmds:
-      - nixpacks build . --name pacis-docs
+      - docker build -t canpacis/pacis -f Dockerfile.base .
+      - docker push canpacis/pacis
+  build-www-docker:
+    cmds:
+      - docker build -t canpacis/pacis-www -f Dockerfile.www .
+      - docker push canpacis/pacis-www
