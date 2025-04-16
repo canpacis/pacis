@@ -6,12 +6,12 @@ WORKDIR /app
 # Copy the source code
 COPY . .
 
-# Install dependencies and build
-RUN /usr/local/bin/pcpg i
-RUN /usr/local/bin/pcpg c www
-RUN go build -o pacis-www ./www
-
 ENV PATH="/usr/local/bin:${PATH}"
+
+# Install dependencies and build
+RUN pcpg i
+RUN pcpg c www
+RUN go build -o pacis-www ./www
 
 EXPOSE 8080
 
