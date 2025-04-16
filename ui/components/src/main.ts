@@ -572,7 +572,9 @@ const prefetch = {
   },
   load: async (url: string, e?: MouseEvent) => {
     const data = prefetchStore.get(url);
-    if (!data) {
+    // If no data is available, or if the meta key is pressed, do nothing
+    // and let the default behavior of the link take over.
+    if (!data || e?.metaKey) {
       return;
     }
     e?.preventDefault();
