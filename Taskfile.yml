@@ -16,7 +16,7 @@ tasks:
       - task build-ui-assets
   build-base-docker:
     cmds:
-      - docker build -t canpacis/pacis -f Dockerfile.base .
+      - docker build -t canpacis/pacis:0.0.1 -f Dockerfile.base .
       - docker push canpacis/pacis
   build-www-docker:
     cmds:

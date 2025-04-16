@@ -1,4 +1,4 @@
-FROM canpacis/pacis
+FROM canpacis/pacis:0.0.1
 
 # Set working directory
 WORKDIR /app
