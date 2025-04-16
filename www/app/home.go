@@ -32,6 +32,7 @@ func HomePage(ctx *pages.PageContext) I {
 				Class("mt-8 flex gap-2"),
 
 				Button(
+					pages.Eager,
 					Replace(pages.A),
 					Href("/docs/introduction"),
 					Class("!rounded-full"),
@@ -42,6 +43,7 @@ func HomePage(ctx *pages.PageContext) I {
 				Button(
 					ButtonSizeLg,
 					ButtonVariantGhost,
+					pages.Eager,
 					Replace(pages.A),
 					Class("!rounded-full"),
 					Href("/docs/components"),

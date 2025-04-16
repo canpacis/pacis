@@ -206,6 +206,7 @@ func AppHeader() Element {
 				),
 			),
 			pages.A(
+				pages.Eager,
 				Class("flex gap-3 items-center"),
 				Href("/"),
 
@@ -291,6 +292,7 @@ func NotFoundPage(ctx *pages.PageContext) I {
 		),
 		Button(
 			Replace(pages.A),
+			pages.Eager,
 			Href("/"),
 			Class("!rounded-full"),
 

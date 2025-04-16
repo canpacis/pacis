@@ -42,14 +42,22 @@ func (l *Link) Render(ctx context.Context, w io.Writer) error {
 		return l.Element.Render(ctx, w)
 	}
 
-	l.Element.AddAttribute(c.On("mouseenter", fmt.Sprintf("$prefetch.get('%s')", href)))
-	l.Element.AddAttribute(c.On("click", fmt.Sprintf("$prefetch.set('%s', $event)", href)))
+	l.Element.AddAttribute(c.On("mouseenter", fmt.Sprintf("$prefetch.queue('%s')", href)))
+	l.Element.AddAttribute(c.On("click", fmt.Sprintf("$prefetch.load('%s', $event)", href)))
+
+	_, eager := l.Element.GetAttribute("eager")
+	if eager {
+		l.Element.RemoveAttribute("eager")
+		l.Element.AddAttribute(c.X("intersect", fmt.Sprintf("$prefetch.queue('%s')", href)))
+	}
 	return l.Element.Render(ctx, w)
 }
 
 func (*Link) NodeType() h.NodeType {
 	return h.NodeElement
 }
+
+var Eager = h.Attr("eager", true)
 
 func A(props ...h.I) h.Element {
 	return &Link{Element: h.A(props...)}

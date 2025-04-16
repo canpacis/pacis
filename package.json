@@ -2,11 +2,13 @@
   "dependencies": {
     "@alpinejs/anchor": "^3.14.9",
     "@alpinejs/focus": "^3.14.9",
+    "@alpinejs/intersect": "^3.14.9",
     "@alpinejs/persist": "^3.14.9",
     "@tailwindcss/cli": "^4.0.17",
     "@types/alpinejs": "^3.13.11",
     "@types/alpinejs__anchor": "^3.13.1",
     "@types/alpinejs__focus": "^3.13.4",
+    "@types/alpinejs__intersect": "^3.13.4",
     "@types/alpinejs__persist": "^3.13.4",
     "alpinejs": "^3.14.9",
     "esbuild": "^0.25.2",

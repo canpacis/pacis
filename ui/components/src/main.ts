@@ -4,6 +4,7 @@ import Alpine from "alpinejs";
 import anchor from "@alpinejs/anchor";
 import focus from "@alpinejs/focus";
 import persist from "@alpinejs/persist";
+import intersect from "@alpinejs/intersect";
 
 // TODO: make this dynamic
 hljs.registerLanguage("go", go);
@@ -15,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 Alpine.plugin(persist);
 Alpine.plugin(focus);
 Alpine.plugin(anchor);
+Alpine.plugin(intersect);
 
 declare global {
   interface Window {
@@ -375,7 +377,7 @@ const cookieStorage = {
   },
 };
 
-type ColorSchemeStore = {
+export type ColorSchemeStore = {
   value: "dark" | "light";
   toggle: () => void;
 };
@@ -404,7 +406,7 @@ Alpine.store("colorScheme", {
   },
 });
 
-type LocaleStore = {
+export type LocaleStore = {
   value: string;
   set: (value: string) => void;
 };
@@ -424,6 +426,101 @@ Alpine.store("locale", {
   },
 });
 
+export type DeviceStore = {
+  isMobile: boolean;
+};
+
+Alpine.store("device", {
+  isMobile:
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    ),
+});
+
+type FetchFunction<T> = ({ signal }: { signal: AbortSignal }) => Promise<T>;
+type Resolve<T> = (value: T | PromiseLike<T>) => void;
+type Reject = (reason?: any) => void;
+
+interface QueuedFetchItem<T> {
+  fetchFn: FetchFunction<T>;
+  resolve: Resolve<T>;
+  reject: Reject;
+}
+
+class QueuedFetcher {
+  private items: QueuedFetchItem<any>[] = [];
+  private isProcessing = false;
+  private abortControllers: AbortController[] = [];
+
+  /**
+   * Queues a fetch operation.
+   * @param fetchFn A function that returns a Promise for the fetch operation.
+   * @returns A Promise that will resolve with the result of the fetch.
+   */
+  queue<T>(fetchFn: FetchFunction<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      this.items.push({ fetchFn, resolve, reject });
+      this.processQueue();
+    });
+  }
+
+  /**
+   * Processes the next item in the queue.
+   * @private
+   */
+  private async processQueue(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+    const item = this.items.shift();
+
+    if (item) {
+      const controller = new AbortController();
+      this.abortControllers.push(controller);
+      const signal = controller.signal;
+
+      try {
+        const result = await item.fetchFn({ signal });
+        item.resolve(result);
+      } catch (error: any) {
+        // Check if the error is due to an abort
+        if (error?.name === "AbortError") {
+          item.reject(error);
+        } else {
+          item.reject(error);
+        }
+      } finally {
+        // Remove the AbortController for the completed request
+        this.abortControllers = this.abortControllers.filter(
+          (c) => c !== controller
+        );
+        this.isProcessing = false;
+        this.processQueue(); // Process the next item in the queue
+      }
+    } else {
+      this.isProcessing = false; // Should not happen, but for safety
+    }
+  }
+
+  /**
+   * Aborts all currently pending fetch operations in the queue.
+   */
+  abort(): void {
+    this.abortControllers.forEach((controller) => {
+      controller.abort();
+    });
+    this.abortControllers = [];
+    this.items.forEach((item) => {
+      item.reject(new Error("Fetch aborted"));
+    });
+    this.items = [];
+    this.isProcessing = false;
+  }
+}
+
+const queuedFetcher = new QueuedFetcher();
 const prefetchStore = new Map<string, { doc: Document }>();
 
 function replaceDoc(doc: Document) {
@@ -436,42 +533,49 @@ function replaceDoc(doc: Document) {
 
   Alpine.initTree(body);
   document.dispatchEvent(new Event("DOMContentLoaded"));
-  document.dispatchEvent(new Event("load"));
   window.scrollTo(0, 0);
 }
 
-window.addEventListener("popstate", (e) => {
-  if (e.state && e.state.page) {
-    const data = prefetchStore.get(e.state.page);
-    if (data) {
-      replaceDoc(data.doc);
-    } else {
-      location.reload();
-    }
+window.addEventListener("popstate", () => {
+  const data = prefetchStore.get(window.location.pathname);
+  if (data) {
+    replaceDoc(data.doc);
+  } else {
+    location.reload();
   }
 });
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const prefetchDelay = 50;
+
 const prefetch = {
-  get: async (url: string) => {
+  queue: async (url: string) => {
     if (prefetchStore.has(url)) {
       return;
     }
-    const resp = await fetch(url);
 
-    if (!resp.ok) {
-      console.error("Prefetch failed: ", resp);
-      return;
+    const doc = await queuedFetcher.queue(async ({ signal }) => {
+      const resp = await fetch(url, { signal });
+      if (!resp.ok) {
+        console.error("Prefetch failed: ", resp);
+        return null;
+      }
+      const data = await resp.text();
+      const doc = new DOMParser().parseFromString(data, "text/html");
+      await sleep(prefetchDelay);
+      return doc;
+    });
+
+    if (doc) {
+      prefetchStore.set(url, { doc });
     }
-    const data = await resp.text();
-    const doc = new DOMParser().parseFromString(data, "text/html");
-    prefetchStore.set(url, { doc });
   },
-  set: async (url: string, e: MouseEvent) => {
+  load: async (url: string, e?: MouseEvent) => {
     const data = prefetchStore.get(url);
     if (!data) {
       return;
     }
-    e.preventDefault();
+    e?.preventDefault();
 
     window.history.pushState({ page: url }, "", url);
     replaceDoc(data.doc);

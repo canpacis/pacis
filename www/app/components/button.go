@@ -13,6 +13,7 @@ func DocButton(href string, next bool, label Node) Element {
 		Replace(pages.A),
 		Class("h-fit min-w-32 justify-start"),
 		If(next, Class("ml-auto")),
+		pages.Eager,
 		ButtonVariantGhost,
 
 		Span(
