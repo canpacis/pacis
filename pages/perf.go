@@ -37,11 +37,11 @@ func (t Timing) Done(ctx context.Context) {
 	st := &ServerTiming{Name: t.name, Description: t.desc, Duration: time.Since(t.start)}
 	pctx, ok := ctx.(*PageContext)
 	if ok {
-		pctx.AddTiming(st)
+		pctx.timings = append(pctx.timings, st)
 	} else {
 		lctx, ok := ctx.(*LayoutContext)
 		if ok {
-			lctx.AddTiming(st)
+			lctx.timings = append(lctx.timings, st)
 		}
 	}
 }

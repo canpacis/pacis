@@ -85,10 +85,6 @@ func (ctx *PageContext) NotFound() h.I {
 	return NotFoundPage(ctx)
 }
 
-func (ctx *PageContext) AddTiming(timing *ServerTiming) {
-	ctx.timings = append(ctx.timings, timing)
-}
-
 func (ctx *PageContext) Set(key string, value any) {
 	c := context.WithValue(ctx, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
 	ctx.r = ctx.r.Clone(c)
@@ -157,13 +153,46 @@ func Asset(src string) string {
 	return resolved
 }
 
-func render(item h.I, w http.ResponseWriter, ctx *PageContext, timing *Timing) {
+func render(w http.ResponseWriter, r *http.Request, layout Layout, pg Page, head, body h.I, basecheck bool) {
+	w.Header().Set("Content-Type", "text/html")
+	rt := NewTiming("render", "Document rendered")
+
+	ctx := &PageContext{w: w, r: r}
+	var renderer h.I
+	var page Page
+
+	if basecheck {
+		if r.URL.Path != "/" {
+			w.WriteHeader(http.StatusNotFound)
+			page = NotFoundPage
+		} else {
+			w.WriteHeader(http.StatusOK)
+			page = pg
+		}
+	} else {
+		page = pg
+	}
+
+	if layout != nil {
+		pt := NewTiming("page", "Page prepared")
+		outlet := page(ctx)
+		pt.Done(ctx)
+		lt := NewTiming("layout", "Layout prepared")
+		renderer = layout(&LayoutContext{PageContext: ctx, head: head, body: body, outlet: outlet})
+		lt.Done(ctx)
+	} else {
+		pt := NewTiming("page", "Page prepared")
+		renderer = page(ctx)
+		pt.Done(ctx)
+	}
+
 	flusher := w.(http.Flusher)
+
 	buf := new(bytes.Buffer)
+	renderer.Render(ctx, buf)
+	rt.Done(ctx)
 
-	item.Render(ctx, buf)
-	timing.Done(ctx)
-
+	// TODO: Make timings header opt-in
 	timings := []string{}
 	for _, timing := range ctx.timings {
 		timings = append(timings, timing.String())
@@ -185,6 +214,7 @@ func render(item h.I, w http.ResponseWriter, ctx *PageContext, timing *Timing) {
 		select {
 		case <-ctx.Done():
 			// client disconnected
+			return
 		case el := <-ctx.elemch:
 			el.Render(ctx, w)
 			flusher.Flush()
@@ -211,35 +241,7 @@ func (HomeRoute) Path() string {
 
 func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		rt := NewTiming("render", "Document rendered")
-
-		ctx := &PageContext{w: w, r: r}
-		var renderer h.I
-		var page Page
-
-		if r.URL.Path != "/" {
-			w.WriteHeader(http.StatusNotFound)
-			page = NotFoundPage
-		} else {
-			w.WriteHeader(http.StatusOK)
-			page = hr.page
-		}
-
-		if hr.layout != nil {
-			pt := NewTiming("page", "Page prepared")
-			outlet := page(ctx)
-			pt.Done(ctx)
-			lt := NewTiming("layout", "Layout prepared")
-			renderer = hr.layout(&LayoutContext{PageContext: ctx, head: hr.head, body: hr.body, outlet: outlet})
-			lt.Done(ctx)
-		} else {
-			pt := NewTiming("page", "Page prepared")
-			renderer = page(ctx)
-			pt.Done(ctx)
-		}
-
-		render(renderer, w, ctx, rt)
+		render(w, r, hr.layout, hr.page, hr.head, hr.body, true)
 	})
 	for _, middleware := range hr.middlewares {
 		handler = middleware(handler)
@@ -270,26 +272,7 @@ func (pr PageRoute) Path() string {
 
 func (pr *PageRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusOK)
-		rt := NewTiming("render", "Document rendered")
-
-		ctx := &PageContext{w: w, r: r}
-		var renderer h.I
-		if pr.layout != nil {
-			pt := NewTiming("page", "Page prepared")
-			outlet := pr.page(ctx)
-			pt.Done(ctx)
-			lt := NewTiming("layout", "Layout prepared")
-			renderer = pr.layout(&LayoutContext{PageContext: ctx, head: pr.head, body: pr.body, outlet: outlet})
-			lt.Done(ctx)
-		} else {
-			pt := NewTiming("page", "Page prepared")
-			renderer = pr.page(ctx)
-			pt.Done(ctx)
-		}
-
-		render(renderer, w, ctx, rt)
+		render(w, r, pr.layout, pr.page, pr.head, pr.body, false)
 	})
 	for _, middleware := range pr.middlewares {
 		handler = middleware(handler)
