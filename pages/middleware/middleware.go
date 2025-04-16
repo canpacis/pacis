@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -86,4 +87,15 @@ func Cache(duration time.Duration) func(http.Handler) http.Handler {
 
 func Gzip(h http.Handler) http.Handler {
 	return gziphandler.GzipHandler(h)
+}
+
+func Logger(logger *log.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				logger.Println(r.Method, r.URL.Path, r.RemoteAddr, r.UserAgent())
+			}()
+			next.ServeHTTP(w, r)
+		})
+	}
 }

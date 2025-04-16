@@ -26,7 +26,9 @@ if err != nil {
 }
 `
 
-const locale = `locale := middleware.Locale(bundle, language.English)`
+const middlewares = `locale := middleware.Locale(bundle, language.English)
+logger := pages.Logger()
+`
 
 const serve = `if mux == nil {
  	mux = http.NewServeMux()
@@ -215,7 +217,7 @@ func generate(target string, gen *generator) error {
 	})
 
 	stmt(&ast.ExprStmt{
-		X: ast.NewIdent(locale),
+		X: ast.NewIdent(middlewares),
 	})
 
 	composite := &ast.CompositeLit{

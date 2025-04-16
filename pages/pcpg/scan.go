@@ -133,8 +133,8 @@ func scan(target string, assetmap map[string]string) (*generator, error) {
 			{`pages.Asset("stream.js")`, "javascript"},
 		},
 		routes: []route{
-			home("HomePage", "Layout", "locale", "middleware.Theme", "middleware.Gzip"),
-			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "locale", "middleware.Theme", "middleware.Gzip"),
+			home("HomePage", "Layout", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Logger(logger)"),
+			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Logger(logger)"),
 			redirect("GET /docs/", "/docs/introduction", "http.StatusFound"),
 			redirect("GET /docs/components", "/docs/alert", "http.StatusFound"),
 			raw("GET /robots.txt", "robots", "text/plain; charset=utf-8", "middleware.Gzip"),

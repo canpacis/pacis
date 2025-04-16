@@ -325,15 +325,27 @@ func (rr *RawRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
+var logger *log.Logger
+
+func Logger() *log.Logger {
+	if logger == nil {
+		logger = log.New(os.Stdout, "http: ", log.LstdFlags)
+	}
+	return logger
+}
+
 func Serve(addr string, router http.Handler) {
 	server := &http.Server{
 		Addr:    addr,
 		Handler: router,
 	}
 
+	logger := Logger()
+
 	go func() {
+		logger.Println("Server is starting...")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			logger.Fatalf("Server error: %v\n", err)
 		}
 	}()
 
@@ -346,6 +358,7 @@ func Serve(addr string, router http.Handler) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		logger.Fatalf("Server forced to shutdown: %v\n", err)
 	}
+	logger.Println("Server stopped")
 }
