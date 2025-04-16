@@ -1,23 +1,22 @@
-FROM golang:1.24.1-alpine AS builder
+FROM golang:latest
 
-RUN apk add --no-cache git
-  
+# Set working directory
 WORKDIR /app
-  
+
+# Copy the source code
 COPY . .
-  
-RUN go build -o pacis-docs ./docs
 
-FROM alpine:latest
+# Install dependencies and build
+RUN go install ./pages/pcpg \
+    && mkdir -p /app/bin \
+    && cp $(go env GOPATH)/bin/pcpg /app/bin/ \
+    && /app/bin/pcpg i \
+    && cp /usr/local/bin/pcpg_tw /app/bin/ \
+    && /app/bin/pcpg c www \
+    && go build -o pacis-www ./www
 
-RUN adduser -D -g '' appuser
-
-COPY --from=builder /app/pacis-docs /usr/local/bin/pacis-docs
-COPY --from=builder /app/docs/app/markup /usr/local/bin/docs/app/markup
-
-COPY ./docs /app/docs
-
-USER appuser
+ENV PATH="/app/bin:${PATH}"
 
 EXPOSE 8080
-ENTRYPOINT ["pacis-docs"]
+
+CMD ["./pacis-www"]

@@ -1,5 +1,20 @@
+[phases.setup]
+nixPkgs = ['go']
+
 [phases.build]
-cmds = ['go build -o pacis-docs ./docs']
+workdir = '/app'
+cmds = [
+  'go install ./pages/pcpg',
+  'mkdir -p /app/bin',
+  'cp $(go env GOPATH)/bin/pcpg /app/bin/',
+  '/app/bin/pcpg i',
+  'cp /usr/local/bin/pcpg_tw /app/bin/',
+  '/app/bin/pcpg c www || (echo "Command failed with:" && cat /tmp/error.log)', 
+  'go build -o pacis-www ./www'
+]
 
 [start]
-cmd = './pacis-docs'
+cmd = './pacis-www'
+
+[env]
+PATH = '/app/bin:${PATH}'
