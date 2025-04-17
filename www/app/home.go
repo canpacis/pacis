@@ -2,6 +2,7 @@ package app
 
 import (
 	_ "embed"
+	"fmt"
 
 	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
@@ -11,6 +12,9 @@ import (
 //pacis:language default=en
 //pacis:page path=/
 func HomePage(ctx *pages.PageContext) I {
+	user := pages.Get[*User](ctx, "user")
+	fmt.Println(user)
+
 	return Main(
 		Class("container my-8 lg:my-16 flex-1 flex flex-col lg:flex-row items-start md:items-center gap-8 mt:0 lg:-mt-[var(--footer-height)]"),
 

@@ -35,6 +35,12 @@ func Get[T any](ctx context.Context, key string) T {
 	return cast
 }
 
+func SafeGet[T any](ctx context.Context, key string) (T, bool) {
+	value := ctx.Value(ctxkey(fmt.Sprintf("%s:%s", "app", key)))
+	cast, ok := value.(T)
+	return cast, ok
+}
+
 type PageContext struct {
 	w       http.ResponseWriter
 	r       *http.Request

@@ -9,6 +9,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/canpacis/pacis/pages"
+	"github.com/canpacis/pacis/pages/auth"
 	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -86,9 +87,7 @@ func Cache(duration time.Duration) func(http.Handler) http.Handler {
 	}
 }
 
-func Gzip(h http.Handler) http.Handler {
-	return gziphandler.GzipHandler(h)
-}
+var Gzip = gziphandler.GzipHandler
 
 type statusRecorder struct {
 	http.ResponseWriter
@@ -131,4 +130,26 @@ func Tracer(next http.Handler) http.Handler {
 		r = r.Clone(pages.Set(r.Context(), "start", start))
 		next.ServeHTTP(w, r)
 	})
+}
+
+type AuthHandler[T auth.User] func(*http.Request) (T, error)
+
+func Authentication[T auth.User](handler AuthHandler[T]) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, err := handler(r)
+			if err != nil {
+				reqid, ok := pages.SafeGet[uuid.UUID](r.Context(), "request_id")
+				logger := slog.With(
+					slog.String("error", err.Error()),
+				)
+				if ok {
+					logger = logger.With(slog.String("request_id", reqid.String()))
+				}
+				logger.Error("failed to run authentication handler")
+			}
+			r = r.Clone(pages.Set(r.Context(), "user", user))
+			next.ServeHTTP(w, r)
+		})
+	}
 }
