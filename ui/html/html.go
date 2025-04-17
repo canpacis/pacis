@@ -152,9 +152,11 @@ func Default(value string) Attribute  { return Attr("default", value) }
 
 var Defer = Attr("defer")
 
-func Dir(value string) Attribute            { return Attr("dir", value) }
-func Dirname(value string) Attribute        { return Attr("dirname", value) }
-func Disabled(value string) Attribute       { return Attr("disabled", value) }
+func Dir(value string) Attribute     { return Attr("dir", value) }
+func Dirname(value string) Attribute { return Attr("dirname", value) }
+
+var Disabled = Attr("disabled", "")
+
 func Download(value string) Attribute       { return Attr("download", value) }
 func Draggable(value string) Attribute      { return Attr("draggable", value) }
 func Enctype(value string) Attribute        { return Attr("enctype", value) }

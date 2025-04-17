@@ -9,9 +9,11 @@ import (
 )
 
 func main() {
+	godotenv.Load("www/.env")
 	if err := app.InitDocs(); err != nil {
 		log.Fatal(err)
 	}
-	godotenv.Load("www/.env")
+	app.InitAuth()
+
 	pages.Serve(":8080", app.Router(nil), nil)
 }

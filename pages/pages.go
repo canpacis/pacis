@@ -102,6 +102,14 @@ func (ctx *PageContext) Set(key string, value any) {
 	ctx.r = ctx.r.Clone(c)
 }
 
+func (ctx *PageContext) GetCookie(name string) (*http.Cookie, error) {
+	return ctx.r.Cookie(name)
+}
+
+func (ctx *PageContext) SetCookie(cookie *http.Cookie) {
+	http.SetCookie(ctx.w, cookie)
+}
+
 type Page func(*PageContext) h.I
 
 type LayoutContext struct {
