@@ -116,6 +116,11 @@ func AuthHandler(r *http.Request) (*User, error) {
 
 //pacis:page path=/auth/login
 func LoginPage(ctx *pages.PageContext) I {
+	user := pages.Get[*User](ctx, "user")
+	if user != nil {
+		return ctx.Redirect("/")
+	}
+
 	state := randstate()
 	url := oauthConfig.AuthCodeURL(state)
 
@@ -138,6 +143,7 @@ func LoginPage(ctx *pages.PageContext) I {
 			ButtonSizeLg,
 			Href(url),
 			Replace(A),
+			Class("!rounded-full"),
 
 			GoogleIcon(),
 			Text("Login with Google"),

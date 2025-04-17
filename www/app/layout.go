@@ -266,12 +266,20 @@ func AppHeader(user *User) Element {
 					return Div(
 						Class("ml-2"),
 
-						A(
-							Href("/auth/logout"),
+						Dropdown(
+							DropdownTrigger(
+								Span(
+									Avatar(
+										AvatarImage(Src(user.Picture)),
+										AvatarFallback(Text("MC")),
+									),
+								),
+							),
+							DropdownContent(
+								Anchor(VBottom, HEnd, 8),
 
-							Avatar(
-								AvatarImage(Src(user.Picture)),
-								AvatarFallback(Text("MC")),
+								DropdownLabel(user.Email),
+								DropdownItem(Href("/auth/logout"), Replace(A), icons.LogOut(), Text("Logout")),
 							),
 						),
 					)
