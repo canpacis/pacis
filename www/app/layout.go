@@ -70,8 +70,8 @@ func Layout(ctx *pages.LayoutContext) I {
 				os.Getenv("ENVIRONMENT") == "production",
 				Script(
 					Defer,
-					Src("https://cloud.umami.is/script.js"),
-					Data("website-id", "fd10e9f2-7748-44a9-85f4-056256c07fcd"),
+					Src("https://analytics.ui.canpacis.com/script.js"),
+					Data("website-id", "4ce94416-1fb6-4a90-b881-f2f27a9736f7"),
 				),
 			),
 			Title(Text(title)),
