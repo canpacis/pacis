@@ -35,6 +35,12 @@ func Get[T any](ctx context.Context, key string) T {
 	return cast
 }
 
+func SafeGet[T any](ctx context.Context, key string) (T, bool) {
+	value := ctx.Value(ctxkey(fmt.Sprintf("%s:%s", "app", key)))
+	cast, ok := value.(T)
+	return cast, ok
+}
+
 type PageContext struct {
 	w       http.ResponseWriter
 	r       *http.Request
@@ -94,6 +100,14 @@ func (ctx *PageContext) Logger() *slog.Logger {
 func (ctx *PageContext) Set(key string, value any) {
 	c := context.WithValue(ctx, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
 	ctx.r = ctx.r.Clone(c)
+}
+
+func (ctx *PageContext) GetCookie(name string) (*http.Cookie, error) {
+	return ctx.r.Cookie(name)
+}
+
+func (ctx *PageContext) SetCookie(cookie *http.Cookie) {
+	http.SetCookie(ctx.w, cookie)
 }
 
 type Page func(*PageContext) h.I

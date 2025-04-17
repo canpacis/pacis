@@ -15,10 +15,12 @@ import (
 type directivekind string
 
 const (
-	layoutdir   = directivekind("layout")
-	pagedir     = directivekind("page")
-	redirectdir = directivekind("redirect")
-	languagedir = directivekind("language")
+	layoutdir         = directivekind("layout")
+	pagedir           = directivekind("page")
+	redirectdir       = directivekind("redirect")
+	languagedir       = directivekind("language")
+	authenticationdir = directivekind("authentication")
+	middlewaredir     = directivekind("middleware")
 )
 
 type directive struct {
@@ -45,6 +47,10 @@ func parsedirective(src string) (*directive, error) {
 		dir.kind = redirectdir
 	case string(languagedir):
 		dir.kind = languagedir
+	case string(authenticationdir):
+		dir.kind = authenticationdir
+	case string(middlewaredir):
+		dir.kind = middlewaredir
 	default:
 		return nil, fmt.Errorf("invalid pacis directive kind %s", parts[0])
 	}
@@ -134,8 +140,11 @@ func scan(target string, assetmap map[string]string) (*generator, error) {
 			{`pages.Asset("stream.js")`, "javascript"},
 		},
 		routes: []route{
-			home("HomePage", "Layout", "middleware.Logger", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
-			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "middleware.Logger", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			home("HomePage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			page("GET /auth/login", "LoginPage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			page("GET /auth/logout", "LogoutPage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			page("GET /auth/callback", "AuthCallbackPage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
 			redirect("GET /docs/", "/docs/introduction", "http.StatusFound", "middleware.Logger", "middleware.Tracer"),
 			redirect("GET /docs/components", "/docs/alert", "http.StatusFound", "middleware.Logger", "middleware.Tracer"),
 			raw("GET /robots.txt", "robots", "text/plain; charset=utf-8", "middleware.Logger", "middleware.Gzip"),

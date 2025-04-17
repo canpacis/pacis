@@ -26,7 +26,8 @@ if err != nil {
 }
 `
 
-const middlewares = `locale := middleware.Locale(bundle, language.English)`
+const middlewares = `locale := middleware.Locale(bundle, language.English)
+auth := middleware.Authentication(AuthHandler)`
 
 const serve = `if mux == nil {
  	mux = http.NewServeMux()
