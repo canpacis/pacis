@@ -45,13 +45,34 @@ func DropdownContent(props ...h.I) h.Element {
 }
 
 func DropdownItem(value h.Attribute, props ...h.I) h.Node {
-	return h.Btn(
-		Join(
-			props,
-			CloseDropdown(readattr(value)),
-			h.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
-		)...,
+	props = Join(
+		props,
+		h.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
 	)
+
+	if value.GetKey() != "href" {
+		props = append(props, CloseDropdown(readattr(value)))
+	} else {
+		props = append(props, value)
+	}
+
+	el := h.Btn(props...)
+
+	attr, ok := el.GetAttribute("replace")
+	if ok {
+		el := attr.(*Replacer).element(props...)
+		el.RemoveAttribute("replace")
+		return el
+	}
+	return el
+}
+
+func DropdownSeperator() h.Element {
+	return h.Span(h.Class("-mx-1 my-1 h-px bg-muted block"))
+}
+
+func DropdownLabel(label string, props ...h.I) h.Element {
+	return h.Span(Join(props, h.Class("px-2 py-1.5 text-xs font-semibold text-muted-foreground"), h.Text(label))...)
 }
 
 func OpenDropdownOn(event string) h.Attribute {
