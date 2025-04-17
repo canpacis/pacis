@@ -11,6 +11,8 @@ RUN pcpg i
 RUN pcpg c www
 RUN go build -o pacis-www ./www
 
+ENV ENVIRONMENT="production"
+
 EXPOSE 8080
 
 CMD ["./pacis-www"]

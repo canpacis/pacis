@@ -2,6 +2,7 @@ package app
 
 import (
 	_ "embed"
+	"os"
 	"time"
 
 	"github.com/canpacis/pacis/pages"
@@ -65,6 +66,14 @@ func Layout(ctx *pages.LayoutContext) I {
 			fonts.Head(sans, mono),
 			ctx.Head(),
 			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
+			If(
+				os.Getenv("ENVIRONMENT") == "production",
+				Script(
+					Defer,
+					Src("https://cloud.umami.is/script.js"),
+					Data("website-id", "fd10e9f2-7748-44a9-85f4-056256c07fcd"),
+				),
+			),
 			Title(Text(title)),
 		),
 		Body(
