@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -13,11 +14,13 @@ import (
 	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
 
 var (
+	cachedb     *redis.Client
 	oauthConfig *oauth2.Config
 )
 
@@ -29,6 +32,13 @@ func InitAuth() {
 		Scopes:       []string{"email", "profile"},
 		Endpoint:     google.Endpoint,
 	}
+
+	cachedb = redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("RedisAddress"),
+		Username: os.Getenv("RedisUsername"),
+		Password: os.Getenv("RedisPassword"),
+		DB:       0,
+	})
 }
 
 func randstate() string {
@@ -48,8 +58,23 @@ func (u User) ID() string {
 	return u.UserID
 }
 
+func (u *User) MarshalBinary() ([]byte, error) {
+	return json.Marshal(u)
+}
+
+func (u *User) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, u)
+}
+
 //pacis:authentication
 func AuthHandler(r *http.Request) (*User, error) {
+	if oauthConfig == nil {
+		return nil, errors.New("no oauth2 config")
+	}
+	if cachedb == nil {
+		return nil, errors.New("no cachedb")
+	}
+
 	cookie, err := r.Cookie("auth_token")
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
@@ -59,7 +84,13 @@ func AuthHandler(r *http.Request) (*User, error) {
 	}
 
 	client := oauthConfig.Client(r.Context(), &oauth2.Token{AccessToken: cookie.Value})
-	// TODO: Potentially cache this response
+
+	user := new(User)
+	err = cachedb.Get(r.Context(), cookie.Value).Scan(user)
+	if err == nil {
+		return user, nil
+	}
+
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
 		return nil, err
@@ -71,9 +102,13 @@ func AuthHandler(r *http.Request) (*User, error) {
 		return nil, err
 	}
 
-	user := new(User)
 	if err := json.Unmarshal(data, user); err != nil {
 		return nil, err
+	}
+
+	err = cachedb.Set(r.Context(), cookie.Value, user, time.Hour).Err()
+	if err != nil {
+		slog.Error("failed to cache user data", "error", err)
 	}
 
 	return user, nil
