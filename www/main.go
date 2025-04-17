@@ -12,9 +12,6 @@ func main() {
 	if err := app.InitDocs(); err != nil {
 		log.Fatal(err)
 	}
-	err := godotenv.Load("www/.env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	godotenv.Load("www/.env")
 	pages.Serve(":8080", app.Router(nil), nil)
 }
