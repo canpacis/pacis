@@ -5,13 +5,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/canpacis/pacis/pages"
-	"github.com/canpacis/pacis/pages/async"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"golang.org/x/oauth2"
@@ -82,22 +81,32 @@ func AuthHandler(r *http.Request) (*User, error) {
 
 //pacis:page path=/auth/login
 func LoginPage(ctx *pages.PageContext) I {
+	state := randstate()
+	url := oauthConfig.AuthCodeURL(state)
+
+	ctx.SetCookie(&http.Cookie{
+		Name:     "auth_state",
+		Value:    state,
+		Path:     "/auth",
+		Secure:   true,
+		HttpOnly: true,
+		// Give the state cookie 5 minutes to expire
+		Expires:  time.Now().Add(time.Minute * 5),
+		SameSite: http.SameSiteNoneMode,
+	})
+
 	return Div(
 		Class("container flex-1 flex items-center justify-center flex-col gap-4"),
 
 		H1(Class("text-3xl font-semibold"), Text("Welcome to Pacis")),
-		async.Element(func() Element {
-			url := oauthConfig.AuthCodeURL(randstate())
+		Button(
+			ButtonSizeLg,
+			Href(url),
+			Replace(A),
 
-			return Button(
-				ButtonSizeLg,
-				Href(url),
-				Replace(A),
-
-				GoogleIcon(),
-				Text("Login with Google"),
-			)
-		}, P(Disabled, Text("Login with Google"))),
+			GoogleIcon(),
+			Text("Login with Google"),
+		),
 	)
 }
 
@@ -110,7 +119,7 @@ func LogoutPage(ctx *pages.PageContext) I {
 		Path:     "/",
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteNoneMode,
 		MaxAge:   -1,
 	})
 	return ctx.Redirect("/")
@@ -121,13 +130,18 @@ func AuthCallbackPage(ctx *pages.PageContext) I {
 	r := ctx.Request()
 	state := r.FormValue("state")
 
-	// TODO: check state
-	fmt.Println(state)
+	cookie, err := ctx.GetCookie("auth_state")
+	if err != nil {
+		return ctx.Redirect("/?error=invalid_state")
+	}
+	if state != cookie.Value {
+		return ctx.Redirect("/?error=invalid_state")
+	}
 
 	code := r.FormValue("code")
 	token, err := oauthConfig.Exchange(ctx, code)
 	if err != nil {
-		return ctx.Redirect("/")
+		return ctx.Redirect("/?error=exchange_fail")
 	}
 
 	ctx.SetCookie(&http.Cookie{
