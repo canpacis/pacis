@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"maps"
 	"os"
 	"path"
 	"strings"
@@ -133,18 +134,16 @@ func scan(target string, assetmap map[string]string) (*generator, error) {
 			{`pages.Asset("stream.js")`, "javascript"},
 		},
 		routes: []route{
-			home("HomePage", "Layout", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Logger(logger)"),
-			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Logger(logger)"),
-			redirect("GET /docs/", "/docs/introduction", "http.StatusFound"),
-			redirect("GET /docs/components", "/docs/alert", "http.StatusFound"),
-			raw("GET /robots.txt", "robots", "text/plain; charset=utf-8", "middleware.Gzip"),
-			raw("GET /sitemap.xml", "sitemap", "application/xml", "middleware.Gzip"),
+			home("HomePage", "Layout", "middleware.Logger", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "middleware.Logger", "locale", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			redirect("GET /docs/", "/docs/introduction", "http.StatusFound", "middleware.Logger", "middleware.Tracer"),
+			redirect("GET /docs/components", "/docs/alert", "http.StatusFound", "middleware.Logger", "middleware.Tracer"),
+			raw("GET /robots.txt", "robots", "text/plain; charset=utf-8", "middleware.Logger", "middleware.Gzip"),
+			raw("GET /sitemap.xml", "sitemap", "application/xml", "middleware.Logger", "middleware.Gzip"),
 		},
 	}
 
-	for key, value := range assetmap {
-		gen.assets[key] = value
-	}
+	maps.Copy(gen.assets, assetmap)
 
 	for _, file := range pkg.Files {
 		_, err := scanfile(file.Decls)

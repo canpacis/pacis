@@ -134,7 +134,11 @@ func InitDocs() error {
 		}
 		ast := parser.BuildDjotAst(src)
 		nodes := []I{Class("flex-3")}
-		nodes = append(nodes, RenderMarkup(ast[0], slug))
+		markup, err := RenderMarkup(ast[0], slug)
+		if err != nil {
+			return err
+		}
+		nodes = append(nodes, markup)
 		headings := ExtractTitles(ast[0])
 
 		docs[slug] = &docitem{nodes, headings}

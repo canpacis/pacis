@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -41,6 +42,7 @@ type PageContext struct {
 	elemch  chan h.Element
 	ready   atomic.Bool
 	timings []*ServerTiming
+	logger  *slog.Logger
 }
 
 func (ctx *PageContext) Deadline() (deadline time.Time, ok bool) {
@@ -83,6 +85,10 @@ func (ctx *PageContext) NotFound() h.I {
 	ctx.w.WriteHeader(http.StatusNotFound)
 
 	return NotFoundPage(ctx)
+}
+
+func (ctx *PageContext) Logger() *slog.Logger {
+	return ctx.logger
 }
 
 func (ctx *PageContext) Set(key string, value any) {
@@ -157,7 +163,7 @@ func render(w http.ResponseWriter, r *http.Request, layout Layout, pg Page, head
 	w.Header().Set("Content-Type", "text/html")
 	rt := NewTiming("render", "Document rendered")
 
-	ctx := &PageContext{w: w, r: r}
+	ctx := &PageContext{w: w, r: r, logger: slog.Default()}
 	var renderer h.I
 	var page Page
 
@@ -281,13 +287,14 @@ func (pr *PageRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type RedirectRoute struct {
-	path string
-	To   string
-	Code int
+	path        string
+	to          string
+	code        int
+	middlewares []func(http.Handler) http.Handler
 }
 
-func NewRedirectRoute(path, to string, code int) *RedirectRoute {
-	return &RedirectRoute{path: path, To: to, Code: code}
+func NewRedirectRoute(path, to string, code int, middlewares ...func(http.Handler) http.Handler) *RedirectRoute {
+	return &RedirectRoute{path: path, to: to, code: code, middlewares: middlewares}
 }
 
 func (rr RedirectRoute) Path() string {
@@ -295,7 +302,13 @@ func (rr RedirectRoute) Path() string {
 }
 
 func (rr *RedirectRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, rr.To, rr.Code)
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, rr.to, rr.code)
+	})
+	for _, middleware := range rr.middlewares {
+		handler = middleware(handler)
+	}
+	handler.ServeHTTP(w, r)
 }
 
 type RawRoute struct {
@@ -325,27 +338,24 @@ func (rr *RawRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-var logger *log.Logger
-
-func Logger() *log.Logger {
-	if logger == nil {
-		logger = log.New(os.Stdout, "http: ", log.LstdFlags)
-	}
-	return logger
-}
-
-func Serve(addr string, router http.Handler) {
+func Serve(addr string, router http.Handler, logger *slog.Logger) {
 	server := &http.Server{
 		Addr:    addr,
 		Handler: router,
 	}
 
-	logger := Logger()
+	if logger == nil {
+		opts := &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}
+		logger = slog.New(slog.NewTextHandler(os.Stdout, opts))
+	}
+	slog.SetDefault(logger)
 
 	go func() {
-		logger.Println("Server is starting...")
+		logger.Debug("Server is starting...")
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatalf("Server error: %v\n", err)
+			logger.Error("Server error", "error", err)
 		}
 	}()
 
@@ -358,7 +368,7 @@ func Serve(addr string, router http.Handler) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		logger.Fatalf("Server forced to shutdown: %v\n", err)
+		logger.Error("Server forced to shutdown", "error", err)
 	}
-	logger.Println("Server stopped")
+	logger.Debug("Server stopped")
 }

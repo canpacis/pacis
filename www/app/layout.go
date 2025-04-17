@@ -2,7 +2,6 @@ package app
 
 import (
 	_ "embed"
-	"log"
 	"time"
 
 	"github.com/canpacis/pacis/pages"
@@ -28,7 +27,7 @@ var sitemap []byte
 func Layout(ctx *pages.LayoutContext) I {
 	locale, err := i18n.Locale(ctx)
 	if err != nil {
-		log.Fatal(err)
+		ctx.Logger().Error("failed to get locale", "error", err)
 	}
 
 	title := i18n.Text("title").String(ctx)

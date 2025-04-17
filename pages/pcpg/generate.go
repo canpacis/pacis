@@ -26,9 +26,7 @@ if err != nil {
 }
 `
 
-const middlewares = `locale := middleware.Locale(bundle, language.English)
-logger := pages.Logger()
-`
+const middlewares = `locale := middleware.Locale(bundle, language.English)`
 
 const serve = `if mux == nil {
  	mux = http.NewServeMux()
@@ -72,8 +70,8 @@ func page(path, page, layout string, middlewares ...string) route {
 	return route{path: path, page: page, layout: layout, middlewares: middlewares}
 }
 
-func redirect(path, to, code string) route {
-	return route{redirect: true, path: path, to: to, code: code}
+func redirect(path, to, code string, middlewares ...string) route {
+	return route{redirect: true, path: path, to: to, code: code, middlewares: middlewares}
 }
 
 func raw(path, content, typ string, middlewares ...string) route {
@@ -230,7 +228,7 @@ func generate(target string, gen *generator) error {
 			expr = ast.NewIdent(fmt.Sprintf(`pages.NewHomeRoute(%s, %s, head, body, %s)`, route.page, route.layout, strings.Join(route.middlewares, ", ")))
 		} else {
 			if route.redirect {
-				expr = ast.NewIdent(fmt.Sprintf(`pages.NewRedirectRoute("%s", "%s", %s)`, route.path, route.to, route.code))
+				expr = ast.NewIdent(fmt.Sprintf(`pages.NewRedirectRoute("%s", "%s", %s, %s)`, route.path, route.to, route.code, strings.Join(route.middlewares, ", ")))
 			} else {
 				if route.raw {
 					expr = ast.NewIdent(fmt.Sprintf(`pages.NewRawRoute("%s", "%s", %s, %s)`, route.path, route.typ, route.content, strings.Join(route.middlewares, ", ")))

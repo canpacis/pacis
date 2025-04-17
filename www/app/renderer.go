@@ -1,8 +1,8 @@
 package app
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/canpacis/pacis/pages"
@@ -386,11 +386,15 @@ func Preview(code []byte, value string, preview Node) Node {
 	)
 }
 
-func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
+func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) (Node, error) {
 	children := []I{}
 
 	for _, child := range node.Children {
-		children = append(children, RenderMarkup(child, name))
+		childnode, err := RenderMarkup(child, name)
+		if err != nil {
+			return nil, err
+		}
+		children = append(children, childnode)
 	}
 
 	switch node.Type {
@@ -402,46 +406,46 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 				nodes = append(nodes, node)
 			}
 		}
-		return Frag(nodes...)
+		return Frag(nodes...), nil
 	case parser.SectionNode:
-		return Section(Join(children, Class("space-y-2"))...)
+		return Section(Join(children, Class("space-y-2"))...), nil
 	case parser.TextNode:
-		return Text(node.FullText())
+		return Text(node.FullText()), nil
 	case parser.ParagraphNode:
-		return P(Join(children, Class(node.Attributes.Get("class")))...)
+		return P(Join(children, Class(node.Attributes.Get("class")))...), nil
 	case parser.LinkNode:
-		return pages.A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...)
+		return pages.A(Join(children, Class("text-sky-600 hover:text-sky-700 hover:underline"), Href(node.Attributes.Get("href")))...), nil
 	case parser.CodeNode:
 		plate := node.Attributes.Get("plate")
 		if len(plate) == 0 {
-			return Code(string(node.FullText()), node.Attributes.Get("class"), Class("my-8"))
+			return Code(string(node.FullText()), node.Attributes.Get("class"), Class("my-8")), nil
 		}
 		idx, err := strconv.Atoi(plate)
 		if err != nil {
-			log.Fatalln(err)
+			return nil, err
 		}
 
 		plates, ok := plates[name]
 		if ok {
-			return Preview(node.FullText(), node.Attributes.Get("tab"), plates[idx])
+			return Preview(node.FullText(), node.Attributes.Get("tab"), plates[idx]), nil
 		}
-		return Textf("Unknown plate %d in %s", idx, name)
+		return Textf("Unknown plate %d in %s", idx, name), nil
 	case parser.StrongNode:
-		return Span(Join(children, Class("font-semibold"))...)
+		return Span(Join(children, Class("font-semibold"))...), nil
 	case parser.UnorderedListNode:
-		return Ul(Join(children, Class("list-disc list-inside ml-4 leading-relaxed"))...)
+		return Ul(Join(children, Class("list-disc list-inside ml-4 leading-relaxed"))...), nil
 	case parser.ListItemNode:
-		return Li(children...)
+		return Li(children...), nil
 	case parser.VerbatimNode:
-		return Span(Join(children, Class("px-2 py-1 mx-1 inline bg-secondary font-mono text-sm rounded-sm font-semibold leading-8"))...)
+		return Span(Join(children, Class("px-2 py-1 mx-1 inline bg-secondary font-mono text-sm rounded-sm font-semibold leading-8"))...), nil
 	case parser.TableNode:
-		return Table(TableBody(children...))
+		return Table(TableBody(children...)), nil
 	case parser.TableRowNode:
-		return TableRow(children...)
+		return TableRow(children...), nil
 	case parser.TableCellNode:
-		return TableCell(children...)
+		return TableCell(children...), nil
 	case parser.TableHeaderNode:
-		return TableHeader(children...)
+		return TableHeader(children...), nil
 	case parser.QuoteNode:
 		return Div(
 			Join(
@@ -449,7 +453,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 				icons.Info(Class("size-4 shrink-0")),
 				Class("border rounded-md p-4 text-sm flex gap-2 text-muted-foreground items-center my-4"),
 			)...,
-		)
+		), nil
 	case parser.HeadingNode:
 		level := len(node.Attributes.Get("$HeadingLevelKey"))
 		txt := node.FullText()
@@ -457,7 +461,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 
 		switch level {
 		case 1:
-			return H1(Join(children, Class("scroll-m-20 text-3xl font-bold tracking-tight"))...)
+			return H1(Join(children, Class("scroll-m-20 text-3xl font-bold tracking-tight"))...), nil
 		case 2:
 			return Div(
 				Class("my-6"),
@@ -466,14 +470,14 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) Node {
 					Join(children, ID(id), Class("scroll-m-20 text-xl font-bold tracking-tight"))...,
 				),
 				Seperator(OHorizontal),
-			)
+			), nil
 		case 3:
-			return H3(Join(children, ID(id), Class("scroll-m-20 text-lg font-bold mt-12"))...)
+			return H3(Join(children, ID(id), Class("scroll-m-20 text-lg font-bold mt-12"))...), nil
 		default:
-			return Text("unknown heading")
+			return nil, errors.New("unknown heading")
 		}
 	default:
-		return Textf("unknown node type %s", node.Type)
+		return nil, fmt.Errorf("unknown node type %s", node.Type)
 	}
 }
 
