@@ -48,10 +48,11 @@ func randstate() string {
 }
 
 type User struct {
-	UserID  string `json:"id"`
-	Email   string `json:"email"`
-	Name    string `json:"name"`
-	Picture string `json:"picture"`
+	UserID   string `json:"id,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Picture  string `json:"picture,omitempty"`
+	LoggedIn bool   `json:"logged_in"`
 }
 
 func (u User) ID() string {
@@ -106,6 +107,7 @@ func AuthHandler(r *http.Request) (*User, error) {
 		return nil, err
 	}
 
+	user.LoggedIn = true
 	err = cachedb.Set(r.Context(), cookie.Value, user, time.Hour).Err()
 	if err != nil {
 		slog.Error("failed to cache user data", "error", err)

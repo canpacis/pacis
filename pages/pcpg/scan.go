@@ -142,6 +142,7 @@ func scan(target string, assetmap map[string]string) (*generator, error) {
 		routes: []route{
 			home("HomePage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
 			page("GET /docs/{slug}", "DocsPage", "pages.WrapLayout(DocLayout, Layout)", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
+			page("GET /share/{slug}", "SharePage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
 			page("GET /auth/login", "LoginPage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
 			page("GET /auth/logout", "LogoutPage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),
 			page("GET /auth/callback", "AuthCallbackPage", "Layout", "middleware.Logger", "locale", "auth", "middleware.Theme", "middleware.Gzip", "middleware.Tracer"),

@@ -112,9 +112,9 @@ func createassets(dircfg *dirconfig) ([]asset, map[string]string, error) {
 
 		switch ext {
 		case ".ts":
-			if name != "main.ts" {
-				continue
-			}
+			// if name != "main.ts" {
+			// 	continue
+			// }
 			result := api.Build(api.BuildOptions{
 				EntryPoints: []string{path.Join(dircfg.assets, name)},
 				Bundle:      true,
@@ -126,7 +126,8 @@ func createassets(dircfg *dirconfig) ([]asset, map[string]string, error) {
 			}
 			raw := result.OutputFiles[0].Contents
 			old := name
-			name = hash(raw, "main_", ".js")
+			oldbase, _ := strings.CutSuffix(old, path.Ext(old))
+			name = hash(raw, oldbase+"_", ".js")
 			assets = append(assets, asset{name, path.Join(dircfg.static, name), raw})
 			assetmap[old] = static(name)
 		case ".css":

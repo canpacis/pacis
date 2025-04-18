@@ -234,6 +234,18 @@ func ErrorText(err error) h.Node {
 	)
 }
 
+func JSON(data any, props ...h.I) h.Element {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		panic(err)
+	}
+	return h.Script(Join(props, h.Type("application/json"), h.RawUnsafe(raw))...)
+}
+
+func Store(key string, data any) h.Element {
+	return JSON(data, h.Data("store-key", key))
+}
+
 //go:embed dist
 var dist embed.FS
 

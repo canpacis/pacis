@@ -601,4 +601,23 @@ Alpine.effect(() => {
 
 Alpine.magic("prefetch", () => prefetch);
 
+const stores = Array.from(document.querySelectorAll("[data-store-key]"));
+
+for (const store of stores) {
+  const key = store.getAttribute("data-store-key");
+  if (!key) {
+    throw new Error("Global store must have a data-store-key attribute");
+  }
+  if (
+    !(
+      store instanceof HTMLScriptElement &&
+      store.getAttribute("type") === "application/json"
+    )
+  ) {
+    throw new Error("Global store must be a JSON script tag");
+  }
+  const value = JSON.parse(store.textContent || "{}");
+  Alpine.store(key, value);
+}
+
 Alpine.start();

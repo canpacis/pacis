@@ -2,7 +2,6 @@ package app
 
 import (
 	_ "embed"
-	"os"
 	"time"
 
 	"github.com/canpacis/pacis/pages"
@@ -65,16 +64,19 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(Charset("UTF-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1.0")),
 
+			IfFn(user != nil, func() Renderer {
+				return Store("user", user)
+			}),
+			If(user == nil, Store("user", &User{})),
+
+			Script(Src(pages.Asset("before.ts"))),
 			fonts.Head(sans, mono),
 			ctx.Head(),
 			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
-			If(
-				os.Getenv("ENVIRONMENT") == "production",
-				Script(
-					Defer,
-					Src("https://analytics.ui.canpacis.com/script.js"),
-					Data("website-id", "4ce94416-1fb6-4a90-b881-f2f27a9736f7"),
-				),
+			Script(
+				Defer,
+				Src("https://analytics.ui.canpacis.com/script.js"),
+				Data("website-id", "4ce94416-1fb6-4a90-b881-f2f27a9736f7"),
 			),
 			Title(Text(title)),
 		),
