@@ -1,3 +1,6 @@
 [submodule "lucide"]
 	path = ui/lucide
 	url = https://github.com/lucide-icons/lucide
+[submodule "ui/lucide"]
+	path = ui/lucide
+	url = https://github.com/lucide-icons/lucide
