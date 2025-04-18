@@ -15,6 +15,7 @@ var (
 	ErrNotAPacisDirective    = errors.New("given value is not a pacis directive")
 	ErrInvalidDirectiveType  = errors.New("invalid directive type")
 	ErrInvalidDireciveParams = errors.New("invalid directive params")
+	ErrMissingDirectiveParam = errors.New("directive is missing a parameter")
 )
 
 const (
@@ -32,6 +33,25 @@ const (
 	LanguageDirective
 	AuthenticationDirective
 )
+
+func (dt DirectiveType) String() string {
+	switch dt {
+	case PageDirective:
+		return "page"
+	case LayoutDirective:
+		return "layout"
+	case RedirectDirective:
+		return "redirect"
+	case MiddlewareDirective:
+		return "middleware"
+	case LanguageDirective:
+		return "language"
+	case AuthenticationDirective:
+		return "authentication"
+	default:
+		return "unknown"
+	}
+}
 
 var validdirs = []string{"page", "layout", "redirect", "middleware", "language", "authentication"}
 
@@ -134,6 +154,36 @@ type DirectiveList struct {
 	Authentication []*Directive
 }
 
+func decl(pos token.Pos, file *ast.File) ast.Decl {
+	for _, dcl := range file.Decls {
+		fn, ok := dcl.(*ast.FuncDecl)
+		if !ok {
+			gen, ok := dcl.(*ast.GenDecl)
+			if !ok {
+				continue
+			}
+			if gen.Tok != token.VAR && gen.Tok != token.CONST && gen.Tok != token.FUNC {
+				continue
+			}
+			if gen.Doc == nil || len(gen.Doc.List) == 0 {
+				continue
+			}
+		} else {
+			if fn.Doc == nil || len(fn.Doc.List) == 0 {
+				continue
+			}
+		}
+		// Get start and end position of the declaration
+		start := dcl.Pos()
+		end := dcl.End()
+
+		if pos >= start && pos <= end {
+			return dcl
+		}
+	}
+	return nil
+}
+
 func ParseDir(dir string) (*DirectiveList, error) {
 	fset := token.NewFileSet()
 
@@ -154,7 +204,7 @@ func ParseDir(dir string) (*DirectiveList, error) {
 		for group := range iter.Comments() {
 			for _, comment := range group.List {
 				if strings.HasPrefix(comment.Text, dirprefix) {
-					dir, err := ParseComment(comment.Text, fset.Position(comment.Pos()), nil)
+					dir, err := ParseComment(comment.Text, fset.Position(comment.Pos()), decl(group.End()+1, file))
 					if err != nil {
 						return nil, err
 					}

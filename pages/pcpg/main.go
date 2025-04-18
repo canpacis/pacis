@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/canpacis/pacis/pages/pcpg/generator"
+	pparser "github.com/canpacis/pacis/pages/pcpg/parser"
 	"github.com/urfave/cli/v2"
 )
 
@@ -31,23 +32,34 @@ func main() {
 					}
 					absroot := path.Join(wd, root)
 
-					// list, err := parser.ParseDir(path.Join(root, "app"))
-					// if err != nil {
-					// 	return err
-					// }
-
-					assetmap, err := compile(root)
+					list, err := pparser.ParseDir(path.Join(root, "app"))
 					if err != nil {
 						return err
 					}
 
-					file, err := generator.GenerateFile(assetmap)
+					assets, err := compile(root)
+					if err != nil {
+						return err
+					}
+
+					file := &generator.File{
+						Package: "app",
+						Assets:  assets,
+					}
+					if err := generator.PopulateMisc(list, file); err != nil {
+						return err
+					}
+					if err := generator.PopulateRoutes(list, file); err != nil {
+						return err
+					}
+
+					content, err := generator.GenerateFile(file)
 					if err != nil {
 						return err
 					}
 
 					app := path.Join(absroot, "app")
-					return os.WriteFile(path.Join(app, "app.gen.go"), file, 0o644)
+					return os.WriteFile(path.Join(app, "app.gen.go"), content, 0o644)
 				},
 			},
 			{

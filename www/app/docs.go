@@ -13,9 +13,6 @@ import (
 	parser "github.com/sivukhin/godjot/djot_parser"
 )
 
-//pacis:redirect from=/docs/ to=/docs/introduction
-//pacis:redirect from=/docs/components to=/docs/alert
-
 func getNavItems(sections []NavSection) []NavLink {
 	items := []NavLink{}
 
@@ -65,6 +62,8 @@ func getPrevItem(ctx *pages.LayoutContext, items []NavLink) *NavLink {
 }
 
 //pacis:layout path=/docs
+//pacis:redirect from=/docs/ to=/docs/introduction
+//pacis:redirect from=/docs/components to=/docs/alert
 func DocLayout(ctx *pages.LayoutContext) I {
 	sections := getNavSections()
 	items := getNavItems(sections)
