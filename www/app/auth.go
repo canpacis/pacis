@@ -57,7 +57,7 @@ func Init() {
 	})
 
 	Limiter = NewRateLimiter(&CacheStorage{db: cachedb}, 20, 20, func(r *http.Request) string {
-		return "user"
+		return r.RemoteAddr
 	}).Middleware
 }
 
