@@ -118,6 +118,8 @@ func AuthHandler(r *http.Request) (*User, error) {
 
 //pacis:page path=/auth/login
 func LoginPage(ctx *pages.PageContext) I {
+	ctx.SetTitle("Login | Pacis")
+
 	user := pages.Get[*User](ctx, "user")
 	if user != nil {
 		return ctx.Redirect("/")
@@ -170,21 +172,26 @@ func LogoutPage(ctx *pages.PageContext) I {
 
 //pacis:page path=/auth/callback
 func AuthCallbackPage(ctx *pages.PageContext) I {
+	ctx.SetTitle("Redirecting")
+
 	r := ctx.Request()
 	state := r.FormValue("state")
 
 	cookie, err := ctx.GetCookie("auth_state")
 	if err != nil {
-		return ctx.Redirect("/?error=invalid_state")
+		ctx.Set("error", &AppError{InvalidAuthStateError, ""})
+		return ctx.Error(http.StatusBadRequest)
 	}
 	if state != cookie.Value {
-		return ctx.Redirect("/?error=invalid_state")
+		ctx.Set("error", &AppError{InvalidAuthStateError, ""})
+		return ctx.Error(http.StatusBadRequest)
 	}
 
 	code := r.FormValue("code")
 	token, err := oauthConfig.Exchange(ctx, code)
 	if err != nil {
-		return ctx.Redirect("/?error=exchange_fail")
+		ctx.Set("error", &AppError{AuthExchangeError, ""})
+		return ctx.Error(http.StatusBadRequest)
 	}
 
 	ctx.SetCookie(&http.Cookie{

@@ -34,6 +34,7 @@ const serve = `if mux == nil {
 }
 
 pages.SetNotFoundPage(NotFoundPage)
+pages.SetErrorPage(ErrorPage)
 
 staticfs, _ := fs.Sub(static, "static")
 yearcache := middleware.Cache(time.Hour * 24 * 365)

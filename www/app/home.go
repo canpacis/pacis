@@ -11,6 +11,8 @@ import (
 //pacis:language default=en
 //pacis:page path=/
 func HomePage(ctx *pages.PageContext) I {
+	ctx.SetTitle("Homepage | Pacis")
+
 	return Main(
 		Class("container my-8 lg:my-16 flex-1 flex flex-col lg:flex-row items-start md:items-center gap-8 mt:0 lg:-mt-[var(--footer-height)]"),
 

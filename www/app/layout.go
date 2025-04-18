@@ -271,6 +271,8 @@ func AppHeader(user *User) Element {
 						Dropdown(
 							DropdownTrigger(
 								Span(
+									Class("cursor-pointer"),
+
 									Avatar(
 										AvatarImage(Src(user.Picture)),
 										AvatarFallback(Text("MC")),
@@ -296,25 +298,5 @@ func AppFooter() Element {
 		Class("border-t border-dashed py-2 text-center h-[var(--footer-height)] fixed bottom-0 w-dvw bg-background"),
 
 		P(Class("text-sm text-muted-foreground"), Text("Built by "), pages.A(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
-	)
-}
-
-//pacis:page label=not-found
-func NotFoundPage(ctx *pages.PageContext) I {
-	return Div(
-		Class("flex flex-col gap-6 flex-1 items-center justify-center"),
-
-		P(
-			Class("text-xl container md:text-3xl font-light text-center"),
-			Text("We couldn't find the page you were looking for"),
-		),
-		Button(
-			Replace(pages.A),
-			pages.Eager,
-			Href("/"),
-			Class("!rounded-full"),
-
-			Text("Go Home"),
-		),
 	)
 }

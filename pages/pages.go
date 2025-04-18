@@ -42,6 +42,7 @@ func SafeGet[T any](ctx context.Context, key string) (T, bool) {
 }
 
 type PageContext struct {
+	context.Context
 	w       http.ResponseWriter
 	r       *http.Request
 	chsize  atomic.Int32
@@ -49,22 +50,23 @@ type PageContext struct {
 	ready   atomic.Bool
 	timings []*ServerTiming
 	logger  *slog.Logger
+	title   string
 }
 
-func (ctx *PageContext) Deadline() (deadline time.Time, ok bool) {
-	return ctx.r.Context().Deadline()
-}
+// func (ctx *PageContext) Deadline() (deadline time.Time, ok bool) {
+// 	return ctx.r.Context().Deadline()
+// }
 
-func (ctx *PageContext) Err() error {
-	return ctx.r.Context().Err()
-}
-func (ctx *PageContext) Value(key any) any {
-	return ctx.r.Context().Value(key)
-}
+// func (ctx *PageContext) Err() error {
+// 	return ctx.r.Context().Err()
+// }
+// func (ctx *PageContext) Value(key any) any {
+// 	return ctx.r.Context().Value(key)
+// }
 
-func (ctx *PageContext) Done() <-chan struct{} {
-	return ctx.r.Context().Done()
-}
+// func (ctx *PageContext) Done() <-chan struct{} {
+// 	return ctx.r.Context().Done()
+// }
 
 func (ctx *PageContext) QueueElement() func(h.Element) {
 	ctx.chsize.Add(1)
@@ -93,13 +95,20 @@ func (ctx *PageContext) NotFound() h.I {
 	return NotFoundPage(ctx)
 }
 
+func (ctx *PageContext) Error(status int) h.I {
+	ctx.w.Header().Set("Content-Type", "text/html")
+	ctx.w.WriteHeader(status)
+
+	return ErrorPage(ctx)
+}
+
 func (ctx *PageContext) Logger() *slog.Logger {
 	return ctx.logger
 }
 
 func (ctx *PageContext) Set(key string, value any) {
-	c := context.WithValue(ctx, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
-	ctx.r = ctx.r.Clone(c)
+	c := context.WithValue(ctx.Context, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
+	ctx.Context = c
 }
 
 func (ctx *PageContext) GetCookie(name string) (*http.Cookie, error) {
@@ -108,6 +117,10 @@ func (ctx *PageContext) GetCookie(name string) (*http.Cookie, error) {
 
 func (ctx *PageContext) SetCookie(cookie *http.Cookie) {
 	http.SetCookie(ctx.w, cookie)
+}
+
+func (ctx *PageContext) SetTitle(title string) {
+	ctx.title = title
 }
 
 type Page func(*PageContext) h.I
@@ -159,6 +172,14 @@ func SetNotFoundPage(page Page) {
 	NotFoundPage = page
 }
 
+var ErrorPage Page = func(pc *PageContext) h.I {
+	return h.P(h.Text("Error"))
+}
+
+func SetErrorPage(page Page) {
+	ErrorPage = page
+}
+
 var assetmap = map[string]string{}
 
 func RegisterAssets(assets map[string]string) {
@@ -177,7 +198,7 @@ func render(w http.ResponseWriter, r *http.Request, layout Layout, pg Page, head
 	w.Header().Set("Content-Type", "text/html")
 	rt := NewTiming("render", "Document rendered")
 
-	ctx := &PageContext{w: w, r: r, logger: slog.Default()}
+	ctx := &PageContext{w: w, r: r, logger: slog.Default(), Context: r.Context()}
 	var renderer h.I
 	var page Page
 
@@ -198,6 +219,21 @@ func render(w http.ResponseWriter, r *http.Request, layout Layout, pg Page, head
 		outlet := page(ctx)
 		pt.Done(ctx)
 		lt := NewTiming("layout", "Layout prepared")
+
+		if len(ctx.title) != 0 {
+			el, ok := head.(h.Element)
+			if ok {
+				el.AddNode(h.Title(h.Text(ctx.title)))
+			} else {
+				frag, ok := head.(*h.Fragment)
+				if ok {
+					head = h.Frag(frag, h.Title(h.Text(ctx.title)))
+				} else {
+					ctx.logger.Error("failed to add title to document head")
+				}
+			}
+		}
+
 		renderer = layout(&LayoutContext{PageContext: ctx, head: head, body: body, outlet: outlet})
 		lt.Done(ctx)
 	} else {

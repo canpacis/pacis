@@ -113,6 +113,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 var docsfs embed.FS
 
 type docitem struct {
+	title    string
 	nodes    []I
 	headings []*TableOfContentItem
 }
@@ -123,6 +124,10 @@ func InitDocs() error {
 	entries, err := docsfs.ReadDir("docs")
 	if err != nil {
 		return err
+	}
+
+	capitalize := func(s string) string {
+		return strings.ToUpper(string(s[0])) + string(s[1:])
 	}
 
 	for _, entry := range entries {
@@ -141,7 +146,7 @@ func InitDocs() error {
 		nodes = append(nodes, markup)
 		headings := ExtractTitles(ast[0])
 
-		docs[slug] = &docitem{nodes, headings}
+		docs[slug] = &docitem{title: capitalize(slug), nodes: nodes, headings: headings}
 	}
 	return nil
 }
@@ -152,6 +157,7 @@ func InitDocs() error {
 func DocsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	doc, ok := docs[slug]
+	ctx.SetTitle("Pacis Docs | " + doc.title)
 
 	if !ok {
 		return ctx.NotFound()
