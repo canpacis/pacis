@@ -36,20 +36,13 @@ func main() {
 					if err != nil {
 						return err
 					}
-
 					assets, err := compile(root)
 					if err != nil {
 						return err
 					}
 
-					file := &generator.File{
-						Package: "app",
-						Assets:  assets,
-					}
-					if err := generator.PopulateMisc(list, file); err != nil {
-						return err
-					}
-					if err := generator.PopulateRoutes(list, file); err != nil {
+					file, err := generator.CreateFile(list, assets)
+					if err != nil {
 						return err
 					}
 

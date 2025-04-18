@@ -130,14 +130,15 @@ type AstIter struct {
 
 func (ai *AstIter) Comments() iter.Seq[*ast.CommentGroup] {
 	return func(yield func(*ast.CommentGroup) bool) {
+		var stopped bool
 		ast.Inspect(ai.file, func(n ast.Node) bool {
-			if n == nil {
+			if stopped || n == nil {
 				return false
 			}
 			comgrp, ok := n.(*ast.CommentGroup)
 			if ok {
-				if yield(comgrp) {
-					return false
+				if !yield(comgrp) {
+					stopped = true
 				}
 			}
 			return true

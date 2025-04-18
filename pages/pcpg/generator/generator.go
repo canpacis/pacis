@@ -308,24 +308,97 @@ func cleanpath(p string) string {
 func param(name string, dir *parser.Directive) (string, error) {
 	value, ok := dir.Params[name]
 	if !ok {
-		return "", fmt.Errorf("%w: %s %s %s", parser.ErrMissingDirectiveParam, "path parameter is required for", dir.Type.String(), "directives")
+		return "", fmt.Errorf("%w: %s %s %s %s", parser.ErrMissingDirectiveParam, name, "parameter is required for", dir.Type.String(), "directives")
 	}
 	return value, nil
 }
 
-func PopulateRoutes(list *parser.DirectiveList, file *File) error {
+func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, error) {
+	file := &File{
+		Package: "app",
+		Assets:  assets,
+	}
+
+	file.Imports = []FileImport{
+		{Package: "embed"},
+		{Package: "io/fs"},
+		{Package: "net/http"},
+		{Package: "time"},
+		{Package: "github.com/canpacis/pacis/pages"},
+		{Package: "github.com/canpacis/pacis/pages/middleware"},
+	}
+
+	for _, middleware := range list.Middleware {
+		label, err := param("label", middleware)
+		lclname, lclerr := param("name", middleware)
+
+		var name string
+		fn, ok := middleware.Node.(*ast.FuncDecl)
+		if ok {
+			name = fn.Name.String()
+		} else {
+			gen, ok := middleware.Node.(*ast.GenDecl)
+			if !ok {
+				return nil, fmt.Errorf("middleware %s is incorrectly placed, place it before a varable definition or a function", lclname)
+			}
+			spec, ok := gen.Specs[0].(*ast.ValueSpec)
+			if !ok {
+				return nil, fmt.Errorf("middleware %s is incorrectly placed, place it before a varable definition or a function", lclname)
+			}
+			name = spec.Names[0].Name
+		}
+
+		if err == nil {
+			switch label {
+			case "authentication":
+				file.Middlewares = append(file.Middlewares, FileMiddleware{
+					Ident: "auth",
+					Value: fmt.Sprintf("middleware.Authentication(%s)", name),
+				})
+			default:
+				return nil, fmt.Errorf("unknown middleware label: %s", label)
+			}
+		} else {
+			if lclerr != nil {
+				return nil, err
+			}
+			file.Middlewares = append(file.Middlewares, FileMiddleware{
+				Ident: lclname,
+				Value: name,
+			})
+		}
+	}
+
+	if len(list.Language) > 0 {
+		lang := list.Language[len(list.Language)-1]
+		defaultlang, err := param("default", lang)
+		if err != nil {
+			return nil, err
+		}
+		tag, err := language.Parse(defaultlang)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", parser.ErrInvalidDireciveParams, err)
+		}
+
+		file.I18n = FileI18n{
+			FS:          "messages",
+			DefaultLang: tag.String(),
+		}
+		file.Embeds = append(file.Embeds, FileEmbed{Ident: "messages", Source: "messages"})
+	}
+
 	layoutpaths := []string{}
 	layouts := map[string]FileLayout{}
 	for _, layout := range list.Layout {
 		path, err := param("path", layout)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		path = "/" + cleanpath(path)
 
 		fn, ok := layout.Node.(*ast.FuncDecl)
 		if !ok {
-			return fmt.Errorf("layout %s is incorrectly placed, place it before a layout function", path)
+			return nil, fmt.Errorf("layout %s is incorrectly placed, place it before a layout function", path)
 		}
 
 		layoutpaths = append(layoutpaths, path)
@@ -365,11 +438,11 @@ func PopulateRoutes(list *parser.DirectiveList, file *File) error {
 	for _, redirect := range list.Redirect {
 		to, err := param("to", redirect)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		from, err := param("from", redirect)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		file.Routes = append(file.Routes, &FileRoute{
 			Type: RedirectRoute,
@@ -385,17 +458,25 @@ func PopulateRoutes(list *parser.DirectiveList, file *File) error {
 		if ok {
 			switch label {
 			case "not-found":
-				file.NotFoundPage = ""
+				fn, ok := page.Node.(*ast.FuncDecl)
+				if !ok {
+					return nil, fmt.Errorf("not-found is incorrectly placed, place it before a page function")
+				}
+				file.NotFoundPage = fn.Name.String()
 			case "error":
-				file.ErrorPage = ""
+				fn, ok := page.Node.(*ast.FuncDecl)
+				if !ok {
+					return nil, fmt.Errorf("error is incorrectly placed, place it before a page function")
+				}
+				file.ErrorPage = fn.Name.String()
 			case "robots":
 				decl := page.Node.(*ast.GenDecl)
 				spec, ok := decl.Specs[0].(*ast.ValueSpec)
 				if !ok {
-					return fmt.Errorf("robots directive is incorrectly placed, place it before a variable declaration")
+					return nil, fmt.Errorf("robots directive is incorrectly placed, place it before a variable declaration")
 				}
 				if len(spec.Names) == 0 {
-					return fmt.Errorf("robots directive needs to be put before a named variable")
+					return nil, fmt.Errorf("robots directive needs to be put before a named variable")
 				}
 
 				file.Routes = append(file.Routes, &FileRoute{
@@ -408,10 +489,10 @@ func PopulateRoutes(list *parser.DirectiveList, file *File) error {
 				decl := page.Node.(*ast.GenDecl)
 				spec, ok := decl.Specs[0].(*ast.ValueSpec)
 				if !ok {
-					return fmt.Errorf("sitemap directive is incorrectly placed, place it before a variable declaration")
+					return nil, fmt.Errorf("sitemap directive is incorrectly placed, place it before a variable declaration")
 				}
 				if len(spec.Names) == 0 {
-					return fmt.Errorf("sitemap directive needs to be put before a named variable")
+					return nil, fmt.Errorf("sitemap directive needs to be put before a named variable")
 				}
 
 				file.Routes = append(file.Routes, &FileRoute{
@@ -421,12 +502,12 @@ func PopulateRoutes(list *parser.DirectiveList, file *File) error {
 					Content:     spec.Names[0].String(),
 				})
 			default:
-				return fmt.Errorf("unknown page label: %s", label)
+				return nil, fmt.Errorf("unknown page label: %s", label)
 			}
 		} else {
 			path, err := param("path", page)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			path = "/" + cleanpath(path)
 
@@ -444,53 +525,30 @@ func PopulateRoutes(list *parser.DirectiveList, file *File) error {
 
 			fn, ok := page.Node.(*ast.FuncDecl)
 			if !ok {
-				return fmt.Errorf("page %s is incorrectly placed, place it before a page function", path)
+				return nil, fmt.Errorf("page %s is incorrectly placed, place it before a page function", path)
 			}
 
+			var typ FileRouteType = PageRoute
+			if path == "/" {
+				typ = HomeRoute
+			}
+
+			middlewarelist, _ := param("middlewares", page)
+			middlewares := strings.Split(middlewarelist, ",")
+			middlewares = slices.DeleteFunc(middlewares, func(m string) bool {
+				return len(m) == 0
+			})
+
 			file.Routes = append(file.Routes, &FileRoute{
-				Type:   PageRoute,
-				Path:   "GET " + path,
-				Page:   fn.Name.String(),
-				Layout: layout,
-				// TODO: Pull these from params
-				Middlewares: []string{"auth"},
+				Type:        typ,
+				Path:        "GET " + path,
+				Page:        fn.Name.String(),
+				Layout:      layout,
+				Middlewares: middlewares,
 			})
 			file.HasConstituents = true
 		}
 	}
 
-	return nil
-}
-
-func PopulateMisc(list *parser.DirectiveList, file *File) error {
-	file.Imports = []FileImport{
-		{Package: "embed"},
-		{Package: "io/fs"},
-		{Package: "net/http"},
-		{Package: "time"},
-		{Package: "github.com/canpacis/pacis/pages"},
-		{Package: "github.com/canpacis/pacis/pages/middleware"},
-	}
-	file.Middlewares = []FileMiddleware{
-		{Ident: "auth", Value: "middleware.Authentication(AuthHandler)"},
-	}
-
-	if len(list.Language) > 0 {
-		lang := list.Language[len(list.Language)-1]
-		defaultlang, err := param("default", lang)
-		if err != nil {
-			return err
-		}
-		tag, err := language.Parse(defaultlang)
-		if err != nil {
-			return fmt.Errorf("%w: %w", parser.ErrInvalidDireciveParams, err)
-		}
-
-		file.I18n = FileI18n{
-			FS:          "messages",
-			DefaultLang: tag.String(),
-		}
-		file.Embeds = append(file.Embeds, FileEmbed{Ident: "messages", Source: "messages"})
-	}
-	return nil
+	return file, nil
 }
