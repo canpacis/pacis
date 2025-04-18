@@ -9,7 +9,6 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/canpacis/pacis/pages"
-	"github.com/canpacis/pacis/pages/auth"
 	"github.com/google/uuid"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -132,9 +131,13 @@ func Tracer(next http.Handler) http.Handler {
 	})
 }
 
-type AuthHandler[T auth.User] func(*http.Request) (T, error)
+type User interface {
+	ID() string
+}
 
-func Authentication[T auth.User](handler AuthHandler[T]) func(http.Handler) http.Handler {
+type AuthHandler[T User] func(*http.Request) (T, error)
+
+func Authentication[T User](handler AuthHandler[T]) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			user, err := handler(r)
