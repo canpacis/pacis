@@ -15,11 +15,11 @@ import (
 var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 var mono = fonts.New("JetBrains Mono", fonts.WeightList{fonts.W100, fonts.W800}, fonts.Swap, fonts.Latin, fonts.LatinExt)
 
-//pacis:raw path=/robots.txt
+//pacis:page label=robots
 //go:embed robots.txt
 var robots []byte
 
-//pacis:raw path=/sitemap.xml
+//pacis:page label=sitemap
 //go:embed sitemap.xml
 var sitemap []byte
 

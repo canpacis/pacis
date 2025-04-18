@@ -14,6 +14,10 @@ func main() {
 		log.Fatal(err)
 	}
 	app.InitAuth()
+	router, err := app.Router(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	pages.Serve(":8080", app.Router(nil), nil)
+	pages.Serve(":8080", router, nil)
 }

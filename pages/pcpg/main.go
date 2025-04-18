@@ -4,7 +4,9 @@ import (
 	"errors"
 	"log"
 	"os"
+	"path"
 
+	"github.com/canpacis/pacis/pages/pcpg/generator"
 	"github.com/urfave/cli/v2"
 )
 
@@ -19,19 +21,33 @@ func main() {
 				Usage:   "bundle your assets and compile your go code to create a router",
 				Action: func(ctx *cli.Context) error {
 					if !ctx.Args().Present() {
-						return errors.New("a target directory is required for compiling")
+						return errors.New("a root directory is required for compiling")
 					}
 
-					target := ctx.Args().First()
-					assetmap, err := compile(target)
+					root := ctx.Args().First()
+					wd, err := os.Getwd()
 					if err != nil {
 						return err
 					}
-					gen, err := scan(target, assetmap)
+					absroot := path.Join(wd, root)
+
+					// list, err := parser.ParseDir(path.Join(root, "app"))
+					// if err != nil {
+					// 	return err
+					// }
+
+					assetmap, err := compile(root)
 					if err != nil {
 						return err
 					}
-					return generate(target, gen)
+
+					file, err := generator.GenerateFile(assetmap)
+					if err != nil {
+						return err
+					}
+
+					app := path.Join(absroot, "app")
+					return os.WriteFile(path.Join(app, "app.gen.go"), file, 0o644)
 				},
 			},
 			{

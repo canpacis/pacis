@@ -13,6 +13,9 @@ import (
 	parser "github.com/sivukhin/godjot/djot_parser"
 )
 
+//pacis:redirect from=/docs/ to=/docs/introduction
+//pacis:redirect from=/docs/components to=/docs/alert
+
 func getNavItems(sections []NavSection) []NavLink {
 	items := []NavLink{}
 
@@ -152,8 +155,6 @@ func InitDocs() error {
 }
 
 //pacis:page path=/docs/{slug}
-//pacis:redirect from=/docs/ to=/docs/introduction
-//pacis:redirect from=/docs/components to=/docs/alert
 func DocsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	doc, ok := docs[slug]
