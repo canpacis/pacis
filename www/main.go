@@ -13,7 +13,7 @@ func main() {
 	if err := app.InitDocs(); err != nil {
 		log.Fatal(err)
 	}
-	app.InitAuth()
+	app.Init()
 	router, err := app.Router(nil)
 	if err != nil {
 		log.Fatal(err)

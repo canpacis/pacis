@@ -25,7 +25,6 @@ func NotFoundPage(ctx *pages.PageContext) I {
 		),
 		Button(
 			Replace(pages.A),
-			pages.Eager,
 			Href("/"),
 			Class("!rounded-full"),
 
@@ -80,7 +79,6 @@ func ErrorPage(ctx *pages.PageContext) I {
 		),
 		Button(
 			Replace(pages.A),
-			pages.Eager,
 			Href("/"),
 			Class("!rounded-full"),
 

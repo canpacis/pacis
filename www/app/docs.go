@@ -153,7 +153,7 @@ func InitDocs() error {
 	return nil
 }
 
-//pacis:page path=/docs/{slug}
+//pacis:page path=/docs/{slug} middlewares=auth,limiter
 func DocsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	doc, ok := docs[slug]

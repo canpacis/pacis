@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -24,7 +25,22 @@ var (
 	oauthConfig *oauth2.Config
 )
 
-func InitAuth() {
+type CacheStorage struct {
+	db *redis.Client
+}
+
+func (cs *CacheStorage) Get(key string, val any) error {
+	return cs.db.Get(context.Background(), key).Scan(val)
+}
+
+func (cs *CacheStorage) Set(key string, val any) error {
+	return cs.db.Set(context.Background(), key, val, time.Hour).Err()
+}
+
+//pacis:middleware name=limiter
+var Limiter func(http.Handler) http.Handler
+
+func Init() {
 	oauthConfig = &oauth2.Config{
 		RedirectURL:  os.Getenv("OAuthCallbackURL"),
 		ClientID:     os.Getenv("GoogleOAuthClientID"),
@@ -39,6 +55,10 @@ func InitAuth() {
 		Password: os.Getenv("RedisPassword"),
 		DB:       0,
 	})
+
+	Limiter = NewRateLimiter(&CacheStorage{db: cachedb}, 20, 20, func(r *http.Request) string {
+		return "user"
+	}).Middleware
 }
 
 func randstate() string {
@@ -67,7 +87,7 @@ func (u *User) UnmarshalBinary(data []byte) error {
 	return json.Unmarshal(data, u)
 }
 
-//pacis:authentication
+//pacis:middleware label=authentication
 func AuthHandler(r *http.Request) (*User, error) {
 	if oauthConfig == nil {
 		return nil, errors.New("no oauth2 config")
@@ -116,7 +136,7 @@ func AuthHandler(r *http.Request) (*User, error) {
 	return user, nil
 }
 
-//pacis:page path=/auth/login
+//pacis:page path=/auth/login middlewares=auth,limiter
 func LoginPage(ctx *pages.PageContext) I {
 	ctx.SetTitle("Login | Pacis")
 
@@ -155,7 +175,7 @@ func LoginPage(ctx *pages.PageContext) I {
 	)
 }
 
-//pacis:page path=/auth/logout
+//pacis:page path=/auth/logout middlewares=auth,limiter
 func LogoutPage(ctx *pages.PageContext) I {
 	// Remove the cookie
 	ctx.SetCookie(&http.Cookie{
@@ -170,7 +190,7 @@ func LogoutPage(ctx *pages.PageContext) I {
 	return ctx.Redirect("/")
 }
 
-//pacis:page path=/auth/callback
+//pacis:page path=/auth/callback middlewares=auth,limiter
 func AuthCallbackPage(ctx *pages.PageContext) I {
 	ctx.SetTitle("Redirecting")
 
