@@ -7,7 +7,7 @@ import (
 	. "github.com/canpacis/pacis/ui/html"
 )
 
-//pacis:page path=/share/{slug}
+//pacis:page path=/share/{slug} middlewares=auth
 func SharePage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 
