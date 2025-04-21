@@ -43,7 +43,7 @@ func Router(mux *http.ServeMux) (*http.ServeMux, error) {
 	{{ if ne (len .NotFoundPage) 0 }}
 	pages.SetNotFoundPage({{ .NotFoundPage }})
 	{{ end }}
-	{{ if ne (len .NotFoundPage) 0 }}
+	{{ if ne (len .ErrorPage) 0 }}
 	pages.SetErrorPage({{ .ErrorPage }})
 	{{ end }}
 
@@ -242,7 +242,9 @@ func GenerateFile(file *File) ([]byte, error) {
 
 const hometempl = `pages.NewHomeRoute(
 	{{ .Page }},
-	{{ .Layout }},
+	{{ if eq .Layout nil }}
+	pages.EmptyLayout, {{ else }}
+	{{ .Layout }}, {{ end }}
 	head, body,
 	{{ range .Middlewares }}
 	{{ . }}, {{ end }}

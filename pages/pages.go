@@ -423,6 +423,6 @@ func Serve(addr string, router http.Handler, logger *slog.Logger) {
 	logger.Debug("Server stopped")
 }
 
-func EmptyLayout(*LayoutContext) h.I {
-	return h.Frag()
+func EmptyLayout(ctx *LayoutContext) h.I {
+	return ctx.Outlet()
 }
