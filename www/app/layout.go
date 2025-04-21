@@ -52,17 +52,17 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(HttpEquiv("language"), Content("English")),
 			Meta(HttpEquiv("author"), Content("canpacis")),
 
-			Meta(Property("og:type"), Content("website")),
-			Meta(Property("og:url"), Content(appurl)),
-			Meta(Property("og:title"), Content(title)),
-			Meta(Property("og:description"), Content(desc)),
-			Meta(Property("og:image"), Content(banner)),
-
 			Meta(Property("twitter:card"), Content("summary_large_image")),
 			Meta(Property("twitter:url"), Content(appurl)),
 			Meta(Property("twitter:title"), Content(title)),
 			Meta(Property("twitter:description"), Content(desc)),
 			Meta(Property("twitter:image"), Content(banner)),
+
+			Meta(Property("og:type"), Content("website")),
+			Meta(Property("og:url"), Content(appurl)),
+			Meta(Property("og:title"), Content(title)),
+			Meta(Property("og:description"), Content(desc)),
+			Meta(Property("og:image"), Content(banner)),
 
 			Meta(Charset("UTF-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1.0")),
