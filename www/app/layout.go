@@ -2,6 +2,7 @@ package app
 
 import (
 	_ "embed"
+	"os"
 	"time"
 
 	"github.com/canpacis/pacis/pages"
@@ -35,6 +36,8 @@ func Layout(ctx *pages.LayoutContext) I {
 	keywords := i18n.Text("keywords").String(ctx)
 
 	user := pages.Get[*User](ctx, "user")
+	appurl := os.Getenv("AppURL")
+	banner := appurl + pages.Asset("banner.webp")
 
 	return Html(
 		Class(pages.Get[string](ctx, "theme")),
@@ -50,16 +53,16 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(HttpEquiv("author"), Content("canpacis")),
 
 			Meta(Property("og:type"), Content("website")),
-			Meta(Property("og:url"), Content("https://ui.canpacis.com")),
+			Meta(Property("og:url"), Content(appurl)),
 			Meta(Property("og:title"), Content(title)),
 			Meta(Property("og:description"), Content(desc)),
-			Meta(Property("og:image"), Content(pages.Asset("banner.webp"))),
+			Meta(Property("og:image"), Content(banner)),
 
 			Meta(Property("twitter:card"), Content("summary_large_image")),
-			Meta(Property("twitter:url"), Content("https://ui.canpacis.com")),
+			Meta(Property("twitter:url"), Content(appurl)),
 			Meta(Property("twitter:title"), Content(title)),
 			Meta(Property("twitter:description"), Content(desc)),
-			Meta(Property("twitter:image"), Content(pages.Asset("banner.webp"))),
+			Meta(Property("twitter:image"), Content(banner)),
 
 			Meta(Charset("UTF-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1.0")),
