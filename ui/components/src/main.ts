@@ -357,7 +357,10 @@ Alpine.data("tooltip", (open = false, id = null) => ({
 }));
 
 Alpine.magic("clipboard", () => {
-  return (data: string) => navigator.clipboard.writeText(data);
+  return (data: string) => {
+    navigator.clipboard.writeText(data);
+    (Alpine.store("toast") as ToastManagerState).show("Copied to clipboard", "");
+  };
 });
 
 const cookieStorage = {
@@ -619,5 +622,147 @@ for (const store of stores) {
   const value = JSON.parse(store.textContent || "{}");
   Alpine.store(key, value);
 }
+
+Alpine.data("toast", () => ({
+  show: false,
+
+  async init() {
+    this.$dispatch("init");
+    await this.$nextTick();
+    this.show = true;
+    this.$dispatch("shown");
+  },
+}));
+
+export type ToastContent = {
+  title: string;
+  message: string;
+};
+
+export type ManagedToast = {
+  id: string;
+  content: ToastContent;
+  duration?: number;
+  createdAt: number;
+};
+
+export type ToastManagerConfig = {
+  limit: number;
+  defaultDuration?: number;
+};
+
+export interface ToastManagerState {
+  visibleToasts: ManagedToast[];
+  queuedToasts: ManagedToast[];
+  config: ToastManagerConfig;
+  readonly timers: Readonly<Record<string, number>>;
+
+  show(title: string, message: string, options?: { duration?: number }): string;
+  clear(id: string): void;
+  clearAll(): void;
+}
+
+Alpine.store("toast", {
+  visibleToasts: [] as ManagedToast[],
+  queuedToasts: [] as ManagedToast[],
+
+  config: {
+    limit: 5,
+    defaultDuration: 5000,
+  } as ToastManagerConfig,
+
+  timers: {} as Record<string, number>,
+
+  _randomId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+  },
+
+  _startDismissTimer(toast: ManagedToast): void {
+    if (toast.duration && toast.duration > 0) {
+      this._clearDismissTimer(toast.id);
+      this.timers[toast.id] = window.setTimeout(() => {
+        this.clear(toast.id);
+      }, toast.duration);
+    }
+  },
+
+  _clearDismissTimer(id: string): void {
+    if (this.timers[id] !== undefined) {
+      window.clearTimeout(this.timers[id]);
+      delete this.timers[id];
+    }
+  },
+
+  _promoteQueue(): boolean {
+    if (
+      this.visibleToasts.length < this.config.limit &&
+      this.queuedToasts.length > 0
+    ) {
+      const toastToPromote = this.queuedToasts.shift()!;
+      this.visibleToasts.push(toastToPromote);
+      this._startDismissTimer(toastToPromote);
+      return true;
+    }
+    return false;
+  },
+
+  show(
+    title: string,
+    message: string,
+    options: { duration?: number } = {}
+  ): string {
+    const id = this._randomId();
+    const duration = options?.duration ?? this.config.defaultDuration;
+
+    const newToast: ManagedToast = {
+      id,
+      content: {
+        title: title,
+        message: message,
+      },
+      duration,
+      createdAt: Date.now(),
+    };
+
+    if (this.visibleToasts.length < this.config.limit) {
+      this.visibleToasts.push(newToast);
+      this._startDismissTimer(newToast);
+    } else {
+      this.queuedToasts.push(newToast);
+    }
+    return id;
+  },
+
+  clear(id: string): void {
+    let wasVisible = false;
+    this._clearDismissTimer(id);
+
+    this.visibleToasts = this.visibleToasts.filter((toast) => {
+      if (toast.id === id) {
+        wasVisible = true;
+        return false;
+      }
+      return true;
+    });
+
+    if (!wasVisible) {
+      this.queuedToasts = this.queuedToasts.filter((toast) => toast.id !== id);
+    }
+
+    if (wasVisible) {
+      this._promoteQueue();
+    }
+  },
+
+  clearAll(): void {
+    Object.values(this.timers as Record<string, number>).forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    this.timers = {};
+
+    this.visibleToasts = [];
+    this.queuedToasts = [];
+  },
+});
 
 Alpine.start();
