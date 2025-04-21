@@ -9,7 +9,7 @@ func ToastContainer(props ...h.I) h.I {
 	return h.Div(
 		Join(
 			props,
-			h.Class("fixed top-0 left-0 p-6 w-dvw h-dvh flex justify-end items-end size-fit z-50 pointer-events-none"),
+			h.Class("fixed top-0 left-0 p-6 w-dvw h-dvh flex justify-center md:justify-end items-end size-fit z-50 pointer-events-none"),
 
 			h.Div(
 				h.Class("flex flex-col gap-2"),
@@ -21,7 +21,7 @@ func ToastContainer(props ...h.I) h.I {
 						X("show", "show"),
 						X("bind:key", "toast.id"),
 						X("transition.delay"),
-						h.Class("pointer-events-auto relative border rounded-md p-4 w-90 bg-background text-sm transition-opacity"),
+						h.Class("pointer-events-auto relative border rounded-md p-4 w-[74vw] md:w-90 bg-background text-sm transition-opacity"),
 
 						h.P(Textx("toast.content.title")),
 						h.Span(X("show", "toast.content.message.length > 0"), h.Class("text-muted-foreground mt-1"), Textx("toast.content.message")),

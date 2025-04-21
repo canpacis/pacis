@@ -471,11 +471,11 @@
   .w-9 {
     width: calc(var(--spacing) * 9);
   }
-  .w-90 {
-    width: calc(var(--spacing) * 90);
-  }
   .w-\[1px\] {
     width: 1px;
+  }
+  .w-\[74vw\] {
+    width: 74vw;
   }
   .w-dvw {
     width: 100dvw;
@@ -575,9 +575,6 @@
   }
   .justify-center {
     justify-content: center;
-  }
-  .justify-end {
-    justify-content: flex-end;
   }
   .justify-items-start {
     justify-items: start;
@@ -1544,6 +1541,16 @@
   .md\:right-3 {
     @media (width >= 48rem) {
       right: calc(var(--spacing) * 3);
+    }
+  }
+  .md\:w-90 {
+    @media (width >= 48rem) {
+      width: calc(var(--spacing) * 90);
+    }
+  }
+  .md\:justify-end {
+    @media (width >= 48rem) {
+      justify-content: flex-end;
     }
   }
   .md\:p-6 {
