@@ -21,10 +21,10 @@ func ToastContainer(props ...h.I) h.I {
 						X("show", "show"),
 						X("bind:key", "toast.id"),
 						X("transition.delay"),
-						h.Class("pointer-events-auto relative border rounded-md p-4 min-w-90 bg-background text-sm transition-opacity"),
+						h.Class("pointer-events-auto relative border rounded-md p-4 w-90 bg-background text-sm transition-opacity"),
 
-						h.P(h.Class("mb-1"), Textx("toast.content.title")),
-						h.Span(h.Class("text-muted-foreground"), Textx("toast.content.message")),
+						h.P(Textx("toast.content.title")),
+						h.Span(X("show", "toast.content.message.length > 0"), h.Class("text-muted-foreground mt-1"), Textx("toast.content.message")),
 						Button(
 							On("click", "$store.toast.clear(toast.id)"),
 							h.Class("absolute top-2 right-2 w-6 h-6"),
@@ -38,4 +38,12 @@ func ToastContainer(props ...h.I) h.I {
 			),
 		)...,
 	)
+}
+
+func ShowToastOn(event, title, message string) h.Attribute {
+	return On(event, fn("$store.toast.show", title, message))
+}
+
+func ShowToast(title, message string) h.Attribute {
+	return ShowToastOn("click", title, message)
 }

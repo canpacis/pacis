@@ -357,7 +357,10 @@ Alpine.data("tooltip", (open = false, id = null) => ({
 }));
 
 Alpine.magic("clipboard", () => {
-  return (data: string) => navigator.clipboard.writeText(data);
+  return (data: string) => {
+    navigator.clipboard.writeText(data);
+    (Alpine.store("toast") as ToastManagerState).show("Copied to clipboard", "");
+  };
 });
 
 const cookieStorage = {
@@ -628,8 +631,8 @@ Alpine.data("toast", () => ({
     await this.$nextTick();
     this.show = true;
     this.$dispatch("shown");
-  }
-}))
+  },
+}));
 
 export type ToastContent = {
   title: string;
@@ -654,7 +657,7 @@ export interface ToastManagerState {
   config: ToastManagerConfig;
   readonly timers: Readonly<Record<string, number>>;
 
-  show(content: ToastContent, options?: { duration?: number }): string;
+  show(title: string, message: string, options?: { duration?: number }): string;
   clear(id: string): void;
   clearAll(): void;
 }
@@ -703,13 +706,20 @@ Alpine.store("toast", {
     return false;
   },
 
-  show(content: ToastContent, options: { duration?: number } = {}): string {
+  show(
+    title: string,
+    message: string,
+    options: { duration?: number } = {}
+  ): string {
     const id = this._randomId();
     const duration = options?.duration ?? this.config.defaultDuration;
 
     const newToast: ManagedToast = {
       id,
-      content,
+      content: {
+        title: title,
+        message: message,
+      },
       duration,
       createdAt: Date.now(),
     };
