@@ -339,11 +339,11 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 		} else {
 			gen, ok := middleware.Node.(*ast.GenDecl)
 			if !ok {
-				return nil, fmt.Errorf("middleware %s is incorrectly placed, place it before a varable definition or a function", lclname)
+				return nil, fmt.Errorf("middleware %s is incorrectly placed, place it before a variable definition or a function", lclname)
 			}
 			spec, ok := gen.Specs[0].(*ast.ValueSpec)
 			if !ok {
-				return nil, fmt.Errorf("middleware %s is incorrectly placed, place it before a varable definition or a function", lclname)
+				return nil, fmt.Errorf("middleware %s is incorrectly placed, place it before a variable definition or a function", lclname)
 			}
 			name = spec.Names[0].Name
 		}
