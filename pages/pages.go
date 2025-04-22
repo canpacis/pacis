@@ -11,7 +11,6 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"os/signal"
-	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -47,6 +46,7 @@ type PageContext struct {
 	context.Context
 	w       http.ResponseWriter
 	r       *http.Request
+	hookch  chan string
 	chsize  atomic.Int32
 	elemch  chan h.Element
 	ready   atomic.Bool
@@ -54,6 +54,10 @@ type PageContext struct {
 	logger  *slog.Logger
 	title   string
 }
+
+// func (ctx *PageContext) Message() {
+
+// }
 
 func (ctx *PageContext) QueueElement() func(h.Element) {
 	ctx.chsize.Add(1)
@@ -228,70 +232,66 @@ func Asset(src string) string {
 	return resolved
 }
 
-func render(w http.ResponseWriter, r *http.Request, layout Layout, pg Page, head, body h.I, basecheck bool) {
+type Streamer struct {
+	layout     Layout
+	page       Page
+	head, body h.I
+	basecheck  bool
+
+	limit int
+	buf   *bytes.Buffer
+	w     http.ResponseWriter
+	http.Flusher
+}
+
+func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	rt := NewTiming("render", "Document rendered")
+	s.w = w
+	s.Flusher = w.(http.Flusher)
+	s.buf.Reset()
 
 	ctx := &PageContext{w: w, r: r, logger: slog.Default(), Context: r.Context()}
 	var renderer h.I
 	var page Page
 
-	if basecheck {
+	if s.basecheck {
 		if r.URL.Path != "/" {
 			w.WriteHeader(http.StatusNotFound)
 			page = NotFoundPage
 		} else {
 			w.WriteHeader(http.StatusOK)
-			page = pg
+			page = s.page
 		}
 	} else {
-		page = pg
+		page = s.page
 	}
 
-	if layout != nil {
-		pt := NewTiming("page", "Page prepared")
+	if s.layout != nil {
 		outlet := page(ctx)
-		pt.Done(ctx)
-		lt := NewTiming("layout", "Layout prepared")
 
+		// TODO: Maybe do the page metadata api with hooks?
 		if len(ctx.title) != 0 {
-			el, ok := head.(h.Element)
+			el, ok := s.head.(h.Element)
 			if ok {
 				el.AddNode(h.Title(h.Text(ctx.title)))
 			} else {
-				frag, ok := head.(*h.Fragment)
+				frag, ok := s.head.(*h.Fragment)
 				if ok {
-					head = h.Frag(frag, h.Title(h.Text(ctx.title)))
+					s.head = h.Frag(frag, h.Title(h.Text(ctx.title)))
 				} else {
 					ctx.logger.Error("failed to add title to document head")
 				}
 			}
 		}
 
-		renderer = layout(&LayoutContext{PageContext: ctx, head: head, body: body, outlet: outlet})
-		lt.Done(ctx)
+		renderer = s.layout(&LayoutContext{PageContext: ctx, head: s.head, body: s.body, outlet: outlet})
 	} else {
-		pt := NewTiming("page", "Page prepared")
 		renderer = page(ctx)
-		pt.Done(ctx)
 	}
 
-	flusher := w.(http.Flusher)
+	renderer.Render(ctx, s)
 
-	buf := new(bytes.Buffer)
-	renderer.Render(ctx, buf)
-	rt.Done(ctx)
-
-	// TODO: Make timings header opt-in
-	timings := []string{}
-	for _, timing := range ctx.timings {
-		timings = append(timings, timing.String())
-	}
-	w.Header().Set("Server-Timing", strings.Join(timings, ","))
-
-	io.Copy(w, buf)
-	flusher.Flush()
-
+	// TODO: Maybe carry this to the hooks api
 	size := int(ctx.chsize.Load())
 	if size == 0 {
 		return
@@ -307,8 +307,34 @@ func render(w http.ResponseWriter, r *http.Request, layout Layout, pg Page, head
 			return
 		case el := <-ctx.elemch:
 			el.Render(ctx, w)
-			flusher.Flush()
+			s.Flush()
 		}
+	}
+}
+
+func (s *Streamer) Write(p []byte) (int, error) {
+	if s.buf.Len() < s.limit {
+		return s.buf.Write(p)
+	}
+
+	n, err := s.buf.Write(p)
+	if err != nil {
+		return n, err
+	}
+	m, err := io.Copy(s.w, s.buf)
+	s.Flush()
+	s.buf.Reset()
+	return int(m), err
+}
+
+func NewStreamer(layout Layout, page Page, head, body h.I, basecheck bool) *Streamer {
+	return &Streamer{
+		layout: layout,
+		page:   page,
+		head:   head, body: body,
+		basecheck: basecheck,
+		buf:       new(bytes.Buffer),
+		limit:     500,
 	}
 }
 
@@ -330,9 +356,7 @@ func (HomeRoute) Path() string {
 }
 
 func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, hr.layout, hr.page, hr.head, hr.body, true)
-	})
+	var handler http.Handler = NewStreamer(hr.layout, hr.page, hr.head, hr.body, true)
 	for _, middleware := range hr.middlewares {
 		handler = middleware(handler)
 	}
@@ -361,9 +385,7 @@ func (pr PageRoute) Path() string {
 }
 
 func (pr *PageRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		render(w, r, pr.layout, pr.page, pr.head, pr.body, false)
-	})
+	var handler http.Handler = NewStreamer(pr.layout, pr.page, pr.head, pr.body, false)
 	for _, middleware := range pr.middlewares {
 		handler = middleware(handler)
 	}
@@ -410,12 +432,9 @@ func (ar ActionRoute) Path() string {
 }
 
 func (ar *ActionRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		page := func(ctx *PageContext) h.I {
-			return ar.action(&ActionContext{PageContext: ctx})
-		}
-		render(w, r, EmptyLayout, page, h.Frag(), h.Frag(), false)
-	})
+	var handler http.Handler = NewStreamer(EmptyLayout, func(ctx *PageContext) h.I {
+		return ar.action(&ActionContext{PageContext: ctx})
+	}, h.Frag(), h.Frag(), false)
 	for _, middleware := range ar.middlewares {
 		handler = middleware(handler)
 	}

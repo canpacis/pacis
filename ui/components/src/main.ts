@@ -359,7 +359,10 @@ Alpine.data("tooltip", (open = false, id = null) => ({
 Alpine.magic("clipboard", () => {
   return (data: string) => {
     navigator.clipboard.writeText(data);
-    (Alpine.store("toast") as ToastManagerState).show("Copied to clipboard", "");
+    (Alpine.store("toast") as ToastManagerState).show(
+      "Copied to clipboard",
+      ""
+    );
   };
 });
 
@@ -524,7 +527,7 @@ class QueuedFetcher {
 }
 
 const queuedFetcher = new QueuedFetcher();
-const prefetchStore = new Map<string, { doc: Document, url: string }>();
+const prefetchStore = new Map<string, { doc: Document; url: string }>();
 
 function replaceDoc(doc: Document) {
   const head = document.head;
