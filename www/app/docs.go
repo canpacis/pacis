@@ -244,6 +244,7 @@ type DocDir struct {
 	Dirs  map[string]*DocDir
 }
 
+// TODO: You can do better than this
 func ExtractDocs(fsys fs.ReadDirFS, root string) (*DocDir, error) {
 	entries, err := fsys.ReadDir(root)
 	if err != nil {
