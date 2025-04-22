@@ -546,6 +546,9 @@
   .cursor-pointer {
     cursor: pointer;
   }
+  .appearance-none {
+    appearance: none;
+  }
   .auto-rows-min {
     grid-auto-rows: min-content;
   }
@@ -758,6 +761,9 @@
   }
   .p-6 {
     padding: calc(var(--spacing) * 6);
+  }
+  .px-1 {
+    padding-inline: calc(var(--spacing) * 1);
   }
   .px-2 {
     padding-inline: calc(var(--spacing) * 2);
@@ -1138,6 +1144,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--accent);
+      }
+    }
+  }
+  .hover\:bg-accent\/50 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: color-mix(in oklab, var(--accent) 50%, transparent);
       }
     }
   }
@@ -1937,6 +1950,13 @@
     border-color: var(--border);
     outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
+}
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
 }
 @keyframes enter {
   from {
