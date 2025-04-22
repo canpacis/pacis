@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"iter"
+	"log"
 	"slices"
 	"strings"
 )
@@ -447,11 +449,44 @@ func Map[T any](items []T, fn func(T, int) I) I {
 	return Frag(mapped...)
 }
 
-func IterMap[T any](items map[string]T, fn func(string, T) I) I {
+func Iter[T any, K int](items any, fn func(T, K) I) I {
 	mapped := []I{}
 
-	for key, value := range items {
-		mapped = append(mapped, fn(key, value))
+	seq, ok := items.(iter.Seq[T])
+	if ok {
+		i := 0
+		for item := range seq {
+			mapped = append(mapped, fn(item, K(i)))
+			i++
+		}
+	} else {
+		seq2, ok := items.(iter.Seq2[T, K])
+		if ok {
+			for item, k := range seq2 {
+				mapped = append(mapped, fn(item, k))
+			}
+		} else {
+			slc, ok := items.([]T)
+			if ok {
+				for i, item := range slc {
+					mapped = append(mapped, fn(item, K(i)))
+				}
+			} else {
+				mp, ok := items.(map[K]T)
+				if ok {
+					keys := []K{}
+					for k := range mp {
+						keys = append(keys, k)
+					}
+					slices.Sort(keys)
+					for _, key := range keys {
+						mapped = append(mapped, fn(mp[key], key))
+					}
+				} else {
+					log.Fatalf("failed to iterate over type %T", items)
+				}
+			}
+		}
 	}
 
 	return Frag(mapped...)
