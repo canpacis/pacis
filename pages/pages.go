@@ -8,6 +8,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"os/signal"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	h "github.com/canpacis/pacis/ui/html"
+	"github.com/canpacis/scanner"
 )
 
 type ctxkey string
@@ -52,21 +54,6 @@ type PageContext struct {
 	logger  *slog.Logger
 	title   string
 }
-
-// func (ctx *PageContext) Deadline() (deadline time.Time, ok bool) {
-// 	return ctx.r.Context().Deadline()
-// }
-
-// func (ctx *PageContext) Err() error {
-// 	return ctx.r.Context().Err()
-// }
-// func (ctx *PageContext) Value(key any) any {
-// 	return ctx.r.Context().Value(key)
-// }
-
-// func (ctx *PageContext) Done() <-chan struct{} {
-// 	return ctx.r.Context().Done()
-// }
 
 func (ctx *PageContext) QueueElement() func(h.Element) {
 	ctx.chsize.Add(1)
@@ -106,6 +93,23 @@ func (ctx *PageContext) Logger() *slog.Logger {
 	return ctx.logger
 }
 
+func (ctx *PageContext) Scan(v any) error {
+	query := ctx.r.URL.Query()
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return err
+	}
+	jar.SetCookies(ctx.r.URL, ctx.r.Cookies())
+
+	pipe := scanner.NewPipe(
+		scanner.NewQuery(&query),
+		scanner.NewHeader(&ctx.r.Header),
+		scanner.NewCookie(jar, ctx.r.URL),
+	)
+	return pipe.Scan(v)
+}
+
 func (ctx *PageContext) Set(key string, value any) {
 	c := context.WithValue(ctx.Context, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
 	ctx.Context = c
@@ -119,6 +123,7 @@ func (ctx *PageContext) SetCookie(cookie *http.Cookie) {
 	http.SetCookie(ctx.w, cookie)
 }
 
+// TODO: Replace this API with Page Meta Data API
 func (ctx *PageContext) SetTitle(title string) {
 	ctx.title = title
 }
@@ -145,6 +150,35 @@ func (ctx LayoutContext) Outlet() h.I {
 }
 
 type Layout func(*LayoutContext) h.I
+
+type ActionContext struct {
+	*PageContext
+}
+
+func (ctx *ActionContext) Scan(v any) error {
+	if err := ctx.r.ParseForm(); err != nil {
+		return err
+	}
+
+	query := ctx.r.URL.Query()
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return err
+	}
+	jar.SetCookies(ctx.r.URL, ctx.r.Cookies())
+
+	pipe := scanner.NewPipe(
+		scanner.NewQuery(&query),
+		scanner.NewForm(&ctx.r.PostForm),
+		scanner.NewHeader(&ctx.r.Header),
+		scanner.NewCookie(jar, ctx.r.URL),
+	)
+
+	return pipe.Scan(v)
+}
+
+type Action func(*ActionContext) h.I
 
 func WrapLayout(layout Layout, rest ...Layout) Layout {
 	switch len(rest) {
@@ -361,6 +395,33 @@ func (rr *RedirectRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
+type ActionRoute struct {
+	path        string
+	action      Action
+	middlewares []func(http.Handler) http.Handler
+}
+
+func NewActionRoute(path string, action Action, middlewares ...func(http.Handler) http.Handler) *ActionRoute {
+	return &ActionRoute{path: path, action: action, middlewares: middlewares}
+}
+
+func (ar ActionRoute) Path() string {
+	return ar.path
+}
+
+func (ar *ActionRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		page := func(ctx *PageContext) h.I {
+			return ar.action(&ActionContext{PageContext: ctx})
+		}
+		render(w, r, EmptyLayout, page, h.Frag(), h.Frag(), false)
+	})
+	for _, middleware := range ar.middlewares {
+		handler = middleware(handler)
+	}
+	handler.ServeHTTP(w, r)
+}
+
 type RawRoute struct {
 	path        string
 	contenttyp  string
@@ -423,6 +484,6 @@ func Serve(addr string, router http.Handler, logger *slog.Logger) {
 	logger.Debug("Server stopped")
 }
 
-func EmptyLayout(*LayoutContext) h.I {
-	return h.Frag()
+func EmptyLayout(ctx *LayoutContext) h.I {
+	return ctx.Outlet()
 }

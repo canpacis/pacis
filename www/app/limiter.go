@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -114,7 +113,6 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		identifier := rl.identfn(r)
 
 		allowed, err := rl.Allow(identifier)
-		fmt.Println(allowed, err)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
