@@ -95,107 +95,12 @@ func Layout(ctx *pages.LayoutContext) I {
 	)
 }
 
-type NavLink struct {
-	Href  string
-	Label Node
-}
-
-type NavSection struct {
-	Label Node
-	Items []NavLink
-}
-
-func getNavSections() []NavSection {
-	return []NavSection{
-		{
-			Label: Text("Getting Started"),
-			Items: []NavLink{
-				{"/docs/introduction", Text("Introduction")},
-				// {"/docs/installation", Text("Installation")},
-				// {"/docs/quick-start", Text("Quick Start")},
-				// {"/docs/syntax-usage", Text("Syntax & Usage")},
-				// {"/docs/roadmap", Text("Roadmap")},
-			},
-		},
-		{
-			Label: Text("Components"),
-			Items: []NavLink{
-				{"/docs/alert", Text("Alert")},
-				{"/docs/avatar", Text("Avatar")},
-				{"/docs/badge", Text("Badge")},
-				{"/docs/button", Text("Button")},
-				{"/docs/card", Text("Card")},
-				// {"/docs/carousel", Text("Carousel")},
-				{"/docs/checkbox", Text("Checkbox")},
-				{"/docs/collapsible", Text("Collapsible")},
-				{"/docs/dialog", Text("Dialog")},
-				{"/docs/dropdown", Text("Dropdown")},
-				{"/docs/input", Text("Input")},
-				{"/docs/label", Text("Label")},
-				{"/docs/radio", Text("Radio")},
-				{"/docs/select", Text("Select")},
-				// {"/docs/seperator", Text("Seperator")},
-				// {"/docs/sheet", Text("Sheet")},
-				// {"/docs/slider", Text("Slider")},
-				{"/docs/switch", Text("Switch")},
-				{"/docs/tabs", Text("Tabs")},
-				// {"/docs/textarea", Text("Textarea")},
-				// {"/docs/toast", Text("Toast")},
-				// {"/docs/tooltip", Text("Tooltip")},
-			},
-		},
-	}
-}
-
-func Navigation(sections []NavSection, current *NavLink) Node {
-	iscurr := func(href string) bool {
-		if current == nil {
-			return false
-		}
-		return current.Href == href
-	}
-
-	return Map(sections, func(heading NavSection, i int) Node {
-		return Div(
-			Class("mb-4"),
-
-			H2(
-				Class("font-semibold text-sm text-muted-foreground mb-2"),
-
-				heading.Label,
-			),
-
-			Ul(
-				Map(heading.Items, func(item NavLink, i int) Node {
-					return Li(
-						If(!iscurr(item.Href),
-							pages.A(
-								Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
-								Href(item.Href),
-
-								item.Label,
-							),
-						),
-						If(iscurr(item.Href),
-							Span(
-								Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
-
-								item.Label,
-							),
-						),
-					)
-				}),
-			),
-		)
-	})
-}
-
 func AppHeader(user *User) Element {
-	links := []NavLink{
-		{"/docs/introduction", Text("Docs")},
-		{"/docs/components", Text("Components")},
+	links := []NavItem{
+		{Label: Text("Docs"), Href: "/docs"},
+		{Label: Text("Components"), Href: "/docs/components"},
 	}
-	sections := getNavSections()
+	items := getnavitems()
 
 	return Header(
 		Class("py-3 border-b border-dashed sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 h-[var(--header-height)]"),
@@ -218,7 +123,7 @@ func AppHeader(user *User) Element {
 				SheetContent(
 					Class("overflow-scroll"),
 
-					Navigation(sections, nil),
+					Map(items, NavItemUI),
 				),
 			),
 			pages.A(
@@ -232,7 +137,7 @@ func AppHeader(user *User) Element {
 			Ul(
 				Class("hidden gap-4 lg:flex"),
 
-				Map(links, func(link NavLink, i int) Node {
+				Map(links, func(link NavItem, i int) I {
 					return Li(
 						Class("text-sm text-muted-foreground"),
 

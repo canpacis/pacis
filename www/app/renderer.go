@@ -153,7 +153,7 @@ var plates = map[string][]Node{
 					Checkbox(Name("Enable Notifications"), Span(Class("sr-only"), Text("Enable Notifications"))),
 				),
 				Div(
-					Map(notifications, func(n notification, i int) Node {
+					Map(notifications, func(n notification, i int) I {
 						return Div(
 							Class("mb-4 grid grid-cols-[25px_1fr] items-start pb-4 last:mb-0 last:pb-0"),
 
@@ -399,7 +399,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) (Node, err
 
 	switch node.Type {
 	case parser.DocumentNode:
-		nodes := []Node{}
+		nodes := []I{}
 		for _, child := range children {
 			node, ok := child.(Node)
 			if ok {

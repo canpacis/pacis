@@ -524,7 +524,7 @@ class QueuedFetcher {
 }
 
 const queuedFetcher = new QueuedFetcher();
-const prefetchStore = new Map<string, { doc: Document }>();
+const prefetchStore = new Map<string, { doc: Document, url: string }>();
 
 function replaceDoc(doc: Document) {
   const head = document.head;
@@ -557,11 +557,15 @@ const prefetch = {
       return;
     }
 
+    let redirectedUrl: string | null = null;
     const doc = await queuedFetcher.queue(async ({ signal }) => {
       const resp = await fetch(url, { signal });
       if (!resp.ok) {
         console.error("Prefetch failed: ", resp);
         return null;
+      }
+      if (resp.redirected) {
+        redirectedUrl = new URL(resp.url).pathname;
       }
       const data = await resp.text();
       const doc = new DOMParser().parseFromString(data, "text/html");
@@ -570,7 +574,7 @@ const prefetch = {
     });
 
     if (doc) {
-      prefetchStore.set(url, { doc });
+      prefetchStore.set(url, { doc, url: redirectedUrl ?? url });
     }
   },
   load: async (url: string, e?: MouseEvent) => {
@@ -582,7 +586,7 @@ const prefetch = {
     }
     e?.preventDefault();
 
-    window.history.pushState({ page: url }, "", url);
+    window.history.pushState({ page: data.url }, "", data.url);
     replaceDoc(data.doc);
   },
   clear: async (url?: string) => {

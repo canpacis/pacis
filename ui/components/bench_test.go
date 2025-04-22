@@ -62,7 +62,7 @@ func getNavSections() []NavSection {
 	}
 }
 
-func Navigation(sections []NavSection, current *NavLink) Node {
+func Navigation(sections []NavSection, current *NavLink) I {
 	iscurr := func(href string) bool {
 		if current == nil {
 			return false
@@ -70,7 +70,7 @@ func Navigation(sections []NavSection, current *NavLink) Node {
 		return current.Href == href
 	}
 
-	return Map(sections, func(heading NavSection, i int) Node {
+	return Map(sections, func(heading NavSection, i int) I {
 		return Div(
 			Class("mb-4"),
 
@@ -81,7 +81,7 @@ func Navigation(sections []NavSection, current *NavLink) Node {
 			),
 
 			Ul(
-				Map(heading.Items, func(item NavLink, i int) Node {
+				Map(heading.Items, func(item NavLink, i int) I {
 					return Li(
 						If(!iscurr(item.Href),
 							A(
@@ -179,7 +179,7 @@ func BenchmarkRender(b *testing.B) {
 						Ul(
 							Class("hidden gap-4 lg:flex"),
 
-							Map(links, func(link NavLink, i int) Node {
+							Map(links, func(link NavLink, i int) I {
 								return Li(
 									Class("text-sm text-muted-foreground"),
 

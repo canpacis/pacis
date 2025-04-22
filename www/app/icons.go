@@ -54,3 +54,5 @@ func DiscordIcon(props ...I) Element {
 		)...,
 	)
 }
+
+func IconsPage() {}

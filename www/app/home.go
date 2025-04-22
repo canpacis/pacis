@@ -36,7 +36,7 @@ func HomePage(ctx *pages.PageContext) I {
 				Button(
 					pages.Eager,
 					Replace(pages.A),
-					Href("/docs/introduction"),
+					Href("/docs"),
 					Class("!rounded-full"),
 					ButtonSizeLg,
 

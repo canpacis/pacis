@@ -417,7 +417,7 @@ func Attr(key string, value ...any) Attribute {
 }
 
 type Fragment struct {
-	children []Node
+	children []I
 }
 
 func (f *Fragment) Render(ctx context.Context, w io.Writer) error {
@@ -433,12 +433,12 @@ func (Fragment) NodeType() NodeType {
 	return NodeFragment
 }
 
-func Frag(children ...Node) *Fragment {
+func Frag(children ...I) *Fragment {
 	return &Fragment{children: children}
 }
 
-func Map[T any](items []T, fn func(T, int) Node) Node {
-	mapped := []Node{}
+func Map[T any](items []T, fn func(T, int) I) I {
+	mapped := []I{}
 
 	for i, item := range items {
 		mapped = append(mapped, fn(item, i))

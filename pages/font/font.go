@@ -92,7 +92,7 @@ func Head(fonts ...*Font) *h.Fragment {
 	return h.Frag(
 		h.Link(h.Href("https://fonts.googleapis.com"), h.Rel("preconnect")),
 		h.Link(h.Href("https://fonts.gstatic.com"), h.Rel("preconnect")),
-		h.Map(fonts, func(font *Font, i int) h.Node {
+		h.Map(fonts, func(font *Font, i int) h.I {
 			return h.Link(h.Href(font.URL()), h.Rel("stylesheet"))
 		}),
 	)
