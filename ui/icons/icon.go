@@ -1,4 +1,4 @@
-//go:generate go run ./generate/main.go
+//go:generate go run ./generator/main.go
 package icons
 
 import (

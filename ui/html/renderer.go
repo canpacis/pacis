@@ -447,6 +447,16 @@ func Map[T any](items []T, fn func(T, int) I) I {
 	return Frag(mapped...)
 }
 
+func IterMap[T any](items map[string]T, fn func(string, T) I) I {
+	mapped := []I{}
+
+	for key, value := range items {
+		mapped = append(mapped, fn(key, value))
+	}
+
+	return Frag(mapped...)
+}
+
 type case_[T comparable] struct {
 	expr T
 	node Node
