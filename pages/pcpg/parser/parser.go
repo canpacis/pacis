@@ -29,6 +29,7 @@ const (
 	PageDirective
 	LayoutDirective
 	RedirectDirective
+	ActionDirective
 	MiddlewareDirective
 	LanguageDirective
 	AuthenticationDirective
@@ -42,6 +43,8 @@ func (dt DirectiveType) String() string {
 		return "layout"
 	case RedirectDirective:
 		return "redirect"
+	case ActionDirective:
+		return "action"
 	case MiddlewareDirective:
 		return "middleware"
 	case LanguageDirective:
@@ -53,7 +56,7 @@ func (dt DirectiveType) String() string {
 	}
 }
 
-var validdirs = []string{"page", "layout", "redirect", "middleware", "language", "authentication"}
+var validdirs = []string{"page", "layout", "redirect", "action", "middleware", "language", "authentication"}
 
 type Directive struct {
 	Type     DirectiveType
@@ -97,6 +100,8 @@ func ParseComment(comment string, pos token.Position, decl ast.Decl) (*Directive
 		typ = LayoutDirective
 	case "redirect":
 		typ = RedirectDirective
+	case "action":
+		typ = ActionDirective
 	case "middleware":
 		typ = MiddlewareDirective
 	case "language":
@@ -148,6 +153,7 @@ func (ai *AstIter) Comments() iter.Seq[*ast.CommentGroup] {
 
 type DirectiveList struct {
 	Page           []*Directive
+	Action         []*Directive
 	Layout         []*Directive
 	Redirect       []*Directive
 	Middleware     []*Directive
@@ -217,6 +223,8 @@ func ParseDir(dir string) (*DirectiveList, error) {
 						list.Layout = append(list.Layout, dir)
 					case RedirectDirective:
 						list.Redirect = append(list.Redirect, dir)
+					case ActionDirective:
+						list.Action = append(list.Action, dir)
 					case MiddlewareDirective:
 						list.Middleware = append(list.Middleware, dir)
 					case LanguageDirective:
