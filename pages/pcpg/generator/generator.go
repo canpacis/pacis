@@ -110,6 +110,7 @@ const (
 	HomeRoute     = FileRouteType("pages.NewHomeRoute")
 	PageRoute     = FileRouteType("pages.NewPageRoute")
 	RedirectRoute = FileRouteType("pages.NewRedirectRoute")
+	ActionRoute   = FileRouteType("pages.NewActionRoute")
 	RawRoute      = FileRouteType("pages.NewRawRoute")
 )
 
@@ -136,6 +137,9 @@ type FileRoute struct {
 	// Redirect routes
 	Redirect string
 	Code     string
+
+	// Action routes
+	Action string
 
 	// Raw routes
 	ContentType string
@@ -209,7 +213,7 @@ func GenerateFile(file *File) ([]byte, error) {
 
 	for _, route := range file.Routes {
 		switch route.Type {
-		case PageRoute, HomeRoute:
+		case PageRoute, HomeRoute, ActionRoute:
 			route.Middlewares = append(route.Middlewares, "middleware.Logger", "middleware.Theme", "middleware.Gzip", "middleware.Tracer")
 		case RedirectRoute:
 			route.Middlewares = append(route.Middlewares, "middleware.Logger", "middleware.Tracer")
@@ -269,6 +273,13 @@ const redirecttempl = `pages.NewRedirectRoute(
 	{{ . }}, {{ end }}
 )`
 
+const actiontempl = `pages.NewActionRoute(
+	"{{ .Path }}",
+	{{ .Action }},
+	{{ range .Middlewares }}
+	{{ . }}, {{ end }}
+)`
+
 const rawtempl = `pages.NewRawRoute(
 	"{{ .Path }}",
 	"{{ .ContentType }}",
@@ -287,6 +298,8 @@ func GenerateRoute(route *FileRoute) (string, error) {
 		text = pagetempl
 	case RedirectRoute:
 		text = redirecttempl
+	case ActionRoute:
+		text = actiontempl
 	case RawRoute:
 		text = rawtempl
 	}
@@ -452,6 +465,50 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 			Path:     "GET /" + cleanpath(from),
 			Redirect: "/" + cleanpath(to),
 			Code:     "http.StatusFound",
+		})
+	}
+
+	for _, action := range list.Action {
+		path, err := param("path", action)
+		if err != nil {
+			return nil, err
+		}
+		method, err := param("method", action)
+		if err != nil {
+			return nil, err
+		}
+
+		var mtd string
+
+		switch strings.TrimSpace(strings.ToLower(method)) {
+		case "post":
+			mtd = "POST"
+		case "patch":
+			mtd = "PATCH"
+		case "put":
+			mtd = "PUT"
+		case "delete":
+			mtd = "DELETE"
+		default:
+			return nil, fmt.Errorf("invalid action method %s, valid methods are post, patch, put and delete", method)
+		}
+
+		middlewarelist, _ := param("middlewares", action)
+		middlewares := strings.Split(middlewarelist, ",")
+		middlewares = slices.DeleteFunc(middlewares, func(m string) bool {
+			return len(m) == 0
+		})
+
+		fn, ok := action.Node.(*ast.FuncDecl)
+		if !ok {
+			return nil, fmt.Errorf("action is incorrectly placed, place it before a action function")
+		}
+
+		file.Routes = append(file.Routes, &FileRoute{
+			Type:        ActionRoute,
+			Path:        mtd + " /" + cleanpath(path),
+			Action:      fn.Name.String(),
+			Middlewares: middlewares,
 		})
 	}
 
