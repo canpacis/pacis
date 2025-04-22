@@ -257,6 +257,19 @@ func AppHeader(user *User) Element {
 					),
 				),
 				Tooltip(
+					"Discord",
+					time.Second*1,
+					Button(
+						ButtonSizeIcon,
+						ButtonVariantGhost,
+						Replace(pages.A),
+						Href("https://discord.gg/QnXQjYZrJU"),
+
+						DiscordIcon(),
+						Span(Class("sr-only"), Text("Github")),
+					),
+				),
+				Tooltip(
 					"Toggle Theme",
 					time.Second*1,
 					Button(
