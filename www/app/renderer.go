@@ -382,7 +382,7 @@ func Preview(code []byte, value string, preview Node) Node {
 		),
 
 		TabContent(Value("preview"), Plate(preview)),
-		TabContent(Value("code"), Code(string(code), "language-go")),
+		TabContent(Value("code"), Code(string(code), "go")),
 	)
 }
 
@@ -418,7 +418,7 @@ func RenderMarkup(node parser.TreeNode[parser.DjotNode], name string) (Node, err
 	case parser.CodeNode:
 		plate := node.Attributes.Get("plate")
 		if len(plate) == 0 {
-			return Code(string(node.FullText()), node.Attributes.Get("class"), Class("my-8")), nil
+			return Code(string(node.FullText()), "go", Class("my-8")), nil
 		}
 		idx, err := strconv.Atoi(plate)
 		if err != nil {

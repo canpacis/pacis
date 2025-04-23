@@ -84,7 +84,7 @@ func Layout(ctx *pages.LayoutContext) I {
 			Title(Text(title)),
 		),
 		Body(
-			Class("flex flex-col min-h-dvh"),
+			Class("flex flex-col min-h-dvh overflow-x-hidden"),
 
 			AppHeader(user),
 			ctx.Outlet(),
