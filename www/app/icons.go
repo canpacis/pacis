@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 )
@@ -53,4 +54,25 @@ func DiscordIcon(props ...I) Element {
 			),
 		)...,
 	)
+}
+
+//pacis:page path=/docs/ui/icons/icon-set middlewares=auth
+func IconSetPage(ctx *pages.PageContext) I {
+	return Div(
+		H1(Class("scroll-m-20 text-3xl font-bold tracking-tight"), Text("Icon Set")),
+	)
+}
+
+//pacis:page path=/docs/ui/icons/{slug} middlewares=auth
+func CustomIconsPage(ctx *pages.PageContext) I {
+	slug := ctx.Request().PathValue("slug")
+	page, ok := dir.Dirs["ui"].Dirs["icons"].Pages[slug]
+
+	if ok {
+		ctx.SetTitle("Pacis Docs | UI > Components > " + page.Title)
+	} else {
+		return ctx.NotFound()
+	}
+
+	return DocPageUI(page)
 }

@@ -309,7 +309,7 @@ func InitDocs() error {
 	return err
 }
 
-//pacis:page path=/docs/getting-started/{slug} middlewares=auth,limiter
+//pacis:page path=/docs/getting-started/{slug} middlewares=auth
 func GettingStartedPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	page, ok := dir.Dirs["getting-started"].Pages[slug]
@@ -323,7 +323,7 @@ func GettingStartedPage(ctx *pages.PageContext) I {
 	return DocPageUI(page)
 }
 
-//pacis:page path=/docs/pages/{slug} middlewares=auth,limiter
+//pacis:page path=/docs/pages/{slug} middlewares=auth
 func PagesPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	page, ok := dir.Dirs["pages"].Pages[slug]
@@ -337,7 +337,7 @@ func PagesPage(ctx *pages.PageContext) I {
 	return DocPageUI(page)
 }
 
-//pacis:page path=/docs/ui/templating/{slug} middlewares=auth,limiter
+//pacis:page path=/docs/ui/templating/{slug} middlewares=auth
 func TemplatingPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	page, ok := dir.Dirs["ui"].Dirs["templating"].Pages[slug]
@@ -351,7 +351,7 @@ func TemplatingPage(ctx *pages.PageContext) I {
 	return DocPageUI(page)
 }
 
-//pacis:page path=/docs/ui/components/{slug} middlewares=auth,limiter
+//pacis:page path=/docs/ui/components/{slug} middlewares=auth
 func ComponentsPage(ctx *pages.PageContext) I {
 	slug := ctx.Request().PathValue("slug")
 	page, ok := dir.Dirs["ui"].Dirs["components"].Pages[slug]

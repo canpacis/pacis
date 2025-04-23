@@ -37,9 +37,6 @@ func (cs *CacheStorage) Set(key string, val any) error {
 	return cs.db.Set(context.Background(), key, val, time.Hour).Err()
 }
 
-//pacis:middleware name=limiter
-var Limiter func(http.Handler) http.Handler
-
 func Init() {
 	oauthConfig = &oauth2.Config{
 		RedirectURL:  os.Getenv("OAuthCallbackURL"),
@@ -55,10 +52,6 @@ func Init() {
 		Password: os.Getenv("RedisPassword"),
 		DB:       0,
 	})
-
-	Limiter = NewRateLimiter(&CacheStorage{db: cachedb}, 20, 20, func(r *http.Request) string {
-		return r.RemoteAddr
-	}).Middleware
 }
 
 func randstate() string {
@@ -136,7 +129,7 @@ func AuthHandler(r *http.Request) (*User, error) {
 	return user, nil
 }
 
-//pacis:page path=/auth/login middlewares=auth,limiter
+//pacis:page path=/auth/login middlewares=auth
 func LoginPage(ctx *pages.PageContext) I {
 	ctx.SetTitle("Login | Pacis")
 
@@ -175,7 +168,7 @@ func LoginPage(ctx *pages.PageContext) I {
 	)
 }
 
-//pacis:page path=/auth/logout middlewares=auth,limiter
+//pacis:page path=/auth/logout middlewares=auth
 func LogoutPage(ctx *pages.PageContext) I {
 	// Remove the cookie
 	ctx.SetCookie(&http.Cookie{
@@ -190,7 +183,7 @@ func LogoutPage(ctx *pages.PageContext) I {
 	return ctx.Redirect("/")
 }
 
-//pacis:page path=/auth/callback middlewares=auth,limiter
+//pacis:page path=/auth/callback middlewares=auth
 func AuthCallbackPage(ctx *pages.PageContext) I {
 	ctx.SetTitle("Redirecting")
 

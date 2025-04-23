@@ -9,7 +9,7 @@ import (
 )
 
 //pacis:language default=en
-//pacis:page path=/ middlewares=auth,limiter
+//pacis:page path=/ middlewares=auth
 func HomePage(ctx *pages.PageContext) I {
 	ctx.SetTitle("Homepage | Pacis")
 
