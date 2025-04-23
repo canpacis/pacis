@@ -125,28 +125,153 @@
     @apply hidden;
   }
 
-  .hljs {
-    @apply !text-muted-foreground;
+  .chroma {
+    @apply text-muted-foreground selection:bg-sky-600/20 whitespace-pre-wrap;
   }
 
-  .hljs-string,
-  .hljs-section,
-  .hljs-selector-class,
-  .hljs-template-variable,
-  .hljs-deletion {
+  .chroma .lnlinks {
+    @apply outline-0 decoration-0 text-inherit;
+  }
+
+  .chroma .lntd {
+    @apply align-top p-0 m-0 border-0;
+  }
+
+  .chroma .lntable {
+    @apply border-spacing-0 p-0 m-0 border-0;
+  }
+
+  .chroma .lnt,
+  .chroma .ln {
+    @apply whitespace-pre-wrap select-none mr-4 py-2 text-neutral-400 dark:text-neutral-600;
+  }
+
+  .chroma .line {
+    @apply flex;
+  }
+
+  .chroma .ge {
+    @apply italic;
+  }
+
+  .chroma .gs {
+    @apply font-bold;
+  }
+
+  /* Keyword */
+  .chroma .k,
+  .chroma .kc,
+  .chroma .kd,
+  .chroma .kp,
+  .chroma .kr,
+  .chroma .kt {
+    @apply text-rose-600 dark:text-rose-400;
+  }
+
+  /* KeywordNamespace */
+  .chroma .kn {
+    @apply text-indigo-600 dark:text-indigo-400;
+  }
+
+  /* NameOther */
+  .chroma .nx {
+    @apply text-muted-foreground;
+  }
+
+  /* LiteralString */
+  .chroma .s,
+  .chroma .sa,
+  .chroma .sb,
+  .chroma .sc,
+  .chroma .dl,
+  .chroma .sd,
+  .chroma .s2,
+  .chroma .se,
+  .chroma .sh,
+  .chroma .si,
+  .chroma .sx,
+  .chroma .sr,
+  .chroma .s1,
+  .chroma .ss {
     @apply text-emerald-700 dark:text-emerald-300;
   }
 
-  .hljs-keyword {
-    @apply text-violet-700 dark:text-violet-400;
+  /* LiteralStringEscape */
+  .chroma .se {
+    @apply text-indigo-600 dark:text-indigo-400;
   }
 
-  .hljs-type {
-    @apply text-sky-700 dark:text-sky-400;
+  /* Literal */
+  .chroma .l,
+  .chroma .ld,
+  .chroma .m,
+  .chroma .mb,
+  .chroma .mf,
+  .chroma .mh,
+  .chroma .mi,
+  .chroma .il,
+  .chroma .mo {
+    @apply text-orange-600 dark:text-orange-400;
   }
 
-  .hljs-literal {
-    @apply text-orange-700 dark:text-orange-400;
+  /* NameFunction */
+  .chroma .na,
+  .chroma .nc,
+  .chroma .nd,
+  .chroma .ne,
+  .chroma .nf,
+  .chroma .no {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+
+  /* Punctuation */
+  .chroma .p {
+    @apply text-muted-foreground;
+  }
+
+  /* Comment */
+  .chroma .c,
+  .chroma .ch,
+  .chroma .cm,
+  .chroma .c1,
+  .chroma .cs,
+  .chroma .cp,
+  .chroma .cpf {
+    @apply text-neutral-400 dark:text-neutral-600;
+  }
+
+  /* Operator */
+  .chroma .nt,
+  .chroma .o,
+  .chroma .ow {
+    @apply text-neutral-200 dark:text-neutral-400;
+  }
+
+  /* Name */
+  .chroma .n,
+  .chroma .nb,
+  .chroma .bp,
+  .chroma .ni,
+  .chroma .fm,
+  .chroma .nl,
+  .chroma .nn,
+  .chroma .py,
+  .chroma .nv,
+  .chroma .vc,
+  .chroma .vg,
+  .chroma .vi,
+  .chroma .vm {
+    @apply text-neutral-900 dark:text-neutral-100;
+  }
+
+  /* Error */
+  .chroma .err {
+    @apply text-red-500 dark:text-red-400 bg-red-950 dark:bg-red-800;
+  }
+
+  /* LineHighlight */
+  .chroma .hl {
+    @apply bg-sky-600/40;
   }
 }
 
@@ -162,6 +287,6 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
 }

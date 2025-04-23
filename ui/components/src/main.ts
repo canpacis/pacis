@@ -1,17 +1,8 @@
-import hljs from "highlight.js/lib/core";
-import go from "highlight.js/lib/languages/go";
 import Alpine from "alpinejs";
 import anchor from "@alpinejs/anchor";
 import focus from "@alpinejs/focus";
 import persist from "@alpinejs/persist";
 import intersect from "@alpinejs/intersect";
-
-// TODO: make this dynamic
-hljs.registerLanguage("go", go);
-
-document.addEventListener("DOMContentLoaded", () => {
-  hljs.highlightAll();
-});
 
 Alpine.plugin(persist);
 Alpine.plugin(focus);
