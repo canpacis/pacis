@@ -46,7 +46,6 @@ type PageContext struct {
 	context.Context
 	w       http.ResponseWriter
 	r       *http.Request
-	hookch  chan string
 	chsize  atomic.Int32
 	elemch  chan h.Element
 	ready   atomic.Bool
@@ -241,13 +240,13 @@ type Streamer struct {
 	limit int
 	buf   *bytes.Buffer
 	w     http.ResponseWriter
-	http.Flusher
+	f     http.Flusher
 }
 
 func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	s.w = w
-	s.Flusher = w.(http.Flusher)
+	s.f = w.(http.Flusher)
 	s.buf.Reset()
 
 	ctx := &PageContext{w: w, r: r, logger: slog.Default(), Context: r.Context()}
@@ -290,6 +289,7 @@ func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderer.Render(ctx, s)
+	s.Flush()
 
 	// TODO: Maybe carry this to the hooks api
 	size := int(ctx.chsize.Load())
@@ -322,9 +322,17 @@ func (s *Streamer) Write(p []byte) (int, error) {
 		return n, err
 	}
 	m, err := io.Copy(s.w, s.buf)
-	s.Flush()
+	s.f.Flush()
 	s.buf.Reset()
 	return int(m), err
+}
+
+func (s *Streamer) Flush() {
+	if s.buf.Len() != 0 {
+		io.Copy(s.w, s.buf)
+		s.f.Flush()
+		s.buf.Reset()
+	}
 }
 
 func NewStreamer(layout Layout, page Page, head, body h.I, basecheck bool) *Streamer {
