@@ -38,6 +38,7 @@ func CollapsibleTrigger(trigger h.Element) h.Element {
 // Content slot for the collapsible component
 func CollapsibleContent(content h.Element) h.Element {
 	content.AddAttribute(X("show", "open"))
+	content.AddAttribute(X("collapse"))
 	return content
 }
 

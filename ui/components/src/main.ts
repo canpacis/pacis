@@ -1,11 +1,14 @@
 import Alpine from "alpinejs";
 import anchor from "@alpinejs/anchor";
+import collapse from "@alpinejs/collapse";
 import focus from "@alpinejs/focus";
 import persist from "@alpinejs/persist";
 import intersect from "@alpinejs/intersect";
 
-Alpine.plugin(persist);
+Alpine.plugin(anchor);
+Alpine.plugin(collapse);
 Alpine.plugin(focus);
+Alpine.plugin(persist);
 Alpine.plugin(anchor);
 Alpine.plugin(intersect);
 

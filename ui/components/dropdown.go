@@ -9,7 +9,6 @@ func Dropdown(props ...h.I) h.Element {
 		Join(
 			props,
 			h.Class("relative"),
-			X("trap.noscroll", "open"),
 			DismissDropdownOn("keydown.esc.window"),
 		)...,
 	)
@@ -35,13 +34,16 @@ func DropdownContent(props ...h.I) h.Element {
 		X("cloak"),
 		X("show", "open || usedKeyboard"),
 		X("transition"),
-		X("trap", "usedKeyboard"),
+		X("trap.inert.noscroll.noautofocus", "open"),
 		Anchor(VBottom, HStart, 8),
 		DismissDropdownOn("click.outside"),
 		On("keydown.down.prevent", "$focus.wrap().next();"),
 		On("keydown.up.prevent", "$focus.wrap().previous();"),
 	)
-	return h.Div(props...)
+	return h.Template(
+		X("teleport", "body"),
+		h.Div(props...),
+	)
 }
 
 func DropdownItem(value h.Attribute, props ...h.I) h.Node {
