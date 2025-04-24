@@ -41,10 +41,10 @@ func Router(mux *http.ServeMux) (*http.ServeMux, error) {
 	{{ end }}
 
 	{{ if ne (len .NotFoundPage) 0 }}
-	pages.SetNotFoundPage({{ .NotFoundPage }})
+	pages.SetNotFoundPage(pages.NewFnPage({{ .NotFoundPage }}))
 	{{ end }}
 	{{ if ne (len .ErrorPage) 0 }}
-	pages.SetErrorPage({{ .ErrorPage }})
+	pages.SetErrorPage(pages.NewFnPage({{ .ErrorPage }}))
 	{{ end }}
 
 	{{ if ne (len .I18n.FS) 0 }}
@@ -133,6 +133,9 @@ type FileRoute struct {
 	Path   string
 	Page   string
 	Layout *FileLayout
+	// Wraps the page function if true
+	IsFnPage  bool
+	IsPointer bool
 
 	// Redirect routes
 	Redirect string
@@ -245,7 +248,11 @@ func GenerateFile(file *File) ([]byte, error) {
 }
 
 const hometempl = `pages.NewHomeRoute(
-	{{ .Page }},
+	{{ if .IsFnPage }}
+	pages.NewFnPage({{ .Page }}),
+	{{ else }}
+	{{ if .IsPointer }}&{{ end }}{{ .Page }}{},
+	{{ end }}
 	{{ if eq .Layout nil }}
 	pages.EmptyLayout, {{ else }}
 	{{ .Layout }}, {{ end }}
@@ -256,7 +263,11 @@ const hometempl = `pages.NewHomeRoute(
 
 const pagetempl = `pages.NewPageRoute(
 	"{{ .Path }}",
-	{{ .Page }},
+	{{ if .IsFnPage }}
+	pages.NewFnPage({{ .Page }}),
+	{{ else }}
+	{{ if .IsPointer }}&{{ end }}{{ .Page }}{},
+	{{ end }}
 	{{ if eq .Layout nil }}
 	pages.EmptyLayout, {{ else }}
 	{{ .Layout }}, {{ end }}
@@ -326,6 +337,21 @@ func param(name string, dir *parser.Directive) (string, error) {
 		return "", fmt.Errorf("%w: %s %s %s %s", parser.ErrMissingDirectiveParam, name, "parameter is required for", dir.Type.String(), "directives")
 	}
 	return value, nil
+}
+
+func resolveexpr(expr ast.Expr) string {
+	switch expr := expr.(type) {
+	case *ast.SelectorExpr:
+		return resolveexpr(expr.X) + "." + expr.Sel.String()
+	case *ast.ParenExpr:
+		return resolveexpr(expr.X)
+	case *ast.StarExpr:
+		return resolveexpr(expr.X)
+	case *ast.Ident:
+		return expr.String()
+	default:
+		return ""
+	}
 }
 
 func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, error) {
@@ -587,6 +613,18 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 				return nil, fmt.Errorf("page %s is incorrectly placed, place it before a page function", path)
 			}
 
+			isfn := true
+			name := fn.Name.String()
+			pointer := false
+			if fn.Recv != nil {
+				isfn = false
+				switch fn.Recv.List[0].Type.(type) {
+				case *ast.StarExpr:
+					pointer = true
+				}
+				name = resolveexpr(fn.Recv.List[0].Type)
+			}
+
 			var typ FileRouteType = PageRoute
 			if path == "/" {
 				typ = HomeRoute
@@ -601,7 +639,9 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 			file.Routes = append(file.Routes, &FileRoute{
 				Type:        typ,
 				Path:        "GET " + path,
-				Page:        fn.Name.String(),
+				IsFnPage:    isfn,
+				IsPointer:   pointer,
+				Page:        name,
 				Layout:      layout,
 				Middlewares: middlewares,
 			})

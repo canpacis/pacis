@@ -11,6 +11,7 @@ import (
 	"net/http/cookiejar"
 	"os"
 	"os/signal"
+	"reflect"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -54,10 +55,6 @@ type PageContext struct {
 	title   string
 }
 
-// func (ctx *PageContext) Message() {
-
-// }
-
 func (ctx *PageContext) QueueElement() func(h.Element) {
 	ctx.chsize.Add(1)
 	return func(el h.Element) {
@@ -82,14 +79,14 @@ func (ctx *PageContext) NotFound() h.I {
 	ctx.w.Header().Set("Content-Type", "text/html")
 	ctx.w.WriteHeader(http.StatusNotFound)
 
-	return NotFoundPage(ctx)
+	return NotFoundPage.Serve(ctx)
 }
 
 func (ctx *PageContext) Error(status int) h.I {
 	ctx.w.Header().Set("Content-Type", "text/html")
 	ctx.w.WriteHeader(status)
 
-	return ErrorPage(ctx)
+	return ErrorPage.Serve(ctx)
 }
 
 func (ctx *PageContext) Logger() *slog.Logger {
@@ -107,6 +104,7 @@ func (ctx *PageContext) Scan(v any) error {
 
 	pipe := scanner.NewPipe(
 		scanner.NewQuery(&query),
+		scanner.NewPath(ctx.r),
 		scanner.NewHeader(&ctx.r.Header),
 		scanner.NewCookie(jar, ctx.r.URL),
 	)
@@ -131,7 +129,21 @@ func (ctx *PageContext) SetTitle(title string) {
 	ctx.title = title
 }
 
-type Page func(*PageContext) h.I
+type Page interface {
+	Serve(*PageContext) h.I
+}
+
+type FnPage struct {
+	fn func(*PageContext) h.I
+}
+
+func (fp *FnPage) Serve(ctx *PageContext) h.I {
+	return fp.fn(ctx)
+}
+
+func NewFnPage(fn func(*PageContext) h.I) Page {
+	return &FnPage{fn: fn}
+}
 
 type LayoutContext struct {
 	*PageContext
@@ -173,6 +185,7 @@ func (ctx *ActionContext) Scan(v any) error {
 
 	pipe := scanner.NewPipe(
 		scanner.NewQuery(&query),
+		scanner.NewPath(ctx.r),
 		scanner.NewForm(&ctx.r.PostForm),
 		scanner.NewHeader(&ctx.r.Header),
 		scanner.NewCookie(jar, ctx.r.URL),
@@ -201,17 +214,17 @@ func WrapLayout(layout Layout, rest ...Layout) Layout {
 	}
 }
 
-var NotFoundPage Page = func(pc *PageContext) h.I {
+var NotFoundPage Page = &FnPage{func(*PageContext) h.I {
 	return h.P(h.Text("Not Found"))
-}
+}}
 
 func SetNotFoundPage(page Page) {
 	NotFoundPage = page
 }
 
-var ErrorPage Page = func(pc *PageContext) h.I {
+var ErrorPage Page = &FnPage{func(*PageContext) h.I {
 	return h.P(h.Text("Error"))
-}
+}}
 
 func SetErrorPage(page Page) {
 	ErrorPage = page
@@ -265,8 +278,21 @@ func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		page = s.page
 	}
 
+	_, ok := page.(*FnPage)
+	if !ok {
+		// If the page is not just a function page, create a new instance of the page type
+		rv := reflect.ValueOf(page)
+		rv = reflect.Indirect(rv)
+		page = reflect.New(rv.Type()).Interface().(Page)
+	}
+
+	if err := ctx.Scan(page); err != nil {
+		ctx.Set("error", err)
+		page = ErrorPage
+	}
+
 	if s.layout != nil {
-		outlet := page(ctx)
+		outlet := page.Serve(ctx)
 
 		// TODO: Maybe do the page metadata api with hooks?
 		if len(ctx.title) != 0 {
@@ -285,7 +311,7 @@ func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		renderer = s.layout(&LayoutContext{PageContext: ctx, head: s.head, body: s.body, outlet: outlet})
 	} else {
-		renderer = page(ctx)
+		renderer = page.Serve(ctx)
 	}
 
 	renderer.Render(ctx, s)
@@ -440,9 +466,9 @@ func (ar ActionRoute) Path() string {
 }
 
 func (ar *ActionRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = NewStreamer(EmptyLayout, func(ctx *PageContext) h.I {
+	var handler http.Handler = NewStreamer(EmptyLayout, &FnPage{func(ctx *PageContext) h.I {
 		return ar.action(&ActionContext{PageContext: ctx})
-	}, h.Frag(), h.Frag(), false)
+	}}, h.Frag(), h.Frag(), false)
 	for _, middleware := range ar.middlewares {
 		handler = middleware(handler)
 	}
