@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	p "path"
 
-	"github.com/canpacis/pacis/pages"
+	"github.com/canpacis/pacis/pages/internal"
 	c "github.com/canpacis/pacis/ui/components"
 	h "github.com/canpacis/pacis/ui/html"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -50,7 +50,7 @@ type Message struct {
 }
 
 func (m Message) Render(ctx context.Context, w io.Writer) error {
-	localizer := pages.Get[*i18n.Localizer](ctx, "localizer")
+	localizer := internal.Get[*i18n.Localizer](ctx, "localizer")
 	if localizer == nil {
 		return c.ErrorText(fmt.Errorf("no localizer in the context, have you registered the i18n middleware correctly?")).Render(ctx, w)
 	}
@@ -88,7 +88,7 @@ func Text(key string, data ...any) Message {
 }
 
 func Locale(ctx context.Context) (*language.Tag, error) {
-	locale := pages.Get[*language.Tag](ctx, "locale")
+	locale := internal.Get[*language.Tag](ctx, "locale")
 	if locale == nil {
 		return nil, fmt.Errorf("no localizer in the context, have you registered the i18n middleware correctly?")
 	}

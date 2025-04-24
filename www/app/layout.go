@@ -11,6 +11,7 @@ import (
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/pacis/ui/icons"
+	"golang.org/x/text/language"
 )
 
 var sans = fonts.New("Inter", fonts.WeightList{fonts.W100, fonts.W900}, fonts.Swap, fonts.Latin, fonts.LatinExt)
@@ -24,24 +25,27 @@ var robots []byte
 //go:embed sitemap.xml
 var sitemap []byte
 
+type Layout struct {
+	User   *User         `context:"user"`
+	Locale *language.Tag `context:"locale"`
+	Theme  string        `context:"theme"`
+}
+
 //pacis:layout path=/
-func Layout(ctx *pages.LayoutContext) I {
-	locale, err := i18n.Locale(ctx)
-	if err != nil {
-		ctx.Logger().Error("failed to get locale", "error", err)
-	}
+func (l *Layout) Layout(ctx *pages.Context) I {
+	// TODO: Context values are populate after the middlewares
+	ctx.Scan(l)
 
 	title := i18n.Text("title").String(ctx)
 	desc := i18n.Text("desc").String(ctx)
 	keywords := i18n.Text("keywords").String(ctx)
 
-	user := pages.Get[*User](ctx, "user")
 	appurl := os.Getenv("AppURL")
 	banner := appurl + pages.Asset("banner.webp")
 
 	return Html(
-		Class(pages.Get[string](ctx, "theme")),
-		Lang(locale.String()),
+		Class(l.Theme),
+		Lang(l.Locale.String()),
 
 		Head(
 			Meta(Name("title"), Content(title)),
@@ -67,14 +71,14 @@ func Layout(ctx *pages.LayoutContext) I {
 			Meta(Charset("UTF-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1.0")),
 
-			IfFn(user != nil, func() Renderer {
-				return Store("user", user)
+			IfFn(l.User != nil, func() Renderer {
+				return Store("user", l.User)
 			}),
-			If(user == nil, Store("user", &User{})),
+			If(l.User == nil, Store("user", &User{})),
 
 			Script(Src(pages.Asset("before.ts"))),
 			fonts.Head(sans, mono),
-			ctx.Head(),
+			pages.Head(ctx),
 			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
 			Script(
 				Defer,
@@ -86,11 +90,11 @@ func Layout(ctx *pages.LayoutContext) I {
 		Body(
 			Class("flex flex-col min-h-dvh overflow-x-hidden"),
 
-			AppHeader(user),
-			ctx.Outlet(),
+			AppHeader(l.User),
+			pages.Outlet(ctx),
 			ToastContainer(),
 			AppFooter(),
-			ctx.Body(),
+			pages.Body(ctx),
 		),
 	)
 }

@@ -8,7 +8,7 @@ import (
 )
 
 //pacis:page path=/share/{slug} middlewares=auth
-func SharePage(ctx *pages.PageContext) I {
+func SharePage(ctx *pages.Context) I {
 	slug := ctx.Request().PathValue("slug")
 
 	query := url.Values{}
@@ -36,5 +36,5 @@ func SharePage(ctx *pages.PageContext) I {
 		query.Add("source", "unknown")
 	}
 
-	return ctx.Redirect("/?" + query.Encode())
+	return pages.Redirect(ctx, "/?"+query.Encode())
 }

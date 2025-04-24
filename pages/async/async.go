@@ -5,9 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
-	"time"
 
-	"github.com/canpacis/pacis/pages"
 	c "github.com/canpacis/pacis/ui/components"
 	h "github.com/canpacis/pacis/ui/html"
 )
@@ -24,23 +22,24 @@ type StreamElement struct {
 }
 
 func (n *StreamElement) Render(ctx context.Context, w io.Writer) error {
-	pctx, ok := ctx.(*pages.PageContext)
-	// If context is not a page context, render sync
-	if !ok {
-		return n.fn().Render(ctx, w)
-	}
+	// TODO
+	// pctx, ok := ctx.(*pages.Context)
+	// // If context is not a page context, render sync
+	// if !ok {
+	// 	return n.fn().Render(ctx, w)
+	// }
 
 	id := randid()
-	dequeue := pctx.QueueElement()
+	// dequeue := pctx.QueueElement()
 
 	go func(fn func() h.Element, id string) {
-		for !pctx.Ready() {
-			time.Sleep(time.Microsecond * 100)
-		}
+		// for !pctx.Ready() {
+		// 	time.Sleep(time.Microsecond * 100)
+		// }
 		element := fn()
 		element.AddAttribute(h.SlotAttr(id))
 		element.AddAttribute(c.X("show", "false"))
-		dequeue(element)
+		// dequeue(element)
 	}(n.fn, id)
 
 	placholder := h.Slot(h.Name(id))

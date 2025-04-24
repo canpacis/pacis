@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -129,92 +130,107 @@ func AuthHandler(r *http.Request) (*User, error) {
 	return user, nil
 }
 
-//pacis:page path=/auth/login middlewares=auth
-func LoginPage(ctx *pages.PageContext) I {
-	ctx.SetTitle("Login | Pacis")
+type LoginPage struct {
+	User *User `context:"user"`
+}
 
-	user := pages.Get[*User](ctx, "user")
-	if user != nil {
-		return ctx.Redirect("/")
+//pacis:page path=/auth/login middlewares=auth
+func (p *LoginPage) Page(ctx *pages.Context) I {
+	// ctx.SetTitle("Login | Pacis")
+
+	if p.User != nil {
+		return pages.Redirect(ctx, "/")
 	}
 
 	state := randstate()
 	url := oauthConfig.AuthCodeURL(state)
 
-	ctx.SetCookie(&http.Cookie{
-		Name:     "auth_state",
-		Value:    state,
-		Path:     "/auth",
-		Secure:   true,
-		HttpOnly: true,
-		// Give the state cookie 5 minutes to expire
-		Expires:  time.Now().Add(time.Minute * 5),
-		SameSite: http.SameSiteNoneMode,
-	})
+	return Frag(
+		pages.Cookie(
+			ctx,
 
-	return Div(
-		Class("container flex-1 flex items-center justify-center flex-col gap-4"),
+			&http.Cookie{
+				Name:     "auth_state",
+				Value:    state,
+				Path:     "/",
+				Secure:   true,
+				HttpOnly: true,
+				// Give the state cookie 5 minutes to expire
+				Expires:  time.Now().Add(time.Minute * 5),
+				SameSite: http.SameSiteNoneMode,
+			},
+		),
 
-		H1(Class("text-3xl font-semibold"), Text("Welcome to Pacis")),
-		Button(
-			ButtonSizeLg,
-			Href(url),
-			Replace(A),
-			Class("!rounded-full"),
+		Div(
+			Class("container flex-1 flex items-center justify-center flex-col gap-4"),
 
-			GoogleIcon(),
-			Text("Login with Google"),
+			H1(Class("text-3xl font-semibold"), Text("Welcome to Pacis")),
+			Button(
+				ButtonSizeLg,
+				Href(url),
+				Replace(A),
+				Class("!rounded-full"),
+
+				GoogleIcon(),
+				Text("Login with Google"),
+			),
 		),
 	)
 }
 
 //pacis:page path=/auth/logout middlewares=auth
-func LogoutPage(ctx *pages.PageContext) I {
-	// Remove the cookie
-	ctx.SetCookie(&http.Cookie{
-		Name:     "auth_token",
-		Value:    "",
-		Path:     "/",
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-		MaxAge:   -1,
-	})
-	return ctx.Redirect("/")
+func LogoutPage(ctx *pages.Context) I {
+	return Frag(
+		pages.Cookie(
+			ctx,
+
+			&http.Cookie{
+				Name:     "auth_token",
+				Value:    "",
+				Path:     "/",
+				Secure:   true,
+				HttpOnly: true,
+				SameSite: http.SameSiteNoneMode,
+				MaxAge:   -1,
+			},
+		),
+		pages.Redirect(ctx, "/"),
+	)
+}
+
+type AuthCallbackPage struct {
+	Code        string `query:"code"`
+	QueryState  string `query:"state"`
+	CookieState string `cookie:"auth_state"`
 }
 
 //pacis:page path=/auth/callback middlewares=auth
-func AuthCallbackPage(ctx *pages.PageContext) I {
-	ctx.SetTitle("Redirecting")
+func (p *AuthCallbackPage) Page(ctx *pages.Context) I {
+	fmt.Println(p.Code)
+	fmt.Println(p.QueryState)
+	fmt.Println(p.CookieState)
+	if p.QueryState != p.CookieState {
+		return pages.Error(ctx, http.StatusBadRequest, &AppError{Code: InvalidAuthStateError, Err: errors.New("app error")})
+	}
 
-	r := ctx.Request()
-	state := r.FormValue("state")
-
-	cookie, err := ctx.GetCookie("auth_state")
+	token, err := oauthConfig.Exchange(ctx, p.Code)
 	if err != nil {
-		ctx.Set("error", &AppError{InvalidAuthStateError, ""})
-		return ctx.Error(http.StatusBadRequest)
-	}
-	if state != cookie.Value {
-		ctx.Set("error", &AppError{InvalidAuthStateError, ""})
-		return ctx.Error(http.StatusBadRequest)
+		return pages.Error(ctx, http.StatusBadRequest, &AppError{Code: AuthExchangeError, Err: errors.New("app error")})
 	}
 
-	code := r.FormValue("code")
-	token, err := oauthConfig.Exchange(ctx, code)
-	if err != nil {
-		ctx.Set("error", &AppError{AuthExchangeError, ""})
-		return ctx.Error(http.StatusBadRequest)
-	}
+	return Frag(
+		pages.Cookie(
+			ctx,
 
-	ctx.SetCookie(&http.Cookie{
-		Name:     "auth_token",
-		Value:    token.AccessToken,
-		Path:     "/",
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	return ctx.Redirect("/")
+			&http.Cookie{
+				Name:     "auth_token",
+				Value:    token.AccessToken,
+				Path:     "/",
+				Secure:   true,
+				HttpOnly: true,
+				SameSite: http.SameSiteLaxMode,
+			},
+		),
+		pages.Redirect(ctx, "/"),
+	)
 }

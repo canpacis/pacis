@@ -40,11 +40,11 @@ func Router(mux *http.ServeMux) (*http.ServeMux, error) {
 	})
 	{{ end }}
 
-	{{ if ne (len .NotFoundPage) 0 }}
-	pages.SetNotFoundPage(pages.NewFnPage({{ .NotFoundPage }}))
+	{{ if ne .NotFoundPage nil }}
+	pages.SetNotFoundPage({{ .NotFoundPage }})
 	{{ end }}
-	{{ if ne (len .ErrorPage) 0 }}
-	pages.SetErrorPage(pages.NewFnPage({{ .ErrorPage }}))
+	{{ if ne .ErrorPage nil }}
+	pages.SetErrorPage({{ .ErrorPage }})
 	{{ end }}
 
 	{{ if ne (len .I18n.FS) 0 }}
@@ -81,8 +81,7 @@ func Router(mux *http.ServeMux) (*http.ServeMux, error) {
 	)
 
 	for _, route := range routes {
-		var handler http.Handler = route
-		mux.Handle(route.Path(), handler)
+		mux.Handle(route.Path(), route)
 	}
 
 	return mux, nil
@@ -107,7 +106,6 @@ type FileI18n struct {
 type FileRouteType string
 
 const (
-	HomeRoute     = FileRouteType("pages.NewHomeRoute")
 	PageRoute     = FileRouteType("pages.NewPageRoute")
 	RedirectRoute = FileRouteType("pages.NewRedirectRoute")
 	ActionRoute   = FileRouteType("pages.NewActionRoute")
@@ -115,15 +113,28 @@ const (
 )
 
 type FileLayout struct {
-	Name    string
-	Wrapper *FileLayout
+	name       string
+	Wrapper    *FileLayout
+	IsFnLayout bool
+	IsPointer  bool
+}
+
+func (l FileLayout) Name() string {
+	if l.IsFnLayout {
+		return "pages.NewFnLayout(" + l.name + ")"
+	}
+	name := l.name + "{}"
+	if l.IsPointer {
+		name = "&" + name
+	}
+	return name
 }
 
 func (fl FileLayout) String() string {
 	if fl.Wrapper == nil {
-		return fl.Name
+		return fl.Name()
 	}
-	return fmt.Sprintf("pages.WrapLayout(%s, %s)", fl.Name, fl.Wrapper.Name)
+	return fmt.Sprintf("pages.WrapLayout(%s, %s)", fl.Name(), fl.Wrapper.Name())
 }
 
 type FileRoute struct {
@@ -156,6 +167,23 @@ type FileMiddleware struct {
 	Value string
 }
 
+type MetaPage struct {
+	Name      string
+	IsFnPage  bool
+	IsPointer bool
+}
+
+func (mp MetaPage) String() string {
+	if mp.IsFnPage {
+		return "pages.NewFnPage(" + mp.Name + ")"
+	}
+	name := mp.Name + "{}"
+	if mp.IsPointer {
+		name = "&" + name
+	}
+	return name
+}
+
 type File struct {
 	Package string
 	Imports []FileImport
@@ -171,8 +199,8 @@ type File struct {
 	RouteStrings []string
 	Middlewares  []FileMiddleware
 
-	NotFoundPage string
-	ErrorPage    string
+	NotFoundPage *MetaPage
+	ErrorPage    *MetaPage
 }
 
 func GenerateFile(file *File) ([]byte, error) {
@@ -216,7 +244,7 @@ func GenerateFile(file *File) ([]byte, error) {
 
 	for _, route := range file.Routes {
 		switch route.Type {
-		case PageRoute, HomeRoute, ActionRoute:
+		case PageRoute, ActionRoute:
 			route.Middlewares = append(route.Middlewares, "middleware.Logger", "middleware.Theme", "middleware.Gzip", "middleware.Tracer")
 		case RedirectRoute:
 			route.Middlewares = append(route.Middlewares, "middleware.Logger", "middleware.Tracer")
@@ -246,20 +274,6 @@ func GenerateFile(file *File) ([]byte, error) {
 
 	return formatted, nil
 }
-
-const hometempl = `pages.NewHomeRoute(
-	{{ if .IsFnPage }}
-	pages.NewFnPage({{ .Page }}),
-	{{ else }}
-	{{ if .IsPointer }}&{{ end }}{{ .Page }}{},
-	{{ end }}
-	{{ if eq .Layout nil }}
-	pages.EmptyLayout, {{ else }}
-	{{ .Layout }}, {{ end }}
-	head, body,
-	{{ range .Middlewares }}
-	{{ . }}, {{ end }}
-)`
 
 const pagetempl = `pages.NewPageRoute(
 	"{{ .Path }}",
@@ -303,8 +317,6 @@ func GenerateRoute(route *FileRoute) (string, error) {
 	var text string
 
 	switch route.Type {
-	case HomeRoute:
-		text = hometempl
 	case PageRoute:
 		text = pagetempl
 	case RedirectRoute:
@@ -443,7 +455,24 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 		}
 
 		layoutpaths = append(layoutpaths, path)
-		layouts[path] = FileLayout{Name: fn.Name.String()}
+
+		isfn := true
+		name := fn.Name.String()
+		pointer := false
+		if fn.Recv != nil {
+			isfn = false
+			switch fn.Recv.List[0].Type.(type) {
+			case *ast.StarExpr:
+				pointer = true
+			}
+			name = resolveexpr(fn.Recv.List[0].Type)
+		}
+
+		layouts[path] = FileLayout{
+			name:       name,
+			IsFnLayout: isfn,
+			IsPointer:  pointer,
+		}
 	}
 	// sort them by length, largest one is potentially the most enclosed
 	sort.Slice(layoutpaths, func(i, j int) bool {
@@ -460,16 +489,20 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 				parent := layouts[before]
 				if layouts[path].Wrapper == nil {
 					layouts[path] = FileLayout{
-						Name:    layouts[path].Name,
-						Wrapper: &parent,
+						name:       layouts[path].name,
+						Wrapper:    &parent,
+						IsFnLayout: layouts[path].IsFnLayout,
+						IsPointer:  layouts[path].IsPointer,
 					}
 				} else {
 					layouts[path] = FileLayout{
-						Name: layouts[path].Name,
+						name: layouts[path].name,
 						Wrapper: &FileLayout{
-							Name:    parent.Name,
+							name:    parent.name,
 							Wrapper: layouts[path].Wrapper,
 						},
+						IsFnLayout: layouts[path].IsFnLayout,
+						IsPointer:  layouts[path].IsPointer,
 					}
 				}
 			}
@@ -547,13 +580,46 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 				if !ok {
 					return nil, fmt.Errorf("not-found is incorrectly placed, place it before a page function")
 				}
-				file.NotFoundPage = fn.Name.String()
+				isfn := true
+				name := fn.Name.String()
+				pointer := false
+				if fn.Recv != nil {
+					isfn = false
+					switch fn.Recv.List[0].Type.(type) {
+					case *ast.StarExpr:
+						pointer = true
+					}
+					name = resolveexpr(fn.Recv.List[0].Type)
+				}
+
+				file.NotFoundPage = &MetaPage{
+					Name:      name,
+					IsFnPage:  isfn,
+					IsPointer: pointer,
+				}
 			case "error":
 				fn, ok := page.Node.(*ast.FuncDecl)
 				if !ok {
 					return nil, fmt.Errorf("error is incorrectly placed, place it before a page function")
 				}
-				file.ErrorPage = fn.Name.String()
+
+				isfn := true
+				name := fn.Name.String()
+				pointer := false
+				if fn.Recv != nil {
+					isfn = false
+					switch fn.Recv.List[0].Type.(type) {
+					case *ast.StarExpr:
+						pointer = true
+					}
+					name = resolveexpr(fn.Recv.List[0].Type)
+				}
+
+				file.ErrorPage = &MetaPage{
+					Name:      name,
+					IsFnPage:  isfn,
+					IsPointer: pointer,
+				}
 			case "robots":
 				decl := page.Node.(*ast.GenDecl)
 				spec, ok := decl.Specs[0].(*ast.ValueSpec)
@@ -625,11 +691,6 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 				name = resolveexpr(fn.Recv.List[0].Type)
 			}
 
-			var typ FileRouteType = PageRoute
-			if path == "/" {
-				typ = HomeRoute
-			}
-
 			middlewarelist, _ := param("middlewares", page)
 			middlewares := strings.Split(middlewarelist, ",")
 			middlewares = slices.DeleteFunc(middlewares, func(m string) bool {
@@ -637,7 +698,7 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 			})
 
 			file.Routes = append(file.Routes, &FileRoute{
-				Type:        typ,
+				Type:        PageRoute,
 				Path:        "GET " + path,
 				IsFnPage:    isfn,
 				IsPointer:   pointer,

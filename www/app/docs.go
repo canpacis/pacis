@@ -112,7 +112,7 @@ func flattenitems(items []NavItem) []NavItem {
 	return result
 }
 
-func getnextitem(ctx *pages.LayoutContext, items []NavItem) *NavItem {
+func getnextitem(ctx *pages.Context, items []NavItem) *NavItem {
 	path := ctx.Request().URL.Path
 	items = flattenitems(items)
 	idx := slices.IndexFunc(items, func(item NavItem) bool {
@@ -128,7 +128,7 @@ func getnextitem(ctx *pages.LayoutContext, items []NavItem) *NavItem {
 	return &items[idx+1]
 }
 
-func getprevitem(ctx *pages.LayoutContext, items []NavItem) *NavItem {
+func getprevitem(ctx *pages.Context, items []NavItem) *NavItem {
 	path := ctx.Request().URL.Path
 	items = flattenitems(items)
 	idx := slices.IndexFunc(items, func(item NavItem) bool {
@@ -185,7 +185,7 @@ func NavItemUI(item NavItem, i int) I {
 //pacis:layout path=/docs
 //pacis:redirect from=/docs/ to=/docs/getting-started/introduction
 //pacis:redirect from=/docs/components to=/docs/ui/components/overview
-func DocLayout(ctx *pages.LayoutContext) I {
+func DocLayout(ctx *pages.Context) I {
 	items := getnavitems()
 	prev := getprevitem(ctx, items)
 	next := getnextitem(ctx, items)
@@ -212,7 +212,7 @@ func DocLayout(ctx *pages.LayoutContext) I {
 					)
 				}),
 			),
-			ctx.Outlet(),
+			pages.Outlet(ctx),
 			Div(
 				Class("flex gap-8 mb-[var(--footer-height)]"),
 
@@ -309,57 +309,68 @@ func InitDocs() error {
 	return err
 }
 
+type GettingStartedPage struct {
+	Slug string `path:"slug"`
+}
+
 //pacis:page path=/docs/getting-started/{slug} middlewares=auth
-func GettingStartedPage(ctx *pages.PageContext) I {
-	slug := ctx.Request().PathValue("slug")
-	page, ok := dir.Dirs["getting-started"].Pages[slug]
+func (p *GettingStartedPage) Page(ctx *pages.Context) I {
+	page, ok := dir.Dirs["getting-started"].Pages[p.Slug]
 
 	if ok {
-		ctx.SetTitle("Pacis Docs | Getting Started > " + page.Title)
+		// ctx.SetTitle("Pacis Docs | Getting Started > " + page.Title)
 	} else {
-		return ctx.NotFound()
+		return pages.NotFound(ctx)
 	}
 
 	return DocPageUI(page)
+}
+
+type PagesPage struct {
+	Slug string `path:"slug"`
 }
 
 //pacis:page path=/docs/pages/{slug} middlewares=auth
-func PagesPage(ctx *pages.PageContext) I {
-	slug := ctx.Request().PathValue("slug")
-	page, ok := dir.Dirs["pages"].Pages[slug]
+func (p *PagesPage) Page(ctx *pages.Context) I {
+	page, ok := dir.Dirs["pages"].Pages[p.Slug]
 
 	if ok {
-		ctx.SetTitle("Pacis Docs | Pages > " + page.Title)
+		// ctx.SetTitle("Pacis Docs | Pages > " + page.Title)
 	} else {
-		return ctx.NotFound()
+		return pages.NotFound(ctx)
 	}
 
 	return DocPageUI(page)
+}
+
+type TemplatingPage struct {
+	Slug string `path:"slug"`
 }
 
 //pacis:page path=/docs/ui/templating/{slug} middlewares=auth
-func TemplatingPage(ctx *pages.PageContext) I {
-	slug := ctx.Request().PathValue("slug")
-	page, ok := dir.Dirs["ui"].Dirs["templating"].Pages[slug]
+func (p *TemplatingPage) Page(ctx *pages.Context) I {
+	page, ok := dir.Dirs["ui"].Dirs["templating"].Pages[p.Slug]
 
 	if ok {
-		ctx.SetTitle("Pacis Docs | UI > Templating > " + page.Title)
+		// ctx.SetTitle("Pacis Docs | UI > Templating > " + page.Title)
 	} else {
-		return ctx.NotFound()
+		return pages.NotFound(ctx)
 	}
 
 	return DocPageUI(page)
 }
 
-//pacis:page path=/docs/ui/components/{slug} middlewares=auth
-func ComponentsPage(ctx *pages.PageContext) I {
-	slug := ctx.Request().PathValue("slug")
-	page, ok := dir.Dirs["ui"].Dirs["components"].Pages[slug]
+type ComponentsPage struct {
+	Slug string `path:"slug"`
+}
 
+//pacis:page path=/docs/ui/components/{slug} middlewares=auth
+func (p *ComponentsPage) Page(ctx *pages.Context) I {
+	page, ok := dir.Dirs["ui"].Dirs["components"].Pages[p.Slug]
 	if ok {
-		ctx.SetTitle("Pacis Docs | UI > Components > " + page.Title)
+		// ctx.SetTitle("Pacis Docs | UI > Components > " + page.Title)
 	} else {
-		return ctx.NotFound()
+		return pages.NotFound(ctx)
 	}
 
 	return DocPageUI(page)

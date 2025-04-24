@@ -57,21 +57,21 @@ func DiscordIcon(props ...I) Element {
 }
 
 //pacis:page path=/docs/ui/icons/icon-set middlewares=auth
-func IconSetPage(ctx *pages.PageContext) I {
+func IconSetPage(ctx *pages.Context) I {
 	return Div(
 		H1(Class("scroll-m-20 text-3xl font-bold tracking-tight"), Text("Icon Set")),
 	)
 }
 
 //pacis:page path=/docs/ui/icons/{slug} middlewares=auth
-func CustomIconsPage(ctx *pages.PageContext) I {
+func CustomIconsPage(ctx *pages.Context) I {
 	slug := ctx.Request().PathValue("slug")
 	page, ok := dir.Dirs["ui"].Dirs["icons"].Pages[slug]
 
 	if ok {
-		ctx.SetTitle("Pacis Docs | UI > Components > " + page.Title)
+		// ctx.SetTitle("Pacis Docs | UI > Components > " + page.Title)
 	} else {
-		return ctx.NotFound()
+		return pages.NotFound(ctx)
 	}
 
 	return DocPageUI(page)

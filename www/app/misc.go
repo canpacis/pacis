@@ -8,8 +8,8 @@ import (
 )
 
 //pacis:page label=not-found
-func NotFoundPage(ctx *pages.PageContext) I {
-	ctx.SetTitle("Not Found | Pacis")
+func NotFoundPage(ctx *pages.Context) I {
+	// ctx.SetTitle("Not Found | Pacis")
 
 	return Div(
 		Class("flex flex-col container gap-6 flex-1 items-center justify-center"),
@@ -42,23 +42,26 @@ const (
 )
 
 type AppError struct {
-	Code        AppErrorCode
-	Description string
+	Code AppErrorCode `context:"status"`
+	Err  error        `context:"error"`
 }
 
 func (ae *AppError) Error() string {
-	return ae.Description
+	return ae.Err.Error()
+}
+
+func (ae *AppError) Unwrap() error {
+	return ae.Err
 }
 
 //pacis:page label=error
-func ErrorPage(ctx *pages.PageContext) I {
-	ctx.SetTitle("Error | Pacis")
-
-	err, ok := pages.SafeGet[*AppError](ctx, "error")
-	var code AppErrorCode
-	if ok {
-		code = err.Code
-	}
+func (p *AppError) Page(ctx *pages.Context) I {
+	// ctx.SetTitle("Error | Pacis")
+	// err, ok := pages.SafeGet[*AppError](ctx, "error")
+	// var code AppErrorCode
+	// if ok {
+	// 	code = err.Code
+	// }
 
 	return Div(
 		Class("flex flex-col container gap-6 flex-1 items-center justify-center"),
@@ -71,7 +74,7 @@ func ErrorPage(ctx *pages.PageContext) I {
 		),
 		P(
 			SwitchCase(
-				code,
+				p.Code,
 				Case(InvalidAuthStateError, Text("There was an error with the auth state")),
 				Case(AuthExchangeError, Text("Failed to exchange the auth token")),
 				Case(UnknownError, Text("We don't know what happened")),

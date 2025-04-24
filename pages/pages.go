@@ -1,10 +1,7 @@
 package pages
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"io"
 	"log"
 	"log/slog"
 	"net/http"
@@ -12,88 +9,38 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
-	"sync/atomic"
 	"syscall"
 	"time"
 
-	h "github.com/canpacis/pacis/ui/html"
+	"github.com/canpacis/pacis/pages/internal"
+	"github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/scanner"
 )
 
-type ctxkey string
-
-func Set(ctx context.Context, key string, value any) context.Context {
-	return context.WithValue(ctx, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
-}
-
-func Get[T any](ctx context.Context, key string) T {
-	value := ctx.Value(ctxkey(fmt.Sprintf("%s:%s", "app", key)))
-	cast, ok := value.(T)
-	if !ok {
-		var v T
-		log.Fatalf("failed to cast ctx key '%s' to %T\n", key, v)
-		return v
-	}
-	return cast
-}
-
-func SafeGet[T any](ctx context.Context, key string) (T, bool) {
-	value := ctx.Value(ctxkey(fmt.Sprintf("%s:%s", "app", key)))
-	cast, ok := value.(T)
-	return cast, ok
-}
-
-type PageContext struct {
+type Context struct {
 	context.Context
-	w       http.ResponseWriter
-	r       *http.Request
-	chsize  atomic.Int32
-	elemch  chan h.Element
-	ready   atomic.Bool
-	timings []*ServerTiming
-	logger  *slog.Logger
-	title   string
+	w http.ResponseWriter
+	r *http.Request
+
+	head   html.I
+	body   html.I
+	outlet html.I
 }
 
-func (ctx *PageContext) QueueElement() func(h.Element) {
-	ctx.chsize.Add(1)
-	return func(el h.Element) {
-		ctx.elemch <- el
-	}
+func (ctx *Context) Clone(parent context.Context) *Context {
+	nctx := NewContext(ctx.w, ctx.r)
+	nctx.head = ctx.head
+	nctx.body = ctx.body
+	nctx.outlet = ctx.outlet
+	ctx.Context = parent
+	return nctx
 }
 
-func (ctx *PageContext) Ready() bool {
-	return ctx.ready.Load()
-}
-
-func (ctx *PageContext) Request() *http.Request {
+func (ctx *Context) Request() *http.Request {
 	return ctx.r
 }
 
-func (ctx *PageContext) Redirect(to string) h.I {
-	http.Redirect(ctx.w, ctx.r, to, http.StatusFound)
-	return h.Frag()
-}
-
-func (ctx *PageContext) NotFound() h.I {
-	ctx.w.Header().Set("Content-Type", "text/html")
-	ctx.w.WriteHeader(http.StatusNotFound)
-
-	return NotFoundPage.Serve(ctx)
-}
-
-func (ctx *PageContext) Error(status int) h.I {
-	ctx.w.Header().Set("Content-Type", "text/html")
-	ctx.w.WriteHeader(status)
-
-	return ErrorPage.Serve(ctx)
-}
-
-func (ctx *PageContext) Logger() *slog.Logger {
-	return ctx.logger
-}
-
-func (ctx *PageContext) Scan(v any) error {
+func (ctx *Context) Scan(v any) error {
 	query := ctx.r.URL.Query()
 
 	jar, err := cookiejar.New(nil)
@@ -103,181 +50,75 @@ func (ctx *PageContext) Scan(v any) error {
 	jar.SetCookies(ctx.r.URL, ctx.r.Cookies())
 
 	pipe := scanner.NewPipe(
+		scanner.NewCookie(jar, ctx.r.URL),
 		scanner.NewQuery(&query),
 		scanner.NewPath(ctx.r),
 		scanner.NewHeader(&ctx.r.Header),
-		scanner.NewCookie(jar, ctx.r.URL),
+		internal.NewContextScanner(ctx),
 	)
 	return pipe.Scan(v)
 }
 
-func (ctx *PageContext) Set(key string, value any) {
-	c := context.WithValue(ctx.Context, ctxkey(fmt.Sprintf("%s:%s", "app", key)), value)
-	ctx.Context = c
-}
-
-func (ctx *PageContext) GetCookie(name string) (*http.Cookie, error) {
-	return ctx.r.Cookie(name)
-}
-
-func (ctx *PageContext) SetCookie(cookie *http.Cookie) {
-	http.SetCookie(ctx.w, cookie)
-}
-
-// TODO: Replace this API with Page Meta Data API
-func (ctx *PageContext) SetTitle(title string) {
-	ctx.title = title
+func NewContext(w http.ResponseWriter, r *http.Request) *Context {
+	return &Context{w: w, r: r, Context: r.Context()}
 }
 
 type Page interface {
-	Serve(*PageContext) h.I
+	Page(*Context) html.I
 }
 
 type FnPage struct {
-	fn func(*PageContext) h.I
+	fn func(*Context) html.I
 }
 
-func (fp *FnPage) Serve(ctx *PageContext) h.I {
-	return fp.fn(ctx)
+func (p FnPage) Page(ctx *Context) html.I {
+	return p.fn(ctx)
 }
 
-func NewFnPage(fn func(*PageContext) h.I) Page {
+func NewFnPage(fn func(*Context) html.I) *FnPage {
 	return &FnPage{fn: fn}
 }
 
-type LayoutContext struct {
-	*PageContext
-	head   h.I
-	body   h.I
-	outlet h.I
+type Layout interface {
+	Layout(*Context) html.I
 }
 
-func (ctx LayoutContext) Head() h.I {
-	return ctx.head
-}
-
-func (ctx LayoutContext) Body() h.I {
-	return ctx.body
-}
-
-func (ctx LayoutContext) Outlet() h.I {
+var EmptyLayout = NewFnLayout(func(ctx *Context) html.I {
 	return ctx.outlet
+})
+
+type FnLayout struct {
+	fn func(*Context) html.I
 }
 
-type Layout func(*LayoutContext) h.I
-
-type ActionContext struct {
-	*PageContext
+func (p FnLayout) Layout(ctx *Context) html.I {
+	return p.fn(ctx)
 }
 
-func (ctx *ActionContext) Scan(v any) error {
-	if err := ctx.r.ParseForm(); err != nil {
-		return err
-	}
-
-	query := ctx.r.URL.Query()
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return err
-	}
-	jar.SetCookies(ctx.r.URL, ctx.r.Cookies())
-
-	pipe := scanner.NewPipe(
-		scanner.NewQuery(&query),
-		scanner.NewPath(ctx.r),
-		scanner.NewForm(&ctx.r.PostForm),
-		scanner.NewHeader(&ctx.r.Header),
-		scanner.NewCookie(jar, ctx.r.URL),
-	)
-
-	return pipe.Scan(v)
+func NewFnLayout(fn func(*Context) html.I) *FnLayout {
+	return &FnLayout{fn: fn}
 }
 
-type Action func(*ActionContext) h.I
-
-func WrapLayout(layout Layout, rest ...Layout) Layout {
-	switch len(rest) {
-	case 0:
-		return layout
-	case 1:
-		return func(lc *LayoutContext) h.I {
-			lc.outlet = layout(lc)
-			return rest[0](lc)
-		}
-	default:
-		first := func(lc *LayoutContext) h.I {
-			lc.outlet = layout(lc)
-			return rest[0](lc)
-		}
-		return WrapLayout(first, rest[1:]...)
-	}
+type Action interface {
+	Action(*Context) html.I
 }
 
-var NotFoundPage Page = &FnPage{func(*PageContext) h.I {
-	return h.P(h.Text("Not Found"))
-}}
-
-func SetNotFoundPage(page Page) {
-	NotFoundPage = page
+type Route interface {
+	http.Handler
+	Path() string
 }
 
-var ErrorPage Page = &FnPage{func(*PageContext) h.I {
-	return h.P(h.Text("Error"))
-}}
-
-func SetErrorPage(page Page) {
-	ErrorPage = page
-}
-
-var assetmap = map[string]string{}
-
-func RegisterAssets(assets map[string]string) {
-	assetmap = assets
-}
-
-func Asset(src string) string {
-	resolved, ok := assetmap[src]
-	if !ok {
-		log.Fatalf("failed to resolve asset %s", src)
-	}
-	return resolved
-}
-
-type Streamer struct {
-	layout     Layout
-	page       Page
-	head, body h.I
-	basecheck  bool
-
-	limit int
-	buf   *bytes.Buffer
-	w     http.ResponseWriter
-	f     http.Flusher
-}
-
-func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	s.w = w
-	s.f = w.(http.Flusher)
-	s.buf.Reset()
-
-	ctx := &PageContext{w: w, r: r, logger: slog.Default(), Context: r.Context()}
-	var renderer h.I
+func getdocrenderer(ctx *Context, pg Page, layout Layout, home bool) html.Renderer {
+	var renderer html.I
 	var page Page
 
-	if s.basecheck {
-		if r.URL.Path != "/" {
-			w.WriteHeader(http.StatusNotFound)
-			page = NotFoundPage
-		} else {
-			w.WriteHeader(http.StatusOK)
-			page = s.page
-		}
+	if home && ctx.r.URL.Path != "/" {
+		ctx.w.WriteHeader(http.StatusNotFound)
+		page = NotFoundPage
 	} else {
-		page = s.page
+		ctx.w.WriteHeader(http.StatusOK)
+		page = pg
 	}
-
 	_, ok := page.(*FnPage)
 	if !ok {
 		// If the page is not just a function page, create a new instance of the page type
@@ -287,161 +128,118 @@ func (s *Streamer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := ctx.Scan(page); err != nil {
-		ctx.Set("error", err)
 		page = ErrorPage
 	}
 
-	if s.layout != nil {
-		outlet := page.Serve(ctx)
-
-		// TODO: Maybe do the page metadata api with hooks?
-		if len(ctx.title) != 0 {
-			el, ok := s.head.(h.Element)
-			if ok {
-				el.AddNode(h.Title(h.Text(ctx.title)))
-			} else {
-				frag, ok := s.head.(*h.Fragment)
-				if ok {
-					s.head = h.Frag(frag, h.Title(h.Text(ctx.title)))
-				} else {
-					ctx.logger.Error("failed to add title to document head")
-				}
-			}
+	if layout != nil {
+		_, ok := layout.(*FnLayout)
+		if !ok {
+			// If the layout is not just a function layout, create a new instance of the layout type
+			rv := reflect.ValueOf(layout)
+			rv = reflect.Indirect(rv)
+			layout = reflect.New(rv.Type()).Interface().(Layout)
+		}
+		if err := ctx.Scan(layout); err != nil {
+			page = ErrorPage
 		}
 
-		renderer = s.layout(&LayoutContext{PageContext: ctx, head: s.head, body: s.body, outlet: outlet})
+		ctx.outlet = page.Page(ctx)
+		renderer = layout.Layout(ctx)
 	} else {
-		renderer = page.Serve(ctx)
+		renderer = page.Page(ctx)
 	}
 
-	renderer.Render(ctx, s)
-	s.Flush()
-
-	// TODO: Maybe carry this to the hooks api
-	size := int(ctx.chsize.Load())
-	if size == 0 {
-		return
-	}
-
-	ctx.elemch = make(chan h.Element, size)
-	ctx.ready.Store(true)
-
-	for range size {
-		select {
-		case <-ctx.Done():
-			// client disconnected
-			return
-		case el := <-ctx.elemch:
-			el.Render(ctx, w)
-			s.Flush()
-		}
-	}
+	return renderer
 }
 
-func (s *Streamer) Write(p []byte) (int, error) {
-	if s.buf.Len() < s.limit {
-		return s.buf.Write(p)
-	}
-
-	n, err := s.buf.Write(p)
-	if err != nil {
-		return n, err
-	}
-	m, err := io.Copy(s.w, s.buf)
-	s.f.Flush()
-	s.buf.Reset()
-	return int(m), err
-}
-
-func (s *Streamer) Flush() {
-	if s.buf.Len() != 0 {
-		io.Copy(s.w, s.buf)
-		s.f.Flush()
-		s.buf.Reset()
-	}
-}
-
-func NewStreamer(layout Layout, page Page, head, body h.I, basecheck bool) *Streamer {
-	return &Streamer{
-		layout: layout,
-		page:   page,
-		head:   head, body: body,
-		basecheck: basecheck,
-		buf:       new(bytes.Buffer),
-		limit:     500,
-	}
-}
-
-type Route interface {
-	http.Handler
-	Path() string
-}
-
-type HomeRoute struct {
-	page        Page
-	layout      Layout
-	head        h.I
-	body        h.I
-	middlewares []func(http.Handler) http.Handler
-}
-
-func (HomeRoute) Path() string {
-	return "/"
-}
-
-func (hr *HomeRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = NewStreamer(hr.layout, hr.page, hr.head, hr.body, true)
-	for _, middleware := range hr.middlewares {
-		handler = middleware(handler)
-	}
-	handler.ServeHTTP(w, r)
-}
-
-func NewHomeRoute(page Page, layout Layout, head, body h.I, middlewares ...func(http.Handler) http.Handler) *HomeRoute {
-	return &HomeRoute{page: page, layout: layout, head: head, body: body, middlewares: middlewares}
-}
-
-type PageRoute struct {
+type pageroute struct {
 	path        string
 	page        Page
 	layout      Layout
-	head        h.I
-	body        h.I
+	head        html.I
+	body        html.I
 	middlewares []func(http.Handler) http.Handler
 }
 
-func NewPageRoute(path string, page Page, layout Layout, head, body h.I, middlewares ...func(http.Handler) http.Handler) *PageRoute {
-	return &PageRoute{path: path, page: page, layout: layout, head: head, body: body, middlewares: middlewares}
+func (r pageroute) Path() string {
+	return r.path
 }
 
-func (pr PageRoute) Path() string {
-	return pr.path
-}
+func (pr *pageroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := NewContext(w, r)
+		ctx.head = pr.head
+		ctx.body = pr.body
 
-func (pr *PageRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = NewStreamer(pr.layout, pr.page, pr.head, pr.body, false)
+		renderer := getdocrenderer(ctx, pr.page, pr.layout, pr.path == "GET /")
+		sw := internal.NewStreamWriter(renderer, w)
+		internal.Render(ctx, sw)
+	})
 	for _, middleware := range pr.middlewares {
 		handler = middleware(handler)
 	}
 	handler.ServeHTTP(w, r)
 }
 
-type RedirectRoute struct {
+func NewPageRoute(
+	path string,
+	page Page,
+	layout Layout,
+	head, body html.I,
+	middlewares ...func(http.Handler) http.Handler,
+) *pageroute {
+	return &pageroute{
+		path:   path,
+		page:   page,
+		layout: layout,
+		head:   head, body: body,
+		middlewares: middlewares,
+	}
+}
+
+type actionroute struct {
+	path        string
+	action      Action
+	middlewares []func(http.Handler) http.Handler
+}
+
+func (r actionroute) Path() string {
+	return r.path
+}
+
+func (ar *actionroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := NewContext(w, r)
+		renderer := ar.action.Action(ctx)
+		sw := internal.NewStreamWriter(renderer, w)
+		internal.Render(ctx, sw)
+	})
+	for _, middleware := range ar.middlewares {
+		handler = middleware(handler)
+	}
+	handler.ServeHTTP(w, r)
+}
+
+func NewActionRoute(path string, action Action, middlewares ...func(http.Handler) http.Handler) *actionroute {
+	return &actionroute{path: path, action: action, middlewares: middlewares}
+}
+
+type redirectroute struct {
 	path        string
 	to          string
 	code        int
 	middlewares []func(http.Handler) http.Handler
 }
 
-func NewRedirectRoute(path, to string, code int, middlewares ...func(http.Handler) http.Handler) *RedirectRoute {
-	return &RedirectRoute{path: path, to: to, code: code, middlewares: middlewares}
+func NewRedirectRoute(path, to string, code int, middlewares ...func(http.Handler) http.Handler) *redirectroute {
+	return &redirectroute{path: path, to: to, code: code, middlewares: middlewares}
 }
 
-func (rr RedirectRoute) Path() string {
+func (rr redirectroute) Path() string {
 	return rr.path
 }
 
-func (rr *RedirectRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (rr *redirectroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, rr.to, rr.code)
 	})
@@ -451,46 +249,22 @@ func (rr *RedirectRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-type ActionRoute struct {
-	path        string
-	action      Action
-	middlewares []func(http.Handler) http.Handler
-}
-
-func NewActionRoute(path string, action Action, middlewares ...func(http.Handler) http.Handler) *ActionRoute {
-	return &ActionRoute{path: path, action: action, middlewares: middlewares}
-}
-
-func (ar ActionRoute) Path() string {
-	return ar.path
-}
-
-func (ar *ActionRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var handler http.Handler = NewStreamer(EmptyLayout, &FnPage{func(ctx *PageContext) h.I {
-		return ar.action(&ActionContext{PageContext: ctx})
-	}}, h.Frag(), h.Frag(), false)
-	for _, middleware := range ar.middlewares {
-		handler = middleware(handler)
-	}
-	handler.ServeHTTP(w, r)
-}
-
-type RawRoute struct {
+type rawroute struct {
 	path        string
 	contenttyp  string
 	content     []byte
 	middlewares []func(http.Handler) http.Handler
 }
 
-func NewRawRoute(path, typ string, content []byte, middlewares ...func(http.Handler) http.Handler) *RawRoute {
-	return &RawRoute{path: path, contenttyp: typ, content: content, middlewares: middlewares}
+func NewRawRoute(path, typ string, content []byte, middlewares ...func(http.Handler) http.Handler) *rawroute {
+	return &rawroute{path: path, contenttyp: typ, content: content, middlewares: middlewares}
 }
 
-func (rr RawRoute) Path() string {
+func (rr rawroute) Path() string {
 	return rr.path
 }
 
-func (rr *RawRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (rr *rawroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", rr.contenttyp)
 		w.WriteHeader(http.StatusOK)
@@ -500,6 +274,40 @@ func (rr *RawRoute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handler = middleware(handler)
 	}
 	handler.ServeHTTP(w, r)
+}
+
+func WrapLayout(layout Layout, rest ...Layout) Layout {
+	switch len(rest) {
+	case 0:
+		return layout
+	case 1:
+		return NewFnLayout(func(ctx *Context) html.I {
+			ctx.outlet = layout.Layout(ctx)
+			return rest[0].Layout(ctx)
+		})
+	default:
+		first := NewFnLayout(func(ctx *Context) html.I {
+			ctx.outlet = layout.Layout(ctx)
+			return rest[0].Layout(ctx)
+		})
+		return WrapLayout(first, rest[1:]...)
+	}
+}
+
+var NotFoundPage Page = &FnPage{func(*Context) html.I {
+	return html.P(html.Text("Not Found"))
+}}
+
+func SetNotFoundPage(page Page) {
+	NotFoundPage = page
+}
+
+var ErrorPage Page = &FnPage{func(*Context) html.I {
+	return html.P(html.Text("Error"))
+}}
+
+func SetErrorPage(page Page) {
+	ErrorPage = page
 }
 
 func Serve(addr string, router http.Handler, logger *slog.Logger) {
@@ -537,6 +345,16 @@ func Serve(addr string, router http.Handler, logger *slog.Logger) {
 	logger.Debug("Server stopped")
 }
 
-func EmptyLayout(ctx *LayoutContext) h.I {
-	return ctx.Outlet()
+var assetmap = map[string]string{}
+
+func RegisterAssets(assets map[string]string) {
+	assetmap = assets
+}
+
+func Asset(src string) string {
+	resolved, ok := assetmap[src]
+	if !ok {
+		log.Fatalf("failed to resolve asset %s", src)
+	}
+	return resolved
 }
