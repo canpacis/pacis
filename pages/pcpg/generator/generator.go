@@ -63,8 +63,8 @@ func Router(mux *http.ServeMux) (*http.ServeMux, error) {
 	{{ if .HasConstituents }}
 	head := html.Frag(
 		html.Link(html.Rel("stylesheet"), html.Href(pages.Asset("main.css"))), 
-		html.Script(html.Src(pages.Asset("app.ts"))), 
 		html.Script(html.Src(pages.Asset("main.ts"))),
+		html.Script(html.Src(pages.Asset("app.ts"))), 
 	)
 	body := html.Frag(html.Script(html.Src(pages.Asset("stream.js"))))
 	{{ end }}

@@ -88,6 +88,7 @@ func NewStreamWriter(renderer html.I, w http.ResponseWriter) *StreamWriter {
 }
 
 func Render(ctx context.Context, sw *StreamWriter) error {
+	sw.w.Header().Set("Content-Type", "text/html")
 	if err := sw.Renderer.Render(ctx, sw); err != nil {
 		return err
 	}

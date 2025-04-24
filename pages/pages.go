@@ -5,7 +5,6 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"os/signal"
 	"reflect"
@@ -22,13 +21,15 @@ type Context struct {
 	w http.ResponseWriter
 	r *http.Request
 
+	cookies []*http.Cookie
+
 	head   html.I
 	body   html.I
 	outlet html.I
 }
 
 func (ctx *Context) Clone(parent context.Context) *Context {
-	nctx := NewContext(ctx.w, ctx.r)
+	nctx := NewContext(ctx.w, ctx.r.Clone(parent))
 	nctx.head = ctx.head
 	nctx.body = ctx.body
 	nctx.outlet = ctx.outlet
@@ -41,26 +42,21 @@ func (ctx *Context) Request() *http.Request {
 }
 
 func (ctx *Context) Scan(v any) error {
-	query := ctx.r.URL.Query()
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return err
-	}
-	jar.SetCookies(ctx.r.URL, ctx.r.Cookies())
+	req := ctx.r.Clone(context.Background())
+	query := req.URL.Query()
 
 	pipe := scanner.NewPipe(
-		scanner.NewCookie(jar, ctx.r.URL),
+		scanner.NewCookie(ctx.cookies),
 		scanner.NewQuery(&query),
-		scanner.NewPath(ctx.r),
-		scanner.NewHeader(&ctx.r.Header),
+		scanner.NewPath(req),
+		scanner.NewHeader(&req.Header),
 		internal.NewContextScanner(ctx),
 	)
 	return pipe.Scan(v)
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return &Context{w: w, r: r, Context: r.Context()}
+	return &Context{w: w, r: r, Context: r.Context(), cookies: r.Cookies()}
 }
 
 type Page interface {
@@ -116,7 +112,6 @@ func getdocrenderer(ctx *Context, pg Page, layout Layout, home bool) html.Render
 		ctx.w.WriteHeader(http.StatusNotFound)
 		page = NotFoundPage
 	} else {
-		ctx.w.WriteHeader(http.StatusOK)
 		page = pg
 	}
 	_, ok := page.(*FnPage)
@@ -128,7 +123,10 @@ func getdocrenderer(ctx *Context, pg Page, layout Layout, home bool) html.Render
 	}
 
 	if err := ctx.Scan(page); err != nil {
-		page = ErrorPage
+		errpage := newerrpage()
+		errpage.SetError(err)
+		errpage.SetStatus(http.StatusInternalServerError)
+		page = errpage
 	}
 
 	if layout != nil {
@@ -140,7 +138,10 @@ func getdocrenderer(ctx *Context, pg Page, layout Layout, home bool) html.Render
 			layout = reflect.New(rv.Type()).Interface().(Layout)
 		}
 		if err := ctx.Scan(layout); err != nil {
-			page = ErrorPage
+			errpage := newerrpage()
+			errpage.SetError(err)
+			errpage.SetStatus(http.StatusInternalServerError)
+			page = errpage
 		}
 
 		ctx.outlet = page.Page(ctx)
@@ -241,6 +242,7 @@ func (rr redirectroute) Path() string {
 
 func (rr *redirectroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
 		http.Redirect(w, r, rr.to, rr.code)
 	})
 	for _, middleware := range rr.middlewares {
@@ -282,11 +284,27 @@ func WrapLayout(layout Layout, rest ...Layout) Layout {
 		return layout
 	case 1:
 		return NewFnLayout(func(ctx *Context) html.I {
+			_, ok := layout.(*FnLayout)
+			if !ok {
+				ctx.Scan(layout)
+			}
+			_, ok = rest[0].(*FnLayout)
+			if !ok {
+				ctx.Scan(rest[0])
+			}
 			ctx.outlet = layout.Layout(ctx)
 			return rest[0].Layout(ctx)
 		})
 	default:
 		first := NewFnLayout(func(ctx *Context) html.I {
+			_, ok := layout.(*FnLayout)
+			if !ok {
+				ctx.Scan(layout)
+			}
+			_, ok = rest[0].(*FnLayout)
+			if !ok {
+				ctx.Scan(rest[0])
+			}
 			ctx.outlet = layout.Layout(ctx)
 			return rest[0].Layout(ctx)
 		})
@@ -302,12 +320,47 @@ func SetNotFoundPage(page Page) {
 	NotFoundPage = page
 }
 
-var ErrorPage Page = &FnPage{func(*Context) html.I {
-	return html.P(html.Text("Error"))
-}}
+type ErrorPage interface {
+	error
+	Page
+	SetError(error)
+	Status() int
+	SetStatus(int)
+}
 
-func SetErrorPage(page Page) {
-	ErrorPage = page
+type DefaultErrorPage struct {
+	err    error
+	status int
+}
+
+func (dep *DefaultErrorPage) Error() string {
+	return dep.err.Error()
+}
+
+func (dep *DefaultErrorPage) SetError(err error) {
+	dep.err = err
+}
+
+func (dep *DefaultErrorPage) Page(ctx *Context) html.I {
+	return html.P(html.Text(dep.Error()))
+}
+
+func (dep *DefaultErrorPage) Status() int {
+	return dep.status
+}
+
+func (dep *DefaultErrorPage) SetStatus(status int) {
+	dep.status = status
+}
+
+var deferrpage ErrorPage = &DefaultErrorPage{}
+
+func newerrpage() ErrorPage {
+	return reflect.New(reflect.Indirect(reflect.ValueOf(deferrpage)).Type()).Interface().(ErrorPage)
+}
+
+func SetErrorPage(page ErrorPage) {
+	deferrpage = page
 }
 
 func Serve(addr string, router http.Handler, logger *slog.Logger) {

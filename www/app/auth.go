@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -145,22 +144,22 @@ func (p *LoginPage) Page(ctx *pages.Context) I {
 	state := randstate()
 	url := oauthConfig.AuthCodeURL(state)
 
+	pages.SetCookie(
+		ctx,
+
+		&http.Cookie{
+			Name:     "auth_state",
+			Value:    state,
+			Path:     "/",
+			Secure:   true,
+			HttpOnly: true,
+			// Give the state cookie 5 minutes to expire
+			Expires:  time.Now().Add(time.Minute * 5),
+			SameSite: http.SameSiteNoneMode,
+		},
+	)
+
 	return Frag(
-		pages.Cookie(
-			ctx,
-
-			&http.Cookie{
-				Name:     "auth_state",
-				Value:    state,
-				Path:     "/",
-				Secure:   true,
-				HttpOnly: true,
-				// Give the state cookie 5 minutes to expire
-				Expires:  time.Now().Add(time.Minute * 5),
-				SameSite: http.SameSiteNoneMode,
-			},
-		),
-
 		Div(
 			Class("container flex-1 flex items-center justify-center flex-col gap-4"),
 
@@ -180,22 +179,21 @@ func (p *LoginPage) Page(ctx *pages.Context) I {
 
 //pacis:page path=/auth/logout middlewares=auth
 func LogoutPage(ctx *pages.Context) I {
-	return Frag(
-		pages.Cookie(
-			ctx,
+	pages.SetCookie(
+		ctx,
 
-			&http.Cookie{
-				Name:     "auth_token",
-				Value:    "",
-				Path:     "/",
-				Secure:   true,
-				HttpOnly: true,
-				SameSite: http.SameSiteNoneMode,
-				MaxAge:   -1,
-			},
-		),
-		pages.Redirect(ctx, "/"),
+		&http.Cookie{
+			Name:     "auth_token",
+			Value:    "",
+			Path:     "/",
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteNoneMode,
+			MaxAge:   -1,
+		},
 	)
+
+	return pages.Redirect(ctx, "/")
 }
 
 type AuthCallbackPage struct {
@@ -206,31 +204,26 @@ type AuthCallbackPage struct {
 
 //pacis:page path=/auth/callback middlewares=auth
 func (p *AuthCallbackPage) Page(ctx *pages.Context) I {
-	fmt.Println(p.Code)
-	fmt.Println(p.QueryState)
-	fmt.Println(p.CookieState)
 	if p.QueryState != p.CookieState {
-		return pages.Error(ctx, http.StatusBadRequest, &AppError{Code: InvalidAuthStateError, Err: errors.New("app error")})
+		return pages.Error(ctx, NewAppError(InvalidAuthStateError, ErrGenericAppError, http.StatusBadRequest))
 	}
 
 	token, err := oauthConfig.Exchange(ctx, p.Code)
 	if err != nil {
-		return pages.Error(ctx, http.StatusBadRequest, &AppError{Code: AuthExchangeError, Err: errors.New("app error")})
+		return pages.Error(ctx, NewAppError(AuthExchangeError, ErrGenericAppError, http.StatusBadRequest))
 	}
 
-	return Frag(
-		pages.Cookie(
-			ctx,
+	pages.SetCookie(
+		ctx,
 
-			&http.Cookie{
-				Name:     "auth_token",
-				Value:    token.AccessToken,
-				Path:     "/",
-				Secure:   true,
-				HttpOnly: true,
-				SameSite: http.SameSiteLaxMode,
-			},
-		),
-		pages.Redirect(ctx, "/"),
+		&http.Cookie{
+			Name:     "auth_token",
+			Value:    token.AccessToken,
+			Path:     "/",
+			Secure:   true,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		},
 	)
+	return pages.Redirect(ctx, "/")
 }

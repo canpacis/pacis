@@ -3,6 +3,10 @@ package components
 import h "github.com/canpacis/pacis/ui/html"
 
 func Label(text string, props ...h.I) h.Element {
-	props = Join(props, h.Text(text), h.Class("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 block [&>input]:mt-2"))
-	return h.Lbl(props...)
+	return h.Lbl(
+		Join(props,
+			h.Class("text-sm w-full font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 block flex-1 [&>div>input]:mt-2"),
+			h.Span(h.Class("inline-block"), h.Text(text)),
+		)...,
+	)
 }

@@ -3,6 +3,7 @@ package app
 import (
 	_ "embed"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/canpacis/pacis/pages"
@@ -33,12 +34,11 @@ type Layout struct {
 
 //pacis:layout path=/
 func (l *Layout) Layout(ctx *pages.Context) I {
-	// TODO: Context values are populate after the middlewares
-	ctx.Scan(l)
+	pages.SetHeader(ctx, pages.NewHeader("Host", "canpacis.com"))
 
 	title := i18n.Text("title").String(ctx)
 	desc := i18n.Text("desc").String(ctx)
-	keywords := i18n.Text("keywords").String(ctx)
+	keywords := strings.Split(i18n.Text("keywords").String(ctx), ",")
 
 	appurl := os.Getenv("AppURL")
 	banner := appurl + pages.Asset("banner.webp")
@@ -48,35 +48,34 @@ func (l *Layout) Layout(ctx *pages.Context) I {
 		Lang(l.Locale.String()),
 
 		Head(
-			Meta(Name("title"), Content(title)),
-			Meta(Name("description"), Content(desc)),
-			Meta(Name("keywords"), Content(keywords)),
-			Meta(Name("robots"), Content("index, follow")),
-			Meta(HttpEquiv("Content-Type"), Content("text/html; charset=utf-8")),
-			Meta(HttpEquiv("language"), Content("English")),
-			Meta(HttpEquiv("author"), Content("canpacis")),
-
-			Meta(Property("twitter:card"), Content("summary_large_image")),
-			Meta(Property("twitter:url"), Content(appurl)),
-			Meta(Property("twitter:title"), Content(title)),
-			Meta(Property("twitter:description"), Content(desc)),
-			Meta(Property("twitter:image"), Content(banner)),
-
-			Meta(Property("og:type"), Content("website")),
-			Meta(Property("og:url"), Content(appurl)),
-			Meta(Property("og:title"), Content(title)),
-			Meta(Property("og:description"), Content(desc)),
-			Meta(Property("og:image"), Content(banner)),
-
-			Meta(Charset("UTF-8")),
-			Meta(Name("viewport"), Content("width=device-width, initial-scale=1.0")),
+			&pages.Metadata{
+				Title:       title,
+				Description: desc,
+				Keywords:    keywords,
+				Robots:      "index, follow",
+				Authors:     []string{"canpacis"},
+				Language:    l.Locale.String(),
+				Twitter: &pages.MetadataTwitter{
+					Card:        "summary_large_image",
+					URL:         appurl,
+					Title:       title,
+					Description: desc,
+					Image:       banner,
+				},
+				OpenGraph: &pages.MetadataOG{
+					Type:        "website",
+					URL:         appurl,
+					Title:       title,
+					Description: desc,
+					Image:       banner,
+				},
+			},
 
 			IfFn(l.User != nil, func() Renderer {
 				return Store("user", l.User)
 			}),
 			If(l.User == nil, Store("user", &User{})),
 
-			Script(Src(pages.Asset("before.ts"))),
 			fonts.Head(sans, mono),
 			pages.Head(ctx),
 			Link(Href(pages.Asset("favicon.webp")), Rel("icon"), Type("image/png")),
@@ -85,7 +84,6 @@ func (l *Layout) Layout(ctx *pages.Context) I {
 				Src("https://analytics.ui.canpacis.com/script.js"),
 				Data("website-id", "4ce94416-1fb6-4a90-b881-f2f27a9736f7"),
 			),
-			Title(Text(title)),
 		),
 		Body(
 			Class("flex flex-col min-h-dvh overflow-x-hidden"),
@@ -132,7 +130,7 @@ func AppHeader(user *User) Element {
 			),
 			pages.A(
 				pages.Eager,
-				Class("flex gap-3 items-center"),
+				Class("flex gap-3 items-center focusable p-2"),
 				Href("/"),
 
 				Img(Src(pages.Asset("logo.webp")), Width("24"), Height("24"), Class("w-6"), Alt("logo")),
@@ -145,7 +143,7 @@ func AppHeader(user *User) Element {
 					return Li(
 						Class("text-sm text-muted-foreground"),
 
-						pages.A(Href(link.Href), link.Label),
+						pages.A(Href(link.Href), Class("focusable"), link.Label),
 					)
 				}),
 			),
@@ -223,6 +221,6 @@ func AppFooter() Element {
 	return Footer(
 		Class("border-t border-dashed py-2 text-center h-[var(--footer-height)] fixed bottom-0 w-dvw bg-background z-40"),
 
-		P(Class("text-sm text-muted-foreground"), Text("Built by "), pages.A(Href("https://canpacis.com"), Class("hover:underline"), Text("canpacis"))),
+		P(Class("text-sm text-muted-foreground"), Text("Built by "), pages.A(Href("https://canpacis.com"), Class("hover:underline focusable"), Text("canpacis"))),
 	)
 }

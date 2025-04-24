@@ -174,7 +174,7 @@ func NavItemUI(item NavItem, i int) I {
 
 	return Li(
 		pages.A(
-			Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer"),
+			Class("rounded-md block text-sm w-full px-2.5 py-1.5 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 cursor-pointer focusable"),
 			Href(item.Href),
 
 			item.Label,
@@ -391,7 +391,7 @@ func DocPageUI(page *DocPage) Node {
 
 					pages.A(
 						Href(item.Href),
-						Class("font-light text-muted-foreground hover:text-primary"),
+						Class("font-light text-muted-foreground hover:text-primary focusable"),
 
 						item.Label,
 					),

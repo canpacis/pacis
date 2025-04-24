@@ -225,7 +225,7 @@ var plates = map[string][]Node{
 					Class("flex flex-col gap-4 py-4"),
 
 					Div(
-						Class("grid grid-cols-4 items-center gap-4"),
+						Class("grid grid-cols-4 items-center gap-4 row-auto"),
 
 						Label("Name", HtmlFor("name"), Class("text-right")),
 						Input(ID("name"), Class("col-span-3")),

@@ -31,7 +31,7 @@ func TabList(props ...h.I) h.Element {
 func TabTrigger(trigger h.Node, props ...h.I) h.Element {
 	el := h.Btn(
 		Join(props,
-			h.Class("relative text-sm h-8 text-muted-foreground font-medium px-4 cursor-pointer after:content-[''] after:w-full after:h-px after:absolute after:left-0 after:-bottom-px after:transition-colors"),
+			h.Class("relative text-sm h-8 text-muted-foreground font-medium px-4 cursor-pointer after:content-[''] after:w-full after:h-px after:absolute after:left-0 after:-bottom-px after:transition-colors focus-visible:outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] rounded-t-sm"),
 			trigger,
 		)...,
 	)

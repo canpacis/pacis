@@ -373,6 +373,9 @@
   .inline {
     display: inline;
   }
+  .inline-block {
+    display: inline-block;
+  }
   .inline-flex {
     display: inline-flex;
   }
@@ -689,6 +692,10 @@
   }
   .rounded-xl {
     border-radius: calc(var(--radius) + 4px);
+  }
+  .rounded-t-sm {
+    border-top-left-radius: calc(var(--radius) - 4px);
+    border-top-right-radius: calc(var(--radius) - 4px);
   }
   .border {
     border-style: var(--tw-border-style);
@@ -1877,8 +1884,8 @@
       translate: var(--tw-translate-x) var(--tw-translate-y);
     }
   }
-  .\[\&\>input\]\:mt-2 {
-    &>input {
+  .\[\&\>div\>input\]\:mt-2 {
+    &>div>input {
       margin-top: calc(var(--spacing) * 2);
     }
   }

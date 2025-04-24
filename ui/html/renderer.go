@@ -300,7 +300,6 @@ func El(tag string, items ...I) Element {
 		case Node:
 			el.nodes = append(el.nodes, item)
 		default:
-			fmt.Println(tag, item)
 			panic(fmt.Sprintf("unknown item type %T", item))
 		}
 	}
@@ -494,10 +493,10 @@ func Iter[T any, K int](items any, fn func(T, K) I) I {
 
 type case_[T comparable] struct {
 	expr T
-	node Node
+	node I
 }
 
-func Case[T comparable](expr T, node Node) case_[T] {
+func Case[T comparable](expr T, node I) case_[T] {
 	return case_[T]{expr, node}
 }
 
