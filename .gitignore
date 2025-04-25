@@ -23,4 +23,5 @@ dist
 
 node_modules
 www/app/static
+www/app/static_
 www/app/*.gen.go
