@@ -168,7 +168,7 @@ func NavItemUI(item NavItem, i int) I {
 
 				item.Label,
 			),
-			Div(Map(item.Items, NavItemUI)),
+			Ul(Map(item.Items, NavItemUI)),
 		)
 	}
 
