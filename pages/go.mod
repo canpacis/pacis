@@ -12,6 +12,7 @@ require (
 	github.com/canpacis/scanner v0.1.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/evanw/esbuild v0.25.2 // indirect
+	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/urfave/cli/v2 v2.27.6 // indirect
