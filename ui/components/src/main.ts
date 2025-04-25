@@ -766,4 +766,6 @@ Alpine.store("toast", {
   },
 });
 
-Alpine.start();
+window.addEventListener("DOMContentLoaded", () => {
+  Alpine.start();
+})

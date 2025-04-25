@@ -2069,6 +2069,9 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+[x-cloak] {
+  display: none !important;
+}
 @keyframes enter {
   from {
     opacity: var(--tw-enter-opacity, 1);
