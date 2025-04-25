@@ -43,34 +43,34 @@ func (l *Layout) Layout(ctx *pages.Context) I {
 	appurl := os.Getenv("AppURL")
 	banner := appurl + pages.Asset("banner.webp")
 
+	pages.SetMetadata(ctx, &pages.Metadata{
+		Title:       title,
+		Description: desc,
+		Keywords:    keywords,
+		Robots:      "index, follow",
+		Authors:     []string{"canpacis"},
+		Language:    l.Locale.String(),
+		Twitter: &pages.MetadataTwitter{
+			Card:        "summary_large_image",
+			URL:         appurl,
+			Title:       title,
+			Description: desc,
+			Image:       banner,
+		},
+		OpenGraph: &pages.MetadataOG{
+			Type:        "website",
+			URL:         appurl,
+			Title:       title,
+			Description: desc,
+			Image:       banner,
+		},
+	})
+
 	return Html(
 		Class(l.Theme),
 		Lang(l.Locale.String()),
 
 		Head(
-			&pages.Metadata{
-				Title:       title,
-				Description: desc,
-				Keywords:    keywords,
-				Robots:      "index, follow",
-				Authors:     []string{"canpacis"},
-				Language:    l.Locale.String(),
-				Twitter: &pages.MetadataTwitter{
-					Card:        "summary_large_image",
-					URL:         appurl,
-					Title:       title,
-					Description: desc,
-					Image:       banner,
-				},
-				OpenGraph: &pages.MetadataOG{
-					Type:        "website",
-					URL:         appurl,
-					Title:       title,
-					Description: desc,
-					Image:       banner,
-				},
-			},
-
 			IfFn(l.User != nil, func() Renderer {
 				return Store("user", l.User)
 			}),

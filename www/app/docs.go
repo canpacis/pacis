@@ -318,7 +318,7 @@ func (p *GettingStartedPage) Page(ctx *pages.Context) I {
 	page, ok := dir.Dirs["getting-started"].Pages[p.Slug]
 
 	if ok {
-		// ctx.SetTitle("Pacis Docs | Getting Started > " + page.Title)
+		pages.SetMetadata(ctx, &pages.Metadata{Title: page.Title + " | Getting Started | Pacis Docs"})
 	} else {
 		return pages.NotFound(ctx)
 	}
@@ -335,7 +335,7 @@ func (p *PagesPage) Page(ctx *pages.Context) I {
 	page, ok := dir.Dirs["pages"].Pages[p.Slug]
 
 	if ok {
-		// ctx.SetTitle("Pacis Docs | Pages > " + page.Title)
+		pages.SetMetadata(ctx, &pages.Metadata{Title: page.Title + " | Pages | Pacis Docs"})
 	} else {
 		return pages.NotFound(ctx)
 	}
@@ -352,7 +352,7 @@ func (p *TemplatingPage) Page(ctx *pages.Context) I {
 	page, ok := dir.Dirs["ui"].Dirs["templating"].Pages[p.Slug]
 
 	if ok {
-		// ctx.SetTitle("Pacis Docs | UI > Templating > " + page.Title)
+		pages.SetMetadata(ctx, &pages.Metadata{Title: page.Title + " | Templating | UI | Pacis Docs"})
 	} else {
 		return pages.NotFound(ctx)
 	}
@@ -368,7 +368,7 @@ type ComponentsPage struct {
 func (p *ComponentsPage) Page(ctx *pages.Context) I {
 	page, ok := dir.Dirs["ui"].Dirs["components"].Pages[p.Slug]
 	if ok {
-		// ctx.SetTitle("Pacis Docs | UI > Components > " + page.Title)
+		pages.SetMetadata(ctx, &pages.Metadata{Title: page.Title + " | Components | UI | Pacis Docs"})
 	} else {
 		return pages.NotFound(ctx)
 	}

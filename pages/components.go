@@ -69,7 +69,15 @@ func Outlet(ctx *Context) html.I {
 }
 
 func Head(ctx *Context) html.I {
-	return ctx.head
+	meta := ctx.head.meta
+	if meta == nil {
+		meta = &Metadata{}
+	}
+	pagemeta, ok := pagemetadata[ctx.pattern]
+	if ok {
+		meta = pagemeta.Merge(meta)
+	}
+	return html.Frag(ctx.head.content, meta)
 }
 
 func Body(ctx *Context) html.I {
@@ -169,6 +177,63 @@ type Metadata struct {
 	Assets    []string
 }
 
+func (m *Metadata) Merge(other *Metadata) *Metadata {
+	var selct = func(a, b string) string {
+		if len(a) == 0 {
+			return b
+		} else {
+			return a
+		}
+	}
+	var selctslc = func(a, b []string) []string {
+		if len(a) == 0 {
+			return b
+		} else {
+			return a
+		}
+	}
+
+	newmeta := &Metadata{}
+	newmeta.Title = selct(m.Title, other.Base)
+	newmeta.Title = selct(m.Title, other.Title)
+	newmeta.Description = selct(m.Description, other.Description)
+	newmeta.AppName = selct(m.AppName, other.AppName)
+	newmeta.Authors = selctslc(m.Authors, other.Authors)
+	newmeta.Generator = selct(m.Generator, other.Generator)
+	newmeta.Keywords = selctslc(m.Keywords, other.Keywords)
+	newmeta.Referrer = selct(m.Referrer, other.Referrer)
+	newmeta.Creator = selct(m.Creator, other.Creator)
+	newmeta.Publisher = selct(m.Publisher, other.Publisher)
+	newmeta.Robots = selct(m.Robots, other.Robots)
+	newmeta.Manifest = selct(m.Manifest, other.Manifest)
+	newmeta.Icons = selct(m.Icons, other.Icons)
+	newmeta.Language = selct(m.Language, other.Language)
+	newmeta.Alternates = struct {
+		Canonical string
+		Languages []string
+		Media     string
+		Types     []string
+	}{
+		Canonical: selct(m.Alternates.Canonical, other.Alternates.Canonical),
+		Languages: selctslc(m.Alternates.Languages, other.Alternates.Languages),
+		Media:     selct(m.Alternates.Media, other.Alternates.Media),
+		Types:     selctslc(m.Alternates.Types, other.Alternates.Types),
+	}
+	if m.Twitter != nil {
+		newmeta.Twitter = m.Twitter
+	} else {
+		newmeta.Twitter = other.Twitter
+	}
+	if m.OpenGraph != nil {
+		newmeta.OpenGraph = m.OpenGraph
+	} else {
+		newmeta.OpenGraph = other.OpenGraph
+	}
+	newmeta.Assets = selctslc(m.Assets, other.Assets)
+
+	return newmeta
+}
+
 func (m *Metadata) Render(ctx context.Context, w io.Writer) error {
 	var title string = "Pacis App"
 	if len(m.Title) > 0 {
@@ -252,4 +317,19 @@ func (m *Metadata) Render(ctx context.Context, w io.Writer) error {
 
 func (m *Metadata) NodeType() html.NodeType {
 	return html.NodeFragment
+}
+
+func SetMetadata(ctx *Context, data *Metadata) {
+	if ctx.head.meta == nil {
+		ctx.head.meta = data
+		return
+	}
+	ctx.head.meta = ctx.head.meta.Merge(data)
+}
+
+var pagemetadata = map[string]*Metadata{}
+
+func SetPageMetadata(path string, data *Metadata) string {
+	pagemetadata[path] = data
+	return path
 }

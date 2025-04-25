@@ -1,7 +1,10 @@
 package components
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 
 	"github.com/alecthomas/chroma/v2"
@@ -171,7 +174,19 @@ type ctxwriter struct {
 	ctx context.Context
 }
 
+var codecache = map[string][]byte{}
+
 func (c *CodeHighlighter) Render(ctx context.Context, w io.Writer) error {
+	hash := sha256.New()
+	hash.Write([]byte(c.Source))
+	sum := hex.EncodeToString(hash.Sum(nil))
+
+	cache, ok := codecache[sum]
+	if ok {
+		_, err := w.Write(cache)
+		return err
+	}
+
 	lexer := lexers.Get(c.Language)
 	if lexer == nil {
 		lexer = lexers.Fallback
@@ -182,7 +197,14 @@ func (c *CodeHighlighter) Render(ctx context.Context, w io.Writer) error {
 		return err
 	}
 
-	return htmlformatter.Format(&ctxwriter{Writer: w, ctx: ctx}, styles.Fallback, iterator)
+	var buf = new(bytes.Buffer)
+	if err := htmlformatter.Format(&ctxwriter{Writer: buf, ctx: ctx}, styles.Fallback, iterator); err != nil {
+		return err
+	}
+
+	codecache[sum] = buf.Bytes()
+	_, err = io.Copy(w, buf)
+	return err
 }
 
 func (c *CodeHighlighter) NodeType() h.NodeType {

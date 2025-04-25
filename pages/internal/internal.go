@@ -81,7 +81,7 @@ func NewStreamWriter(renderer html.I, w http.ResponseWriter) *StreamWriter {
 	return &StreamWriter{
 		Renderer:  renderer,
 		buf:       new(bytes.Buffer),
-		chunksize: 500,
+		chunksize: 1024,
 		w:         w,
 		f:         w.(http.Flusher),
 	}

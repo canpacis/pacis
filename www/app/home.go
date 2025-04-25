@@ -11,7 +11,7 @@ import (
 //pacis:language default=en
 //pacis:page path=/ middlewares=auth
 func HomePage(ctx *pages.Context) I {
-	// ctx.SetTitle("Homepage | Pacis")
+	pages.SetMetadata(ctx, &pages.Metadata{Title: "Homepage | Pacis"})
 	pages.SetHeader(ctx, pages.NewHeader("Host", "canpacis.com"))
 
 	return Main(

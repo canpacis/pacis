@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"reflect"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,14 +17,20 @@ import (
 	"github.com/canpacis/scanner"
 )
 
+type apphead struct {
+	content html.I
+	meta    *Metadata
+}
+
 type Context struct {
 	context.Context
 	w http.ResponseWriter
 	r *http.Request
 
 	cookies []*http.Cookie
+	pattern string
 
-	head   html.I
+	head   apphead
 	body   html.I
 	outlet html.I
 }
@@ -33,6 +40,8 @@ func (ctx *Context) Clone(parent context.Context) *Context {
 	nctx.head = ctx.head
 	nctx.body = ctx.body
 	nctx.outlet = ctx.outlet
+	nctx.cookies = ctx.cookies
+	nctx.pattern = ctx.pattern
 	ctx.Context = parent
 	return nctx
 }
@@ -169,8 +178,9 @@ func (r pageroute) Path() string {
 func (pr *pageroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r)
-		ctx.head = pr.head
+		ctx.head = apphead{content: pr.head}
 		ctx.body = pr.body
+		ctx.pattern = strings.TrimPrefix(pr.path, "GET ")
 
 		renderer := getdocrenderer(ctx, pr.page, pr.layout, pr.path == "GET /")
 		sw := internal.NewStreamWriter(renderer, w)
