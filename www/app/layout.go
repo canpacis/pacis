@@ -27,7 +27,7 @@ var robots []byte
 var sitemap []byte
 
 type Layout struct {
-	User   *User         `context:"user"`
+	// User   *User         `context:"user"`
 	Locale *language.Tag `context:"locale"`
 	Theme  string        `context:"theme"`
 }
@@ -71,10 +71,10 @@ func (l *Layout) Layout(ctx *pages.Context) I {
 		Lang(l.Locale.String()),
 
 		Head(
-			IfFn(l.User != nil, func() Renderer {
-				return Store("user", l.User)
-			}),
-			If(l.User == nil, Store("user", &User{})),
+			// IfFn(l.User != nil, func() Renderer {
+			// 	return Store("user", l.User)
+			// }),
+			// If(l.User == nil, Store("user", &User{})),
 
 			fonts.Head(sans, mono),
 			pages.Head(ctx),
@@ -88,7 +88,8 @@ func (l *Layout) Layout(ctx *pages.Context) I {
 		Body(
 			Class("flex flex-col min-h-dvh overflow-x-hidden"),
 
-			AppHeader(l.User),
+			// AppHeader(l.User),
+			AppHeader(nil),
 			pages.Outlet(ctx),
 			ToastContainer(),
 			AppFooter(),

@@ -5,7 +5,7 @@ import (
 	"github.com/canpacis/pacis/ui/icons"
 )
 
-func Select(name h.Attribute, props ...h.I) h.Element {
+func Select(name *h.Attribute, props ...h.I) h.Element {
 	el := h.Div(
 		Join(
 			props,
@@ -20,7 +20,7 @@ func Select(name h.Attribute, props ...h.I) h.Element {
 	var value string
 	valueattr, hasvalue := el.GetAttribute("value")
 	if hasvalue {
-		value = readattr(valueattr)
+		value = valueattr.Value()
 	}
 
 	_, clearable := el.GetAttribute("clearable")
@@ -82,11 +82,11 @@ func SelectContent(props ...h.I) h.Element {
 	)
 }
 
-func SelectItem(value h.Attribute, props ...h.I) h.Element {
+func SelectItem(value *h.Attribute, props ...h.I) h.Element {
 	el := h.Btn(
 		Join(
 			props,
-			CloseSelect(readattr(value)),
+			CloseSelect(value.Value()),
 			h.Class("relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent hover:bg-accent focus:text-accent-foreground hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"),
 		)...,
 	)
@@ -102,26 +102,26 @@ func SelectLabel(label string, props ...h.I) h.Element {
 	return h.Span(Join(props, h.Class("px-2 py-1.5 text-xs font-semibold text-muted-foreground"), h.Text(label))...)
 }
 
-func OpenSelectOn(event string) h.Attribute {
+func OpenSelectOn(event string) *h.Attribute {
 	return On(event, "openSelect()")
 }
 
 var OpenSelect = OpenSelectOn("click")
 
-func CloseSelectOn(event, value string) h.Attribute {
+func CloseSelectOn(event, value string) *h.Attribute {
 	return On(event, fn("closeSelect", value))
 }
 
-func CloseSelect(value string) h.Attribute {
+func CloseSelect(value string) *h.Attribute {
 	return CloseSelectOn("click", value)
 }
 
-func DismissSelectOn(event string) h.Attribute {
+func DismissSelectOn(event string) *h.Attribute {
 	return On(event, "dismissSelect()")
 }
 
 var DismissSelect = DismissSelectOn("click")
 
-func SetSelectOn(event string, value any) h.Attribute {
+func SetSelectOn(event string, value any) *h.Attribute {
 	return On(event, fn("setSelect", value))
 }

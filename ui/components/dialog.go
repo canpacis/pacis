@@ -98,21 +98,21 @@ func DialogDescription(props ...h.I) h.Element {
 	return h.Span(props...)
 }
 
-func OpenDialogOn(event string) h.Attribute {
+func OpenDialogOn(event string) *h.Attribute {
 	return On(event, "openDialog()")
 }
 
 var OpenDialog = OpenDialogOn("click")
 
-func CloseDialogOn(event, value string) h.Attribute {
+func CloseDialogOn(event, value string) *h.Attribute {
 	return On(event, fn("closeDialog", value))
 }
 
-func CloseDialog(value string) h.Attribute {
+func CloseDialog(value string) *h.Attribute {
 	return CloseDialogOn("click", value)
 }
 
-func DismissDialogOn(event string) h.Attribute {
+func DismissDialogOn(event string) *h.Attribute {
 	return On(event, "dismissDialog()")
 }
 

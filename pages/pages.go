@@ -33,6 +33,7 @@ type Context struct {
 	head   apphead
 	body   html.I
 	outlet html.I
+	cancel context.CancelFunc
 }
 
 func (ctx *Context) Clone(parent context.Context) *Context {
@@ -50,6 +51,10 @@ func (ctx *Context) Request() *http.Request {
 	return ctx.r
 }
 
+func (ctx *Context) Close() {
+	ctx.cancel()
+}
+
 func (ctx *Context) Scan(v any) error {
 	req := ctx.r.Clone(context.Background())
 	query := req.URL.Query()
@@ -65,7 +70,8 @@ func (ctx *Context) Scan(v any) error {
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
-	return &Context{w: w, r: r, Context: r.Context(), cookies: r.Cookies()}
+	ctx, cancel := context.WithTimeout(r.Context(), time.Second*3)
+	return &Context{w: w, r: r, Context: ctx, cookies: r.Cookies(), cancel: cancel}
 }
 
 type Page interface {
@@ -178,6 +184,7 @@ func (r pageroute) Path() string {
 func (pr *pageroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r)
+		defer ctx.Close()
 		ctx.head = apphead{content: pr.head}
 		ctx.body = pr.body
 		ctx.pattern = strings.TrimPrefix(pr.path, "GET ")
@@ -221,6 +228,7 @@ func (r actionroute) Path() string {
 func (ar *actionroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r)
+		defer ctx.Close()
 		renderer := ar.action.Action(ctx)
 		sw := internal.NewStreamWriter(renderer, w)
 		internal.Render(ctx, sw)
@@ -375,9 +383,13 @@ func SetErrorPage(page ErrorPage) {
 
 func Serve(addr string, router http.Handler, logger *slog.Logger) {
 	server := &http.Server{
-		Addr:    addr,
-		Handler: router,
+		Addr:         addr,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+		Handler:      router,
 	}
+	server.SetKeepAlivesEnabled(true)
 
 	if logger == nil {
 		opts := &slog.HandlerOptions{

@@ -5,26 +5,30 @@ import (
 )
 
 var (
-	SheetVariantLeft = &GroupedClass{
-		"sheet-variant",
-		"top-0 bottom-0 left-0 h-dvh w-3/4 border-r sm:max-w-sm",
-		true,
-	}
-	SheetVariantTop = &GroupedClass{
-		"sheet-variant",
-		"left-0 right-0 top-0 border-b",
-		false,
-	}
-	SheetVariantRight = &GroupedClass{
-		"sheet-variant",
-		"top-0 bottom-0 right-0 h-dvh w-3/4 border-l sm:max-w-sm",
-		false,
-	}
-	SheetVariantBottom = &GroupedClass{
-		"sheet-variant",
-		"left-0 right-0 bottom-0 border-t",
-		false,
-	}
+	// SheetVariantLeft = &GroupedClass{
+	// 	"sheet-variant",
+	// 	"top-0 bottom-0 left-0 h-dvh w-3/4 border-r sm:max-w-sm",
+	// 	true,
+	// }
+	// SheetVariantTop = &GroupedClass{
+	// 	"sheet-variant",
+	// 	"left-0 right-0 top-0 border-b",
+	// 	false,
+	// }
+	// SheetVariantRight = &GroupedClass{
+	// 	"sheet-variant",
+	// 	"top-0 bottom-0 right-0 h-dvh w-3/4 border-l sm:max-w-sm",
+	// 	false,
+	// }
+	// SheetVariantBottom = &GroupedClass{
+	// 	"sheet-variant",
+	// 	"left-0 right-0 bottom-0 border-t",
+	// 	false,
+	// }
+	SheetVariantLeft   = h.Class("top-0 bottom-0 left-0 h-dvh w-3/4 border-r sm:max-w-sm")
+	SheetVariantTop    = h.Class("left-0 right-0 top-0 border-b")
+	SheetVariantRight  = h.Class("top-0 bottom-0 right-0 h-dvh w-3/4 border-l sm:max-w-sm")
+	SheetVariantBottom = h.Class("left-0 right-0 bottom-0 border-t")
 )
 
 func Sheet(props ...h.I) h.Element {
@@ -58,27 +62,27 @@ func SheetContent(props ...h.I) h.Node {
 
 	content := h.Div(props...)
 
-	for _, prop := range props {
-		grouped, ok := prop.(*groupedclasses)
-		if ok {
-			variant := grouped.Candidate()
+	// for _, prop := range props {
+	// 	grouped, ok := prop.(*groupedclasses)
+	// 	if ok {
+	// 		variant := grouped.Candidate()
 
-			switch variant {
-			case SheetVariantLeft:
-				content.AddAttribute(X("transition:enter", "-translate-x-[100%]"))
-				content.AddAttribute(X("transition:leave", "-translate-x-[100%]"))
-			case SheetVariantTop:
-				content.AddAttribute(X("transition:enter", "-translate-y-[100%]"))
-				content.AddAttribute(X("transition:leave", "-translate-y-[100%]"))
-			case SheetVariantRight:
-				content.AddAttribute(X("transition:enter", "translate-x-[100%]"))
-				content.AddAttribute(X("transition:leave", "translate-x-[100%]"))
-			case SheetVariantBottom:
-				content.AddAttribute(X("transition:enter", "translate-y-[100%]"))
-				content.AddAttribute(X("transition:leave", "translate-y-[100%]"))
-			}
-		}
-	}
+	// 		switch variant {
+	// 		case SheetVariantLeft:
+	// 			content.AddAttribute(X("transition:enter", "-translate-x-[100%]"))
+	// 			content.AddAttribute(X("transition:leave", "-translate-x-[100%]"))
+	// 		case SheetVariantTop:
+	// 			content.AddAttribute(X("transition:enter", "-translate-y-[100%]"))
+	// 			content.AddAttribute(X("transition:leave", "-translate-y-[100%]"))
+	// 		case SheetVariantRight:
+	// 			content.AddAttribute(X("transition:enter", "translate-x-[100%]"))
+	// 			content.AddAttribute(X("transition:leave", "translate-x-[100%]"))
+	// 		case SheetVariantBottom:
+	// 			content.AddAttribute(X("transition:enter", "translate-y-[100%]"))
+	// 			content.AddAttribute(X("transition:leave", "translate-y-[100%]"))
+	// 		}
+	// 	}
+	// }
 
 	return h.Frag(
 		// Overlay
@@ -93,13 +97,13 @@ func SheetContent(props ...h.I) h.Node {
 	)
 }
 
-func OpenSheetOn(event string) h.Attribute {
+func OpenSheetOn(event string) *h.Attribute {
 	return On(event, "openSheet()")
 }
 
 var OpenSheet = OpenSheetOn("click")
 
-func CloseSheetOn(event string) h.Attribute {
+func CloseSheetOn(event string) *h.Attribute {
 	return On(event, "closeSheet()")
 }
 

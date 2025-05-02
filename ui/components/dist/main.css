@@ -42,6 +42,7 @@
     --tracking-tight: -0.025em;
     --leading-relaxed: 1.625;
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
@@ -568,6 +569,9 @@
     --tw-scale-z: 100%;
     scale: var(--tw-scale-x) var(--tw-scale-y);
   }
+  .animate-pulse {
+    animation: var(--animate-pulse);
+  }
   .cursor-default {
     cursor: default;
   }
@@ -776,6 +780,9 @@
   }
   .bg-primary {
     background-color: var(--primary);
+  }
+  .bg-primary\/10 {
+    background-color: color-mix(in oklab, var(--primary) 10%, transparent);
   }
   .bg-red-950 {
     background-color: var(--color-red-950);
@@ -2259,4 +2266,9 @@ input[type="number"] {
   syntax: "*";
   inherits: false;
   initial-value: 0;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
 }

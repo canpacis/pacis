@@ -272,7 +272,7 @@ var plates = map[string][]Node{
 	},
 	"radio": {
 		Div(
-			D{"submitted": ""},
+			X("data", "{ submitted: '' }"),
 			Form(
 				On("submit.prevent", "submitted = new FormData($event.target).get('radio-group')"),
 

@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/canpacis/pacis/ui/html"
 	"github.com/canpacis/scanner/structd"
@@ -75,12 +76,19 @@ func (s *StreamWriter) Flush() {
 		s.f.Flush()
 		s.buf.Reset()
 	}
+	bufpool.Put(s.buf)
+}
+
+var bufpool = sync.Pool{
+	New: func() any {
+		return bytes.NewBuffer(make([]byte, 0, 4096))
+	},
 }
 
 func NewStreamWriter(renderer html.I, w http.ResponseWriter) *StreamWriter {
 	return &StreamWriter{
 		Renderer:  renderer,
-		buf:       new(bytes.Buffer),
+		buf:       bufpool.Get().(*bytes.Buffer),
 		chunksize: 1024,
 		w:         w,
 		f:         w.(http.Flusher),

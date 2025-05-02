@@ -21,11 +21,12 @@ Usage:
 func Collapsible(props ...h.I) h.Element {
 	el := h.Div(props...)
 
-	open, hasopen := el.GetAttribute("open")
-	_, ok := open.(ComponentAttribute)
+	// open, hasopen := el.GetAttribute("open")
+	// _, ok := open.(ComponentAttribute)
 	id := getid(el)
 
-	el.AddAttribute(X("data", fn("collapsible", hasopen && ok, id)))
+	// el.AddAttribute(X("data", fn("collapsible", hasopen && ok, id)))
+	el.AddAttribute(X("data", fn("collapsible", false, id)))
 	return el
 }
 
@@ -58,7 +59,7 @@ Usage:
 		),
 	)
 */
-func ToggleCollapsibleOn(event string) h.Attribute {
+func ToggleCollapsibleOn(event string) *h.Attribute {
 	return On(event, "toggleCollapsible()")
 }
 

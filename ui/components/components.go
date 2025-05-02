@@ -1,14 +1,11 @@
 package components
 
 import (
-	"bytes"
-	"context"
 	"crypto/rand"
 	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"strings"
 
@@ -21,18 +18,12 @@ func randid() string {
 	return "pacis-" + hex.EncodeToString(buf)
 }
 
-func readattr(attr h.Attribute) string {
-	var buf bytes.Buffer
-	attr.Render(context.Background(), &buf)
-	return buf.String()
-}
-
 func getid(el h.Element) string {
 	idattr, hasid := el.GetAttribute("id")
 	if !hasid {
 		return randid()
 	} else {
-		return readattr(idattr)
+		return idattr.Value()
 	}
 }
 
@@ -63,55 +54,69 @@ func fn(name string, args ...any) string {
 	return fmt.Sprintf("%s(%s)", name, strings.Join(list, ", "))
 }
 
-type GroupedClass struct {
-	group     string
-	class     h.Class
-	isdefault bool
+type Variant struct {
+	*h.Attribute
+	ID    string
+	Group string
 }
 
-func (GroupedClass) Render(context.Context, io.Writer) error {
-	return nil
+func (v *Variant) Unwrap() *h.Attribute {
+	return v.Attribute
 }
 
-type groupedclasses []*GroupedClass
-
-func (list groupedclasses) Render(ctx context.Context, w io.Writer) error {
-	selected := list.Candidate()
-	if selected == nil {
-		return nil
-	}
-	return selected.class.Render(ctx, w)
+func Vary(group, id string, attr *h.Attribute) *Variant {
+	return &Variant{Group: group, ID: id, Attribute: attr}
 }
 
-func (list groupedclasses) Candidate() *GroupedClass {
-	if len(list) == 0 {
-		return nil
-	}
-	var def *GroupedClass
-	var selected *GroupedClass
+// type GroupedClass struct {
+// 	group     string
+// 	class     *h.Attribute_
+// 	isdefault bool
+// }
 
-	for _, item := range list {
-		if item.isdefault {
-			def = item
-		} else {
-			selected = item
-		}
-	}
-	if selected == nil {
-		selected = def
-	}
-	return selected
-}
+// func (GroupedClass) Render(context.Context, io.Writer) error {
+// 	return nil
+// }
 
-func (groupedclasses) GetKey() string {
-	return "class"
-}
+// type groupedclasses []*GroupedClass
 
-func (a groupedclasses) IsEmpty() bool {
-	return false
-}
+// func (list groupedclasses) Render(ctx context.Context, w io.Writer) error {
+// 	selected := list.Candidate()
+// 	if selected == nil {
+// 		return nil
+// 	}
+// 	return selected.class.Render(ctx, w)
+// }
 
-func (groupedclasses) Dedupe() {}
+// func (list groupedclasses) Candidate() *GroupedClass {
+// 	if len(list) == 0 {
+// 		return nil
+// 	}
+// 	var def *GroupedClass
+// 	var selected *GroupedClass
+
+// 	for _, item := range list {
+// 		if item.isdefault {
+// 			def = item
+// 		} else {
+// 			selected = item
+// 		}
+// 	}
+// 	if selected == nil {
+// 		selected = def
+// 	}
+// 	return selected
+// }
+
+// func (groupedclasses) GetKey() string {
+// 	return "class"
+// }
+
+// func (a groupedclasses) IsEmpty() bool {
+// 	return false
+// }
+
+// func (groupedclasses) Dedupe() {}
 
 /*
 	Joins a prop list with rest. Puts the props at the end for correct attribute deduplication.
@@ -128,27 +133,28 @@ Usage:
 	}
 */
 func Join(props []h.I, rest ...h.I) []h.I {
-	source := []h.I{}
-	source = append(source, rest...)
-	source = append(source, props...)
+	// source := []h.I{}
+	// source = append(source, rest...)
+	// source = append(source, props...)
 
-	result := []h.I{}
+	// result := []h.I{}
 
-	groups := map[string]groupedclasses{}
+	// groups := map[string]groupedclasses{}
 
-	for _, prop := range source {
-		grouped, ok := prop.(*GroupedClass)
-		if ok {
-			groups[grouped.group] = append(groups[grouped.group], grouped)
-		} else {
-			result = append(result, prop)
-		}
-	}
-	for _, group := range groups {
-		result = append(result, &group)
-	}
+	// for _, prop := range source {
+	// 	grouped, ok := prop.(*GroupedClass)
+	// 	if ok {
+	// 		groups[grouped.group] = append(groups[grouped.group], grouped)
+	// 	} else {
+	// 		result = append(result, prop)
+	// 	}
+	// }
+	// for _, group := range groups {
+	// 	result = append(result, &group)
+	// }
 
-	return result
+	// return result
+	return append(rest, props...)
 }
 
 /*
@@ -160,25 +166,25 @@ Usage:
 		D{"open": false}
 	) // <div x-data="{'open':false}"></div>
 */
-type D map[string]any
+// type D map[string]any
 
-func (d D) Render(ctx context.Context, w io.Writer) error {
-	enc, err := json.Marshal(d)
-	if err != nil {
-		return err
-	}
+// func (d D) Render(ctx context.Context, w io.Writer) error {
+// 	enc, err := json.Marshal(d)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	_, err = w.Write([]byte(strings.ReplaceAll(string(enc), "\"", "'")))
-	return err
-}
+// 	_, err = w.Write([]byte(strings.ReplaceAll(string(enc), "\"", "'")))
+// 	return err
+// }
 
-func (D) GetKey() string {
-	return "x-data"
-}
+// func (D) GetKey() string {
+// 	return "x-data"
+// }
 
-func (d D) IsEmpty() bool {
-	return d == nil
-}
+// func (d D) IsEmpty() bool {
+// 	return d == nil
+// }
 
 /*
 	Provide arbitrary x attributes to your elements.
@@ -187,11 +193,11 @@ Usage:
 
 	Div(X("show", "false")) // <div x-show="false"></div>
 */
-func X(key string, value ...any) h.Attribute {
-	return h.Attr(fmt.Sprintf("x-%s", key), value...)
+func X(key string, value ...any) *h.Attribute {
+	return h.Attr("x-"+key, value...)
 }
 
-func Textx(value string) h.Attribute {
+func Textx(value string) *h.Attribute {
 	return h.Attr("x-text", value)
 }
 
@@ -202,8 +208,8 @@ Usage:
 
 	Button(On("click", "console.log('clicked')")) // <button x-on:click="console.log('clicked')"></button>
 */
-func On(event string, handler string) h.Attribute {
-	return h.Attr(fmt.Sprintf("x-on:%s", event), handler)
+func On(event string, handler string) *h.Attribute {
+	return h.Attr("x-on:"+event, handler)
 }
 
 // Toggles color scheme upon a click event
@@ -311,88 +317,90 @@ Usage:
 		)
 	)
 */
-type AnchorPosition struct {
-	vpos   VPos
-	hpos   HPos
-	offset int
+// type AnchorPosition struct {
+// 	vpos   VPos
+// 	hpos   HPos
+// 	offset int
+// }
+
+// func (a AnchorPosition) Render(ctx context.Context, w io.Writer) error {
+// 	_, err := w.Write([]byte("$refs.anchor"))
+// 	return err
+// }
+
+// func (a AnchorPosition) GetKey() string {
+// 	key := "x-anchor"
+
+// 	switch a.vpos {
+// 	case VTop:
+// 		key += ".top"
+// 	case VBottom:
+// 		key += ".bottom"
+// 	default:
+// 		log.Fatalln("invalid vertical position for anchor")
+// 	}
+
+// 	switch a.hpos {
+// 	case HCenter:
+// 	case HStart:
+// 		key += "-start"
+// 	case HEnd:
+// 		key += "-end"
+// 	default:
+// 		log.Fatalln("invalid horizontal position for anchor")
+// 	}
+
+// 	key += fmt.Sprintf(".offset.%d", a.offset)
+
+// 	return key
+// }
+
+// func (a AnchorPosition) IsEmpty() bool {
+// 	return false
+// }
+
+// /*
+// 	Provides anchor positioning attributes to given element
+
+// Usage:
+
+//	Dropdown(
+//		DropdownTrigger( ... )
+//		DropdownContent(
+//			// Pass this to content elements
+//			Anchor(VBottom, HCenter, 12)
+//			// Positions content at bottom center of the trigger, offsetted 12 pixels
+//		)
+//	)
+//
+// */
+func Anchor(v VPos, hz HPos, offset int) *h.Attribute {
+	return h.Attr("todo", "todo")
+	// return AnchorPosition{vpos: v, hpos: h, offset: offset}
 }
 
-func (a AnchorPosition) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte("$refs.anchor"))
-	return err
-}
+// // Implements Deduper interface to deduplicate attribute
+// // and use the last provided value as the final attribte
+// func (a AnchorPosition) Dedupe() {}
 
-func (a AnchorPosition) GetKey() string {
-	key := "x-anchor"
+// type Replacer struct {
+// 	element func(items ...h.I) h.Element
+// }
 
-	switch a.vpos {
-	case VTop:
-		key += ".top"
-	case VBottom:
-		key += ".bottom"
-	default:
-		log.Fatalln("invalid vertical position for anchor")
-	}
+// func (*Replacer) Render(context.Context, io.Writer) error {
+// 	return nil
+// }
 
-	switch a.hpos {
-	case HCenter:
-	case HStart:
-		key += "-start"
-	case HEnd:
-		key += "-end"
-	default:
-		log.Fatalln("invalid horizontal position for anchor")
-	}
+// func (*Replacer) GetKey() string {
+// 	return "replace"
+// }
 
-	key += fmt.Sprintf(".offset.%d", a.offset)
+// func (*Replacer) IsEmpty() bool {
+// 	return true
+// }
 
-	return key
-}
-
-func (a AnchorPosition) IsEmpty() bool {
-	return false
-}
-
-/*
-	Provides anchor positioning attributes to given element
-
-Usage:
-
-	Dropdown(
-		DropdownTrigger( ... )
-		DropdownContent(
-			// Pass this to content elements
-			Anchor(VBottom, HCenter, 12)
-			// Positions content at bottom center of the trigger, offsetted 12 pixels
-		)
-	)
-*/
-func Anchor(v VPos, h HPos, offset int) AnchorPosition {
-	return AnchorPosition{vpos: v, hpos: h, offset: offset}
-}
-
-// Implements Deduper interface to deduplicate attribute
-// and use the last provided value as the final attribte
-func (a AnchorPosition) Dedupe() {}
-
-type Replacer struct {
-	element func(items ...h.I) h.Element
-}
-
-func (*Replacer) Render(context.Context, io.Writer) error {
-	return nil
-}
-
-func (*Replacer) GetKey() string {
-	return "replace"
-}
-
-func (*Replacer) IsEmpty() bool {
-	return true
-}
-
-func Replace(element func(items ...h.I) h.Element) *Replacer {
-	return &Replacer{element: element}
+func Replace(element func(items ...h.I) h.Element) *h.Attribute {
+	return h.Attr("replace", element)
 }
 
 type Orientation int
@@ -414,44 +422,44 @@ func (o Orientation) String() string {
 	}
 }
 
-type ComponentAttribute int
+// type ComponentAttribute int
 
-func (ComponentAttribute) Render(context.Context, io.Writer) error {
-	return nil
-}
+// func (ComponentAttribute) Render(context.Context, io.Writer) error {
+// 	return nil
+// }
 
-func (a ComponentAttribute) GetKey() string {
-	switch a {
-	case Clearable:
-		return "clearable"
-	case Open:
-		return "open"
-	default:
-		return "invalid-input-attribute"
-	}
-}
+// func (a ComponentAttribute) GetKey() string {
+// 	switch a {
+// 	case Clearable:
+// 		return "clearable"
+// 	case Open:
+// 		return "open"
+// 	default:
+// 		return "invalid-input-attribute"
+// 	}
+// }
 
-func (ComponentAttribute) IsEmpty() bool {
-	return true
-}
+// func (ComponentAttribute) IsEmpty() bool {
+// 	return true
+// }
 
-const (
-	Clearable = ComponentAttribute(iota)
-	Open
+var (
+	Clearable = h.Attr("clearable")
+	Open      = h.Attr("open")
 )
 
-func Changed(handler string) h.Attribute {
+func Changed(handler string) *h.Attribute {
 	return On("changed", handler)
 }
 
-func Opened(handler string) h.Attribute {
+func Opened(handler string) *h.Attribute {
 	return On("opened", handler)
 }
 
-func Closed(handler string) h.Attribute {
+func Closed(handler string) *h.Attribute {
 	return On("closed", handler)
 }
 
-func Dismissed(handler string) h.Attribute {
+func Dismissed(handler string) *h.Attribute {
 	return On("dismissed", handler)
 }

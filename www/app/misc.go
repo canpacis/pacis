@@ -20,7 +20,7 @@ func NotFoundPage(ctx *pages.Context) I {
 		H1(
 			Class("text-xl md:text-3xl font-thin flex items-end gap-2 leading-7"),
 
-			icons.FileSearch(Class("size-7"), icons.StrokeWidth(1)),
+			icons.FileSearch(Class("size-7"), Attr("stroke-width", "1")),
 			Span(Text("Not Found!")),
 		),
 		P(
@@ -89,7 +89,7 @@ func (p *AppError) Page(ctx *pages.Context) I {
 		H1(
 			Class("text-xl md:text-3xl font-thin flex items-end gap-2 leading-7"),
 
-			icons.TriangleAlert(Class("size-7"), icons.StrokeWidth(1)),
+			icons.TriangleAlert(Class("size-7"), Attr("stroke-width", "1")),
 			Span(Text("Error!")),
 		),
 		P(

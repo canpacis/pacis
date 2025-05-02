@@ -110,96 +110,96 @@ func Txtarea(props ...I) Element    { return El("textarea", props...) }
 
 // Attributes
 
-func As(value string) Attribute            { return Attr("as", value) }
-func Accept(value string) Attribute        { return Attr("accept", value) }
-func AcceptCharset(value string) Attribute { return Attr("accept-charset", value) }
-func AccessKey(value string) Attribute     { return Attr("accesskey", value) }
-func Action(value string) Attribute        { return Attr("action", value) }
-func Align(value string) Attribute         { return Attr("align", value) }
-func Alt(value string) Attribute           { return Attr("alt", value) }
-func Aria(name, value string) Attribute {
+func As(value string) *Attribute            { return Attr("as", value) }
+func Accept(value string) *Attribute        { return Attr("accept", value) }
+func AcceptCharset(value string) *Attribute { return Attr("accept-charset", value) }
+func AccessKey(value string) *Attribute     { return Attr("accesskey", value) }
+func Action(value string) *Attribute        { return Attr("action", value) }
+func Align(value string) *Attribute         { return Attr("align", value) }
+func Alt(value string) *Attribute           { return Attr("alt", value) }
+func Aria(name, value string) *Attribute {
 	if strings.HasPrefix(name, ":") {
 		return Attr(":aria-"+name[1:], value)
 	}
 	return Attr("aria-"+name, value)
 }
-func Async(value string) Attribute        { return Attr("async", value) }
-func Autocomplete(value string) Attribute { return Attr("autocomplete", value) }
-func Autofocus(value string) Attribute    { return Attr("autofocus", value) }
-func Autoplay(value string) Attribute     { return Attr("autoplay", value) }
-func BGColor(value string) Attribute      { return Attr("bgcolor", value) }
-func Border(value string) Attribute       { return Attr("border", value) }
-func Charset(value string) Attribute      { return Attr("charset", value) }
+func Async(value string) *Attribute        { return Attr("async", value) }
+func Autocomplete(value string) *Attribute { return Attr("autocomplete", value) }
+func Autofocus(value string) *Attribute    { return Attr("autofocus", value) }
+func Autoplay(value string) *Attribute     { return Attr("autoplay", value) }
+func BGColor(value string) *Attribute      { return Attr("bgcolor", value) }
+func Border(value string) *Attribute       { return Attr("border", value) }
+func Charset(value string) *Attribute      { return Attr("charset", value) }
 
 var Checked = Attr("checked", "")
 
-func CiteAttr_(value string) Attribute       { return Attr("cite", value) }
-func ColorAttr(value string) Attribute       { return Attr("color", value) }
-func Cols(value string) Attribute            { return Attr("cols", value) }
-func Colspan(value string) Attribute         { return Attr("colspan", value) }
-func Content(value string) Attribute         { return Attr("content", value) }
-func ContentEditable(value string) Attribute { return Attr("contenteditable", value) }
-func Controls(value string) Attribute        { return Attr("controls", value) }
-func Coords(value string) Attribute          { return Attr("coords", value) }
-func Data(name, value string) Attribute {
+func CiteAttr_(value string) *Attribute       { return Attr("cite", value) }
+func ColorAttr(value string) *Attribute       { return Attr("color", value) }
+func Cols(value string) *Attribute            { return Attr("cols", value) }
+func Colspan(value string) *Attribute         { return Attr("colspan", value) }
+func Content(value string) *Attribute         { return Attr("content", value) }
+func ContentEditable(value string) *Attribute { return Attr("contenteditable", value) }
+func Controls(value string) *Attribute        { return Attr("controls", value) }
+func Coords(value string) *Attribute          { return Attr("coords", value) }
+func Data(name, value string) *Attribute {
 	if strings.HasPrefix(name, ":") {
 		return Attr(":data-"+name[1:], value)
 	}
 	return Attr("data-"+name, value)
 }
-func Datetime(value string) Attribute { return Attr("datetime", value) }
-func Default(value string) Attribute  { return Attr("default", value) }
+func Datetime(value string) *Attribute { return Attr("datetime", value) }
+func Default(value string) *Attribute  { return Attr("default", value) }
 
 var Defer = Attr("defer")
 
-func Dir(value string) Attribute     { return Attr("dir", value) }
-func Dirname(value string) Attribute { return Attr("dirname", value) }
+func Dir(value string) *Attribute     { return Attr("dir", value) }
+func Dirname(value string) *Attribute { return Attr("dirname", value) }
 
 var Disabled = Attr("disabled", "")
 
-func Download(value string) Attribute       { return Attr("download", value) }
-func Draggable(value string) Attribute      { return Attr("draggable", value) }
-func Enctype(value string) Attribute        { return Attr("enctype", value) }
-func EnterKeyHint(value string) Attribute   { return Attr("enterkeyhint", value) }
-func For(value string) Attribute            { return Attr("for", value) }
-func FormAttr(value string) Attribute       { return Attr("form", value) }
-func FormAction(value string) Attribute     { return Attr("formaction", value) }
-func Headers(value string) Attribute        { return Attr("headers", value) }
-func Height(value string) Attribute         { return Attr("height", value) }
-func Hidden(value string) Attribute         { return Attr("hidden", value) }
-func High(value string) Attribute           { return Attr("high", value) }
-func Href(value string) Attribute           { return Attr("href", value) }
-func HrefLang(value string) Attribute       { return Attr("hreflang", value) }
-func HttpEquiv(value string) Attribute      { return Attr("http-equiv", value) }
-func HtmlFor(value string) Attribute        { return Attr("htmlFor", value) }
-func ID(value string) Attribute             { return Attr("id", value) }
-func Inert(value string) Attribute          { return Attr("inert", value) }
-func InputMode(value string) Attribute      { return Attr("inputmode", value) }
-func IsMap(value string) Attribute          { return Attr("ismap", value) }
-func Kind(value string) Attribute           { return Attr("kind", value) }
-func LabelAttr(value string) Attribute      { return Attr("label", value) }
-func Src(value string) Attribute            { return Attr("src", value) }
-func Role(value string) Attribute           { return Attr("role", value) }
-func Lang(value string) Attribute           { return Attr("lang", value) }
-func List(value string) Attribute           { return Attr("list", value) }
-func Loop(value string) Attribute           { return Attr("loop", value) }
-func Low(value string) Attribute            { return Attr("low", value) }
-func Max(value string) Attribute            { return Attr("max", value) }
-func MaxLength(value string) Attribute      { return Attr("maxlength", value) }
-func Media(value string) Attribute          { return Attr("media", value) }
-func Method(value string) Attribute         { return Attr("method", value) }
-func Min(value string) Attribute            { return Attr("min", value) }
-func Multiple(value string) Attribute       { return Attr("multiple", value) }
-func Muted(value string) Attribute          { return Attr("muted", value) }
-func Name(value string) Attribute           { return Attr("name", value) }
-func NoValidate(value string) Attribute     { return Attr("novalidate", value) }
-func Placeholder(value string) Attribute    { return Attr("placeholder", value) }
-func Type(value string) Attribute           { return Attr("type", value) }
-func Rel(value string) Attribute            { return Attr("rel", value) }
-func Width(value string) Attribute          { return Attr("width", value) }
-func Value(value string) Attribute          { return Attr("value", value) }
-func Shadowrootmode(value string) Attribute { return Attr("shadowrootmode", value) }
-func SlotAttr(value string) Attribute       { return Attr("slot", value) }
-func Target(value string) Attribute         { return Attr("target", value) }
-func Property(value string) Attribute       { return Attr("property", value) }
-func StyleAttr(value string) Attribute      { return Attr("style", value) }
+func Download(value string) *Attribute       { return Attr("download", value) }
+func Draggable(value string) *Attribute      { return Attr("draggable", value) }
+func Enctype(value string) *Attribute        { return Attr("enctype", value) }
+func EnterKeyHint(value string) *Attribute   { return Attr("enterkeyhint", value) }
+func For(value string) *Attribute            { return Attr("for", value) }
+func FormAttr(value string) *Attribute       { return Attr("form", value) }
+func FormAction(value string) *Attribute     { return Attr("formaction", value) }
+func Headers(value string) *Attribute        { return Attr("headers", value) }
+func Height(value string) *Attribute         { return Attr("height", value) }
+func Hidden(value string) *Attribute         { return Attr("hidden", value) }
+func High(value string) *Attribute           { return Attr("high", value) }
+func Href(value string) *Attribute           { return Attr("href", value) }
+func HrefLang(value string) *Attribute       { return Attr("hreflang", value) }
+func HttpEquiv(value string) *Attribute      { return Attr("http-equiv", value) }
+func HtmlFor(value string) *Attribute        { return Attr("htmlFor", value) }
+func ID(value string) *Attribute             { return Attr("id", value) }
+func Inert(value string) *Attribute          { return Attr("inert", value) }
+func InputMode(value string) *Attribute      { return Attr("inputmode", value) }
+func IsMap(value string) *Attribute          { return Attr("ismap", value) }
+func Kind(value string) *Attribute           { return Attr("kind", value) }
+func LabelAttr(value string) *Attribute      { return Attr("label", value) }
+func Src(value string) *Attribute            { return Attr("src", value) }
+func Role(value string) *Attribute           { return Attr("role", value) }
+func Lang(value string) *Attribute           { return Attr("lang", value) }
+func List(value string) *Attribute           { return Attr("list", value) }
+func Loop(value string) *Attribute           { return Attr("loop", value) }
+func Low(value string) *Attribute            { return Attr("low", value) }
+func Max(value string) *Attribute            { return Attr("max", value) }
+func MaxLength(value string) *Attribute      { return Attr("maxlength", value) }
+func Media(value string) *Attribute          { return Attr("media", value) }
+func Method(value string) *Attribute         { return Attr("method", value) }
+func Min(value string) *Attribute            { return Attr("min", value) }
+func Multiple(value string) *Attribute       { return Attr("multiple", value) }
+func Muted(value string) *Attribute          { return Attr("muted", value) }
+func Name(value string) *Attribute           { return Attr("name", value) }
+func NoValidate(value string) *Attribute     { return Attr("novalidate", value) }
+func Placeholder(value string) *Attribute    { return Attr("placeholder", value) }
+func Type(value string) *Attribute           { return Attr("type", value) }
+func Rel(value string) *Attribute            { return Attr("rel", value) }
+func Width(value string) *Attribute          { return Attr("width", value) }
+func Value(value string) *Attribute          { return Attr("value", value) }
+func Shadowrootmode(value string) *Attribute { return Attr("shadowrootmode", value) }
+func SlotAttr(value string) *Attribute       { return Attr("slot", value) }
+func Target(value string) *Attribute         { return Attr("target", value) }
+func Property(value string) *Attribute       { return Attr("property", value) }
+func StyleAttr(value string) *Attribute      { return Attr("style", value) }

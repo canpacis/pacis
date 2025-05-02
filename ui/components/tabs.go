@@ -11,7 +11,7 @@ func Tabs(props ...h.I) h.Element {
 	valueattr, _ := el.GetAttribute("value")
 	var value any
 	if valueattr != nil {
-		value = readattr(valueattr)
+		value = valueattr.Value()
 	}
 	id := getid(el)
 	el.AddAttribute(X("data", fn("tabs", value, id)))
@@ -39,7 +39,7 @@ func TabTrigger(trigger h.Node, props ...h.I) h.Element {
 	if !ok {
 		panic("tab trigger elements need a value attribute")
 	}
-	value := readattr(valueattr)
+	value := valueattr.Value()
 	el.AddAttribute(SetTab(value))
 	el.AddAttribute(X("bind:class", fmt.Sprintf("value === '%s' && 'after:bg-primary !text-primary'", value)))
 
@@ -58,15 +58,15 @@ func TabContent(props ...h.I) h.Element {
 	if !ok {
 		panic("tab content elements need a value attribute")
 	}
-	el.AddAttribute(X("show", fmt.Sprintf("value === '%s'", readattr(value))))
+	el.AddAttribute(X("show", fmt.Sprintf("value === '%s'", value.Value())))
 
 	return el
 }
 
-func SetTabOn(event string, value any) h.Attribute {
+func SetTabOn(event string, value any) *h.Attribute {
 	return On(event, fn("setTab", value))
 }
 
-func SetTab(value any) h.Attribute {
+func SetTab(value any) *h.Attribute {
 	return SetTabOn("click", value)
 }

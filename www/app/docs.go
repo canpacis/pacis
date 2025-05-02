@@ -313,7 +313,7 @@ type GettingStartedPage struct {
 	Slug string `path:"slug"`
 }
 
-//pacis:page path=/docs/getting-started/{slug} middlewares=auth
+//pacis:page path=/docs/getting-started/{slug}
 func (p *GettingStartedPage) Page(ctx *pages.Context) I {
 	page, ok := dir.Dirs["getting-started"].Pages[p.Slug]
 
@@ -385,6 +385,11 @@ func DocPageUI(page *DocPage) Node {
 			Class("text-sm flex-1 h-fit leading-6 relative xl:sticky xl:top-[calc(var(--header-height)+2rem)]"),
 
 			P(Class("font-semibold text-primary"), Text("On This Page")),
+			// Skeleton(Class("h-4 my-1 w-20")),
+			// Skeleton(Class("h-4 my-1 w-24 ml-4")),
+			// Skeleton(Class("h-4 my-1 w-16")),
+			// Skeleton(Class("h-4 my-1 w-30 ml-4")),
+			// Skeleton(Class("h-4 my-1 w-22 ml-4")),
 			Map(page.Contents, func(item *TableOfContentItem, i int) I {
 				return P(
 					If(item.Order > 2, Class("ml-4")),

@@ -49,7 +49,7 @@ func Checkbox(props ...h.I) h.Element {
 }
 
 // Returns an attribute that toggles the related checkbox upon given event
-func ToggleCheckboxOn(event string) h.Attribute {
+func ToggleCheckboxOn(event string) *h.Attribute {
 	return On(event, "toggleCheckbox()")
 }
 

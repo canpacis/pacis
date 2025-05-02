@@ -6,7 +6,7 @@ import (
 	h "github.com/canpacis/pacis/ui/html"
 )
 
-func RadioGroup(name h.Attribute, props ...h.I) h.Element {
+func RadioGroup(name *h.Attribute, props ...h.I) h.Element {
 	el := h.El("fieldset",
 		Join(
 			props,
@@ -17,17 +17,17 @@ func RadioGroup(name h.Attribute, props ...h.I) h.Element {
 	var value string
 	valueattr, hasvalue := el.GetAttribute("value")
 	if hasvalue {
-		value = readattr(valueattr)
+		value = valueattr.Value()
 	}
 
 	id := getid(el)
 
-	el.AddAttribute(X("data", fn("radio", readattr(name), value, id)))
+	el.AddAttribute(X("data", fn("radio", name.Value(), value, id)))
 	return el
 }
 
-func RadioGroupItem(value h.Attribute, props ...h.I) h.Element {
-	val := readattr(value)
+func RadioGroupItem(value *h.Attribute, props ...h.I) h.Element {
+	val := value.Value()
 
 	return h.Lbl(
 		Join(

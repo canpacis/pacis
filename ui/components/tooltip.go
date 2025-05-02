@@ -33,27 +33,27 @@ func Tooltip(content string, delay time.Duration, trigger h.Element, props ...h.
 	)
 }
 
-func OpenTooltipOn(event string) h.Attribute {
+func OpenTooltipOn(event string) *h.Attribute {
 	return On(event, "openTooltip()")
 }
 
 var OpenTooltip = OpenTooltipOn("mouseenter")
 
-func CloseTooltipOn(event string) h.Attribute {
+func CloseTooltipOn(event string) *h.Attribute {
 	return On(event, "closeTooltip()")
 }
 
 var CloseTooltip = CloseTooltipOn("mouseleave")
 
-func QueueOpenTooltipOn(event string, delay time.Duration) h.Attribute {
+func QueueOpenTooltipOn(event string, delay time.Duration) *h.Attribute {
 	return On(event, fn("queueOpenTooltip", int(delay.Milliseconds())))
 }
 
-func QueueOpenTooltip(delay time.Duration) h.Attribute {
+func QueueOpenTooltip(delay time.Duration) *h.Attribute {
 	return QueueOpenTooltipOn("mouseenter", delay)
 }
 
-func AbortTooltipOn(event string) h.Attribute {
+func AbortTooltipOn(event string) *h.Attribute {
 	return On(event, "abortTooltip()")
 }
 

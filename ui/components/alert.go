@@ -25,8 +25,10 @@ func AlertDescription(props ...h.I) h.Element {
 }
 
 var (
-	AlertVariantDefault     = &GroupedClass{"alert", "bg-card text-card-foreground", true}
-	AlertVariantDestructive = &GroupedClass{"alert", "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90", false}
+	// AlertVariantDefault     = &GroupedClass{"alert", "bg-card text-card-foreground", true}
+	// AlertVariantDestructive = &GroupedClass{"alert", "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90", false}
+	AlertVariantDefault     = h.Class("bg-card text-card-foreground")
+	AlertVariantDestructive = h.Class("text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90")
 )
 
 /*

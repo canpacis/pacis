@@ -2,10 +2,6 @@
 package icons
 
 import (
-	"context"
-	"io"
-	"strconv"
-
 	h "github.com/canpacis/pacis/ui/html"
 )
 
@@ -13,68 +9,68 @@ func join(props []h.I, rest ...h.I) []h.I {
 	return append(rest, props...)
 }
 
-type Width float64
+// type Width float64
 
-func (Width) GetKey() string {
-	return "width"
-}
+// func (Width) GetKey() string {
+// 	return "width"
+// }
 
-func (wd Width) IsEmpty() bool {
-	return false
-}
+// func (wd Width) IsEmpty() bool {
+// 	return false
+// }
 
-// Implements Deduper interface to deduplicate attribute
-// and use the last provided value as the final attribte
-func (Width) Dedupe() {}
+// // Implements Deduper interface to deduplicate attribute
+// // and use the last provided value as the final attribte
+// func (Width) Dedupe() {}
 
-func (wd Width) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(strconv.FormatFloat(float64(wd), 'f', -1, 64)))
-	return err
-}
+// func (wd Width) Render(ctx context.Context, w io.Writer) error {
+// 	_, err := w.Write([]byte(strconv.FormatFloat(float64(wd), 'f', -1, 64)))
+// 	return err
+// }
 
-type Height float64
+// type Height float64
 
-func (Height) GetKey() string {
-	return "height"
-}
+// func (Height) GetKey() string {
+// 	return "height"
+// }
 
-func (wd Height) IsEmpty() bool {
-	return false
-}
+// func (wd Height) IsEmpty() bool {
+// 	return false
+// }
 
-// Implements Deduper interface to deduplicate attribute
-// and use the last provided value as the final attribte
-func (Height) Dedupe() {}
+// // Implements Deduper interface to deduplicate attribute
+// // and use the last provided value as the final attribte
+// func (Height) Dedupe() {}
 
-func (wd Height) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(strconv.FormatFloat(float64(wd), 'f', -1, 64)))
-	return err
-}
+// func (wd Height) Render(ctx context.Context, w io.Writer) error {
+// 	_, err := w.Write([]byte(strconv.FormatFloat(float64(wd), 'f', -1, 64)))
+// 	return err
+// }
 
-type StrokeWidth float64
+// type StrokeWidth float64
 
-func (StrokeWidth) GetKey() string {
-	return "stroke-width"
-}
+// func (StrokeWidth) GetKey() string {
+// 	return "stroke-width"
+// }
 
-func (wd StrokeWidth) IsEmpty() bool {
-	return false
-}
+// func (wd StrokeWidth) IsEmpty() bool {
+// 	return false
+// }
 
-// Implements Deduper interface to deduplicate attribute
-// and use the last provided value as the final attribte
-func (StrokeWidth) Dedupe() {}
+// // Implements Deduper interface to deduplicate attribute
+// // and use the last provided value as the final attribte
+// func (StrokeWidth) Dedupe() {}
 
-func (wd StrokeWidth) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(strconv.FormatFloat(float64(wd), 'f', -1, 64)))
-	return err
-}
+// func (wd StrokeWidth) Render(ctx context.Context, w io.Writer) error {
+// 	_, err := w.Write([]byte(strconv.FormatFloat(float64(wd), 'f', -1, 64)))
+// 	return err
+// }
 
-func Fill(fill string) h.Attribute {
+func Fill(fill string) *h.Attribute {
 	return h.Attr("fill", fill)
 }
 
-func Stroke(fill string) h.Attribute {
+func Stroke(fill string) *h.Attribute {
 	return h.Attr("stroke", fill)
 }
 
@@ -84,9 +80,9 @@ type SvgIcon struct {
 
 func Icon(props ...h.I) SvgIcon {
 	props = join(props,
-		Width(24),
-		Height(24),
-		StrokeWidth(2),
+		h.Width("24"),
+		h.Height("24"),
+		h.Attr("stroke-width", "2"),
 		Fill("none"),
 		Stroke("currentColor"),
 		h.Attr("viewBox", "0 0 24 24"),

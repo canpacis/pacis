@@ -1,7 +1,6 @@
 package pages
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,55 +12,78 @@ import (
 	"github.com/canpacis/pacis/ui/html"
 )
 
-func readattr(attr html.Attribute) string {
-	var buf bytes.Buffer
-	attr.Render(context.Background(), &buf)
-	return buf.String()
-}
+// type Link struct {
+// 	html.Element
+// }
 
-type Link struct {
-	html.Element
-}
+// func (l *Link) Render(ctx context.Context, w io.Writer) error {
+// 	hrefattr, ok := l.Element.GetAttribute("href")
+// 	if !ok {
+// 		return l.Element.Render(ctx, w)
+// 	}
+// 	href := hrefattr.Value()
 
-func (l *Link) Render(ctx context.Context, w io.Writer) error {
-	hrefattr, ok := l.Element.GetAttribute("href")
+// 	// In-page link, just render regular anchor
+// 	if strings.HasPrefix(href, "#") {
+// 		return l.Element.Render(ctx, w)
+// 	}
+
+// 	parsed, err := url.Parse(href)
+// 	// Valid external url or broken url, just render regular anchor
+// 	if err != nil || len(parsed.Host) != 0 {
+// 		l.Element.AddAttribute(html.Target("blank"))
+// 		l.Element.AddAttribute(html.Rel("noreferer"))
+// 		return l.Element.Render(ctx, w)
+// 	}
+
+// 	l.Element.AddAttribute(c.On("mouseenter", fmt.Sprintf("$prefetch.queue('%s')", href)))
+// 	l.Element.AddAttribute(c.On("click", fmt.Sprintf("$prefetch.load('%s', $event)", href)))
+
+// 	_, eager := l.Element.GetAttribute("eager")
+// 	if eager {
+// 		l.Element.RemoveAttribute("eager")
+// 		l.Element.AddAttribute(c.X("intersect", fmt.Sprintf("$prefetch.queue('%s')", href)))
+// 	}
+// 	return l.Element.Render(ctx, w)
+// }
+
+// func (*Link) NodeType() html.NodeType {
+// 	return html.NodeElement
+// }
+
+var Eager = html.Attr("eager")
+
+func A(props ...html.I) html.Element {
+	el := html.A(props...)
+	hrefattr, ok := el.GetAttribute("href")
 	if !ok {
-		return l.Element.Render(ctx, w)
+		return el
 	}
-	href := readattr(hrefattr)
+	href := hrefattr.Value()
 
 	// In-page link, just render regular anchor
 	if strings.HasPrefix(href, "#") {
-		return l.Element.Render(ctx, w)
+		return el
 	}
 
 	parsed, err := url.Parse(href)
 	// Valid external url or broken url, just render regular anchor
 	if err != nil || len(parsed.Host) != 0 {
-		l.Element.AddAttribute(html.Target("blank"))
-		l.Element.AddAttribute(html.Rel("noreferer"))
-		return l.Element.Render(ctx, w)
+		el.AddAttribute(html.Target("blank"))
+		el.AddAttribute(html.Rel("noreferer"))
+		return el
 	}
 
-	l.Element.AddAttribute(c.On("mouseenter", fmt.Sprintf("$prefetch.queue('%s')", href)))
-	l.Element.AddAttribute(c.On("click", fmt.Sprintf("$prefetch.load('%s', $event)", href)))
+	el.AddAttribute(c.On("mouseenter", fmt.Sprintf("$prefetch.queue('%s')", href)))
+	el.AddAttribute(c.On("click", fmt.Sprintf("$prefetch.load('%s', $event)", href)))
 
-	_, eager := l.Element.GetAttribute("eager")
+	_, eager := el.GetAttribute("eager")
 	if eager {
-		l.Element.RemoveAttribute("eager")
-		l.Element.AddAttribute(c.X("intersect", fmt.Sprintf("$prefetch.queue('%s')", href)))
+		el.RemoveAttribute("eager")
+		el.AddAttribute(c.X("intersect", fmt.Sprintf("$prefetch.queue('%s')", href)))
 	}
-	return l.Element.Render(ctx, w)
-}
 
-func (*Link) NodeType() html.NodeType {
-	return html.NodeElement
-}
-
-var Eager = html.Attr("eager", true)
-
-func A(props ...html.I) html.Element {
-	return &Link{Element: html.A(props...)}
+	return el
 }
 
 func Outlet(ctx *Context) html.I {

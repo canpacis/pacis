@@ -32,7 +32,7 @@ func Switch(props ...h.I) h.Element {
 }
 
 // Returns an attribute that toggles the related switch upon given event
-func ToggleSwitchOn(event string) h.Attribute {
+func ToggleSwitchOn(event string) *h.Attribute {
 	return On(event, "toggleSwitch()")
 }
 

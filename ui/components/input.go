@@ -19,13 +19,14 @@ func Input(props ...h.I) h.Element {
 		h.Class("relative h-fit w-full"),
 		h.If(hascls, class),
 
-		D{"input": ""},
+		// D{"input": ""},
+		X("data", "{ input: null }"),
 		X("init", "input = $el.querySelector('input')"),
 
 		input,
 		h.IfFn(hastyp, func() h.Renderer {
 			// input[type=number]
-			return h.If(readattr(typ) == "number", h.Span(
+			return h.If(typ.Value() == "number", h.Span(
 				h.Class("absolute top-0 right-0 h-full flex flex-col text-muted-foreground"),
 
 				h.Btn(

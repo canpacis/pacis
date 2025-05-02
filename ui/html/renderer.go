@@ -10,6 +10,7 @@ import (
 	"log"
 	"slices"
 	"strings"
+	"sync"
 )
 
 var selfClosingTags = map[string]string{
@@ -59,9 +60,9 @@ type Element interface {
 	Node
 	GetTag() string
 
-	GetAttributes() []Attribute
-	GetAttribute(string) (Attribute, bool)
-	AddAttribute(Attribute)
+	// GetAttributes() []*Attribute_
+	GetAttribute(string) (*Attribute, bool)
+	AddAttribute(*Attribute)
 	RemoveAttribute(string)
 
 	GetNodes() []Node
@@ -73,126 +74,178 @@ type Element interface {
 	GetElements() []Element
 }
 
-// ErrorSetter is an interface that allows a node to
-// set its error so that it can be raised during rendering.
-type ErrorSetter interface {
-	SetError(error)
-}
+type DedupeStrategy int
+
+const (
+	DedupeTakeLast = DedupeStrategy(iota)
+	DedupeTakeFirst
+	DedupeJoinComma
+	DedupeJoinSpace
+)
 
 // Represents any kind of element attribute
-type Attribute interface {
-	Renderer
-	GetKey() string
-	IsEmpty() bool
+type Attribute struct {
+	strategy DedupeStrategy
+	Name     string
+	value    []any
+	IsEmpty  bool
+
+	rendered []byte
+}
+
+func (a Attribute) get(i int) string {
+	raw := a.value[i]
+	switch raw := raw.(type) {
+	case string:
+		return html.EscapeString(raw)
+	case bool:
+		if raw {
+			return "true"
+		}
+		return "false"
+	case int, uint:
+		return fmt.Sprintf("%d", raw)
+	default:
+		return ""
+	}
+}
+
+func (a Attribute) strings() []string {
+	strs := []string{}
+	for i := range a.value {
+		strs = append(strs, a.get(i))
+	}
+	return strs
+}
+
+func (a Attribute) Value() string {
+	switch a.strategy {
+	case DedupeTakeFirst:
+		return a.get(0)
+	case DedupeTakeLast:
+		if len(a.value) == 0 {
+			return ""
+		}
+		return a.get(len(a.value) - 1)
+	case DedupeJoinComma:
+		return strings.Join(a.strings(), ",")
+	case DedupeJoinSpace:
+		return strings.Join(a.strings(), " ")
+	default:
+		return ""
+	}
+}
+
+func (a Attribute) Raw() any {
+	switch a.strategy {
+	case DedupeTakeFirst:
+		return a.value[0]
+	case DedupeTakeLast:
+		if len(a.value) == 0 {
+			return ""
+		}
+		return a.value[len(a.value)-1]
+	case DedupeJoinComma:
+		return strings.Join(a.strings(), ",")
+	case DedupeJoinSpace:
+		return strings.Join(a.strings(), " ")
+	default:
+		return ""
+	}
+}
+
+func (a *Attribute) Render(ctx context.Context, w io.Writer) error {
+	if len(a.rendered) != 0 {
+		_, err := w.Write(a.rendered)
+		return err
+	}
+	var err error
+	var buf = new(bytes.Buffer)
+	_, err = buf.Write([]byte(" " + a.Name))
+	if err != nil {
+		return err
+	}
+
+	if !a.IsEmpty {
+		_, err = buf.WriteString("=\"" + a.Value() + "\"")
+		if err != nil {
+			return err
+		}
+	}
+	a.rendered = buf.Bytes()
+	_, err = io.Copy(w, buf)
+	return err
 }
 
 type element struct {
 	tag         string
 	nodes       []Node
-	attrs       []Attribute
+	attrmap     map[string]*Attribute
 	selfClosing bool
 
 	err error
 }
 
+var bufpool = sync.Pool{
+	New: func() any {
+		return bytes.NewBuffer(make([]byte, 0, 1024))
+	},
+}
+
 func (e *element) Render(ctx context.Context, w io.Writer) error {
-	if e.GetError() != nil {
-		return e.GetError()
+	var nocopy bool
+	var buf *bytes.Buffer
+	b, ok := w.(*bytes.Buffer)
+	if ok {
+		buf = b
+		nocopy = true
+	} else {
+		buf = bufpool.Get().(*bytes.Buffer)
+		buf.Reset()
 	}
 
-	if _, err := w.Write(fmt.Appendf(nil, "<%s", e.tag)); err != nil {
+	var err error
+	_, err = buf.WriteString("<" + e.tag)
+	if err != nil {
 		return err
 	}
 
-	attrs := map[string][]Attribute{}
-
-	// Collapse duplicate definitions
-	for _, attr := range e.attrs {
-		key := attr.GetKey()
-		attrs[key] = append(attrs[key], attr)
-	}
-
-	// TODO: Maybe refactor this to its own function
-	for key, list := range attrs {
-		// join class names with a space, duplicate other attributes
-		if key == "class" {
-			if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
-				return err
-			}
-
-			for i, class := range list {
-				if i != 0 {
-					if _, err := w.Write([]byte(" ")); err != nil {
-						return err
-					}
-				}
-				if err := class.Render(ctx, w); err != nil {
-					return err
-				}
-			}
-			if _, err := w.Write([]byte("\"")); err != nil {
-				return err
-			}
-		} else {
-			if len(list) == 0 {
-				continue
-			}
-			// if the attribute is dedupable, pick the last element
-			_, ok := list[0].(interface{ Dedupe() })
-			if ok {
-				attr := list[len(list)-1]
-				if attr.IsEmpty() {
-					if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
-						return err
-					}
-				} else {
-					if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
-						return err
-					}
-					if err := attr.Render(ctx, w); err != nil {
-						return err
-					}
-					if _, err := w.Write([]byte("\"")); err != nil {
-						return err
-					}
-				}
-			} else {
-				for _, attr := range list {
-					if attr.IsEmpty() {
-						if _, err := w.Write(fmt.Appendf(nil, " %s", key)); err != nil {
-							return err
-						}
-					} else {
-						if _, err := w.Write(fmt.Appendf(nil, " %s=\"", key)); err != nil {
-							return err
-						}
-						if err := attr.Render(ctx, w); err != nil {
-							return err
-						}
-						if _, err := w.Write([]byte("\"")); err != nil {
-							return err
-						}
-					}
-				}
-			}
-		}
-	}
-
-	if e.selfClosing {
-		_, err := w.Write([]byte(" />"))
-		return err
-	}
-	if _, err := w.Write([]byte(">")); err != nil {
-		return err
-	}
-
-	for _, node := range e.nodes {
-		if err := node.Render(ctx, w); err != nil {
+	for _, attr := range e.attrmap {
+		if err := attr.Render(ctx, buf); err != nil {
 			return err
 		}
 	}
 
-	if _, err := w.Write(fmt.Appendf(nil, "</%s>", e.tag)); err != nil {
+	if e.selfClosing {
+		_, err := buf.WriteString(" />")
+		if err != nil {
+			return err
+		}
+		if !nocopy {
+			_, err = io.Copy(w, buf)
+			bufpool.Put(buf)
+			return err
+		}
+		return nil
+	}
+	_, err = buf.WriteString(">")
+	if err != nil {
+		return err
+	}
+
+	for _, node := range e.nodes {
+		if err := node.Render(ctx, buf); err != nil {
+			return err
+		}
+	}
+
+	_, err = buf.WriteString("</" + e.tag + ">")
+	if err != nil {
+		return err
+	}
+	if !nocopy {
+		_, err = io.Copy(w, buf)
+		bufpool.Put(buf)
 		return err
 	}
 	return nil
@@ -206,35 +259,26 @@ func (e *element) GetTag() string {
 	return e.tag
 }
 
-func (e *element) GetAttributes() []Attribute {
-	return e.attrs
+func (e *element) GetAttribute(key string) (*Attribute, bool) {
+	attr, ok := e.attrmap[key]
+	return attr, ok
 }
 
-func (e *element) GetAttribute(key string) (Attribute, bool) {
-	for _, attr := range e.attrs {
-		if attr.GetKey() == key {
-			return attr, true
-		}
+var nullbuf = bytes.NewBuffer(make([]byte, 0, 1024))
+
+func (e *element) AddAttribute(attr *Attribute) {
+	attr.Render(context.Background(), nullbuf)
+	nullbuf.Reset()
+	existing, ok := e.attrmap[attr.Name]
+	if ok {
+		existing.value = append(existing.value, attr.value...)
+	} else {
+		e.attrmap[attr.Name] = attr
 	}
-	return nil, false
-}
-
-func (e *element) AddAttribute(attr Attribute) {
-	e.attrs = append(e.attrs, attr)
 }
 
 func (e *element) RemoveAttribute(key string) {
-	idx := -1
-	for i, attr := range e.attrs {
-		if attr.GetKey() == key {
-			idx = i
-		}
-	}
-	if idx < 0 {
-		e.err = fmt.Errorf("remove attribute: cannot remove attribute %s on element %s, attribute does not exist", key, e.tag)
-	} else {
-		e.attrs = slices.Delete(e.attrs, idx, idx+1)
-	}
+	delete(e.attrmap, key)
 }
 
 func (e *element) GetElement(i int) (Element, bool) {
@@ -291,42 +335,21 @@ func (e *element) GetError() error {
 // Creates an element with default html renderer
 func El(tag string, items ...I) Element {
 	_, selfClosing := selfClosingTags[tag]
-	el := &element{tag: tag, selfClosing: selfClosing}
+	el := &element{tag: tag, selfClosing: selfClosing, attrmap: make(map[string]*Attribute, 4)}
 
 	for _, item := range items {
 		switch item := item.(type) {
-		case Attribute:
-			el.attrs = append(el.attrs, item)
+		case *Attribute:
+			el.AddAttribute(item)
 		case Node:
 			el.nodes = append(el.nodes, item)
 		default:
-			panic(fmt.Sprintf("unknown item type %T", item))
-		}
-	}
-
-	return el
-}
-
-// Clones an element. This does not clone the Render() method
-// of that element, instead it creates a new element with the
-// default html element renderer.
-func Clone(elem Element, items ...I) Element {
-	_, selfClosing := selfClosingTags[elem.GetTag()]
-	el := &element{
-		tag:         elem.GetTag(),
-		nodes:       elem.GetNodes(),
-		attrs:       elem.GetAttributes(),
-		selfClosing: selfClosing,
-	}
-
-	for _, item := range items {
-		switch item := item.(type) {
-		case Attribute:
-			el.attrs = append(el.attrs, item)
-		case Node:
-			el.nodes = append(el.nodes, item)
-		default:
-			panic(fmt.Sprintf("unknown item type %T", item))
+			unwrapper, ok := item.(interface{ Unwrap() *Attribute })
+			if ok {
+				el.AddAttribute(unwrapper.Unwrap())
+			} else {
+				panic(fmt.Sprintf("unknown item type %T", item))
+			}
 		}
 	}
 
@@ -363,55 +386,12 @@ func (RawUnsafe) NodeType() NodeType {
 	return NodeText
 }
 
-type attr struct {
-	key   string
-	value any
-}
-
-func (a attr) Render(ctx context.Context, w io.Writer) error {
-	var str string
-
-	switch value := a.value.(type) {
-	case bool:
-		if value {
-			str = "true"
-		} else {
-			str = "false"
-		}
-	case string:
-		if a.key == "class" {
-			str = strings.ReplaceAll(value, "\"", "'")
-		} else {
-			str = html.EscapeString(value)
-		}
-	case int8, int16, int32, int64, uint8, uint16, uint32, uint64, float32, float64, int, uint:
-		str = fmt.Sprintf("%d", value)
-	case interface{ String() string }:
-		str = html.EscapeString(value.String())
-	default:
-		str = fmt.Sprintf("%v", value)
-	}
-
-	_, err := w.Write([]byte(str))
-	return err
-}
-
-func (a *attr) GetKey() string {
-	return a.key
-}
-
-func (a *attr) IsEmpty() bool {
-	return a.value == nil
-}
-
-func (*attr) Dedupe() {}
-
-func Attr(key string, value ...any) Attribute {
+func Attr(name string, value ...any) *Attribute {
 	switch len(value) {
 	case 0:
-		return &attr{key: key, value: nil}
+		return &Attribute{Name: name, IsEmpty: true}
 	case 1:
-		return &attr{key: key, value: value[0]}
+		return &Attribute{Name: name, value: value}
 	default:
 		panic("attr expects no more than 2 parameters")
 	}
@@ -556,33 +536,8 @@ func (ContextNode) NodeType() NodeType {
 	return NodeFragment
 }
 
-type ContextAttr func(context.Context) Attribute
-
-func (ca ContextAttr) Render(ctx context.Context, w io.Writer) error {
-	return ca(ctx).Render(ctx, w)
+func Class(class string) *Attribute {
+	attr := Attr("class", class)
+	attr.strategy = DedupeJoinSpace
+	return attr
 }
-
-func (ca ContextAttr) GetKey() string {
-	return ca(context.Background()).GetKey()
-}
-
-func (ContextAttr) IsEmpty() bool {
-	return false
-}
-
-type Class string
-
-func (ca Class) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(ca))
-	return err
-}
-
-func (ca Class) GetKey() string {
-	return "class"
-}
-
-func (Class) IsEmpty() bool {
-	return false
-}
-
-func (Class) Dedupe() {}

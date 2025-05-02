@@ -12,11 +12,12 @@ func Dropdown(props ...h.I) h.Element {
 			DismissDropdownOn("keydown.esc.window"),
 		)...,
 	)
-	open, hasopen := el.GetAttribute("open")
-	_, ok := open.(ComponentAttribute)
+	// open, hasopen := el.GetAttribute("open")
+	// _, ok := open.(ComponentAttribute)
 
 	id := getid(el)
-	el.AddAttribute(X("data", fn("dropdown", hasopen && ok, id)))
+	// el.AddAttribute(X("data", fn("dropdown", hasopen && ok, id)))
+	el.AddAttribute(X("data", fn("dropdown", false, id)))
 
 	return el
 }
@@ -46,14 +47,14 @@ func DropdownContent(props ...h.I) h.Element {
 	)
 }
 
-func DropdownItem(value h.Attribute, props ...h.I) h.Node {
+func DropdownItem(value *h.Attribute, props ...h.I) h.Node {
 	props = Join(
 		props,
 		h.Class("relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0 hover:bg-accent"),
 	)
 
-	if value.GetKey() != "href" {
-		props = append(props, CloseDropdown(readattr(value)))
+	if value.Name != "href" {
+		props = append(props, CloseDropdown(value.Value()))
 	} else {
 		props = append(props, value)
 	}
@@ -62,9 +63,9 @@ func DropdownItem(value h.Attribute, props ...h.I) h.Node {
 
 	attr, ok := el.GetAttribute("replace")
 	if ok {
-		el := attr.(*Replacer).element(props...)
+		replacer := attr.Raw().(func(items ...h.I) h.Element)
+		el = replacer(props...)
 		el.RemoveAttribute("replace")
-		return el
 	}
 	return el
 }
@@ -77,21 +78,21 @@ func DropdownLabel(label string, props ...h.I) h.Element {
 	return h.Span(Join(props, h.Class("px-2 py-1.5 text-xs font-semibold text-muted-foreground"), h.Text(label))...)
 }
 
-func OpenDropdownOn(event string) h.Attribute {
+func OpenDropdownOn(event string) *h.Attribute {
 	return On(event, "openDropdown()")
 }
 
 var OpenDropdown = OpenDropdownOn("click")
 
-func CloseDropdownOn(event string, value any) h.Attribute {
+func CloseDropdownOn(event string, value any) *h.Attribute {
 	return On(event, fn("closeDropdown", value))
 }
 
-func CloseDropdown(value string) h.Attribute {
+func CloseDropdown(value string) *h.Attribute {
 	return CloseDropdownOn("click", value)
 }
 
-func DismissDropdownOn(event string) h.Attribute {
+func DismissDropdownOn(event string) *h.Attribute {
 	return On(event, "dismissDropdown()")
 }
 

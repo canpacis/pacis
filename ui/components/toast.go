@@ -40,10 +40,10 @@ func ToastContainer(props ...h.I) h.I {
 	)
 }
 
-func ShowToastOn(event, title, message string) h.Attribute {
+func ShowToastOn(event, title, message string) *h.Attribute {
 	return On(event, fn("$store.toast.show", title, message))
 }
 
-func ShowToast(title, message string) h.Attribute {
+func ShowToast(title, message string) *h.Attribute {
 	return ShowToastOn("click", title, message)
 }
