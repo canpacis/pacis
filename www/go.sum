@@ -4,6 +4,8 @@ github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/NYTimes/gziphandler v1.1.1 h1:ZUDjpQae29j0ryrS0u/B8HZfJBtBQHjqw2rQ2cqUQ3I=
 github.com/NYTimes/gziphandler v1.1.1/go.mod h1:n/CVRwUEOgIxrgPvAQhUUr9oeUtvrhMomdKFjzJNB0c=
+github.com/authorizerdev/authorizer-go v0.0.0-20240402105736-0eeef41a29a2 h1:Fb7QvIRVgUY4bzVheAgffz+Qa43t4ujQTMNApjyTfo8=
+github.com/authorizerdev/authorizer-go v0.0.0-20240402105736-0eeef41a29a2/go.mod h1:JS47FPlPYXUoppQmyiyxk8pWwxYvw2Hf63Q7jFZzz1k=
 github.com/canpacis/pacis/pages v0.0.0-20250417085348-8b10cc473c0d h1:DK61bKisWWNiuDqfm6wPtTdH3VsSGxBM0czTVujcWqY=
 github.com/canpacis/pacis/pages v0.0.0-20250417085348-8b10cc473c0d/go.mod h1:aIlnKf7jdFBU8Z8BbiFRr+bd3s2e9nPmLgUXUH4Mpq0=
 github.com/canpacis/pacis/ui v0.0.0-20250417085348-8b10cc473c0d h1:+MjMXGNCevIBdZ93Rjqv/6NANJOnMRzS5a+gqrEaBKY=

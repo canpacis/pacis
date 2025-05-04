@@ -6,12 +6,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/authorizerdev/authorizer-go"
 	"github.com/canpacis/pacis/pages"
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
@@ -23,6 +25,7 @@ import (
 var (
 	cachedb     *redis.Client
 	oauthConfig *oauth2.Config
+	auth        *authorizer.AuthorizerClient
 )
 
 type CacheStorage struct {
@@ -37,7 +40,7 @@ func (cs *CacheStorage) Set(key string, val any) error {
 	return cs.db.Set(context.Background(), key, val, time.Hour).Err()
 }
 
-func Init() {
+func Init() error {
 	oauthConfig = &oauth2.Config{
 		RedirectURL:  os.Getenv("OAuthCallbackURL"),
 		ClientID:     os.Getenv("GoogleOAuthClientID"),
@@ -52,6 +55,10 @@ func Init() {
 		Password: os.Getenv("RedisPassword"),
 		DB:       0,
 	})
+
+	var err error
+	auth, err = authorizer.NewAuthorizerClient(os.Getenv("AuthorizerID"), os.Getenv("AuthorizerURL"), os.Getenv("OAuthCallbackURL"), map[string]string{})
+	return err
 }
 
 func randstate() string {
@@ -135,46 +142,107 @@ type LoginPage struct {
 
 //pacis:page path=/auth/login middlewares=auth
 func (p *LoginPage) Page(ctx *pages.Context) I {
-	// ctx.SetTitle("Login | Pacis")
+	// if p.User != nil {
+	// 	return pages.Redirect(ctx, "/")
+	// }
 
-	if p.User != nil {
+	// state := randstate()
+	// url := oauthConfig.AuthCodeURL(state)
+
+	// pages.SetCookie(
+	// 	ctx,
+
+	// 	&http.Cookie{
+	// 		Name:     "auth_state",
+	// 		Value:    state,
+	// 		Path:     "/",
+	// 		Secure:   true,
+	// 		HttpOnly: true,
+	// 		// Give the state cookie 5 minutes to expire
+	// 		Expires:  time.Now().Add(time.Minute * 5),
+	// 		SameSite: http.SameSiteNoneMode,
+	// 	},
+	// )
+
+	return Div(
+		Class("container flex-1 flex items-center justify-center flex-col gap-4"),
+
+		H1(Class("text-3xl font-semibold"), Text("Welcome to Pacis")),
+		Form(
+			Input(
+				Placeholder("Email"),
+				Placeholder("Password"),
+			),
+		),
+		// Button(
+		// 	ButtonSizeLg,
+		// 	Href(url),
+		// 	Replace(A),
+		// 	Class("!rounded-full"),
+
+		// 	GoogleIcon(),
+		// 	Text("Login with Google"),
+		// ),
+	)
+}
+
+type Signup struct {
+	User     *User  `context:"user"`
+	Email    string `form:"email"`
+	Password string `form:"password"`
+}
+
+//pacis:page path=/auth/signup middlewares=auth
+func (s *Signup) Page(ctx *pages.Context) I {
+	if s.User != nil {
 		return pages.Redirect(ctx, "/")
 	}
 
-	state := randstate()
-	url := oauthConfig.AuthCodeURL(state)
+	return Div(
+		Class("container flex-1 flex justify-center items-center"),
 
-	pages.SetCookie(
-		ctx,
-
-		&http.Cookie{
-			Name:     "auth_state",
-			Value:    state,
-			Path:     "/",
-			Secure:   true,
-			HttpOnly: true,
-			// Give the state cookie 5 minutes to expire
-			Expires:  time.Now().Add(time.Minute * 5),
-			SameSite: http.SameSiteNoneMode,
-		},
-	)
-
-	return Frag(
 		Div(
-			Class("container flex-1 flex items-center justify-center flex-col gap-4"),
+			Class("max-w-80 flex flex-col gap-4"),
 
-			H1(Class("text-3xl font-semibold"), Text("Welcome to Pacis")),
-			Button(
-				ButtonSizeLg,
-				Href(url),
-				Replace(A),
-				Class("!rounded-full"),
+			H1(Class("font-semibold"), Text("Sign up to Pacis")),
+			Form(
+				Action("/auth/signup"),
+				Method("POST"),
+				Class("flex flex-col gap-2 w-full"),
 
-				GoogleIcon(),
-				Text("Login with Google"),
+				Input(
+					Type("email"),
+					Attr("required"),
+					Placeholder("Email"),
+					Name("email"),
+				),
+				Input(
+					Type("password"),
+					Attr("required"),
+					Placeholder("Password"),
+					Name("password"),
+				),
+				Button(
+					Type("submit"),
+
+					Text("Sign Up"),
+				),
 			),
 		),
 	)
+}
+
+//pacis:action path=/auth/signup method=post middlewares=auth
+func (s *Signup) Action(ctx *pages.Context) I {
+	token, err := auth.SignUp(&authorizer.SignUpInput{
+		Email:           &s.Email,
+		Password:        s.Password,
+		ConfirmPassword: s.Password,
+	})
+	fmt.Println(token, err)
+
+	// return pages.Redirect(ctx, "/")
+	return Frag()
 }
 
 //pacis:page path=/auth/logout middlewares=auth

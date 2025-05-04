@@ -13,7 +13,9 @@ func main() {
 	if err := app.InitDocs(); err != nil {
 		log.Fatal(err)
 	}
-	app.Init()
+	if err := app.Init(); err != nil {
+		log.Fatal(err)
+	}
 	router, err := app.Router(nil)
 	if err != nil {
 		log.Fatal(err)
