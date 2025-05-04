@@ -54,10 +54,17 @@ func (ctx *Context) Scan(v any) error {
 	req := ctx.r.Clone(context.Background())
 	query := req.URL.Query()
 
+	if ctx.r.Method == "POST" || ctx.r.Method == "PATCH" || ctx.r.Method == "PUT" {
+		if err := ctx.r.ParseForm(); err != nil {
+			return err
+		}
+	}
+
 	pipe := scanner.NewPipe(
 		scanner.NewCookie(ctx.cookies),
 		scanner.NewQuery(&query),
 		scanner.NewPath(req),
+		scanner.NewForm(&ctx.r.PostForm),
 		scanner.NewHeader(&req.Header),
 		internal.NewContextScanner(ctx),
 	)
@@ -106,6 +113,18 @@ func NewFnLayout(fn func(*Context) html.I) *FnLayout {
 
 type Action interface {
 	Action(*Context) html.I
+}
+
+type FnAction struct {
+	fn func(*Context) html.I
+}
+
+func (a FnAction) Action(ctx *Context) html.I {
+	return a.fn(ctx)
+}
+
+func NewFnAction(fn func(*Context) html.I) *FnAction {
+	return &FnAction{fn: fn}
 }
 
 type Route interface {
@@ -221,6 +240,7 @@ func (r actionroute) Path() string {
 func (ar *actionroute) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r)
+		ctx.Scan(ar.action)
 		renderer := ar.action.Action(ctx)
 		sw := internal.NewStreamWriter(renderer, w)
 		internal.Render(ctx, sw)

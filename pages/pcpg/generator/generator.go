@@ -145,7 +145,7 @@ type FileRoute struct {
 	Page   string
 	Layout *FileLayout
 	// Wraps the page function if true
-	IsFnPage  bool
+	IsFn      bool
 	IsPointer bool
 
 	// Redirect routes
@@ -169,12 +169,12 @@ type FileMiddleware struct {
 
 type MetaPage struct {
 	Name      string
-	IsFnPage  bool
+	IsFn      bool
 	IsPointer bool
 }
 
 func (mp MetaPage) String() string {
-	if mp.IsFnPage {
+	if mp.IsFn {
 		return "pages.NewFnPage(" + mp.Name + ")"
 	}
 	name := mp.Name + "{}"
@@ -277,7 +277,7 @@ func GenerateFile(file *File) ([]byte, error) {
 
 const pagetempl = `pages.NewPageRoute(
 	"{{ .Path }}",
-	{{ if .IsFnPage }}
+	{{ if .IsFn }}
 	pages.NewFnPage({{ .Page }}),
 	{{ else }}
 	{{ if .IsPointer }}&{{ end }}{{ .Page }}{},
@@ -300,7 +300,11 @@ const redirecttempl = `pages.NewRedirectRoute(
 
 const actiontempl = `pages.NewActionRoute(
 	"{{ .Path }}",
-	{{ .Action }},
+	{{ if .IsFn }}
+	pages.NewFnAction({{ .Action }}),
+	{{ else }}
+	{{ if .IsPointer }}&{{ end }}{{ .Action }}{},
+	{{ end }}
 	{{ range .Middlewares }}
 	{{ . }}, {{ end }}
 )`
@@ -563,10 +567,24 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 			return nil, fmt.Errorf("action is incorrectly placed, place it before a action function")
 		}
 
+		isfn := true
+		name := fn.Name.String()
+		pointer := false
+		if fn.Recv != nil {
+			isfn = false
+			switch fn.Recv.List[0].Type.(type) {
+			case *ast.StarExpr:
+				pointer = true
+			}
+			name = resolveexpr(fn.Recv.List[0].Type)
+		}
+
 		file.Routes = append(file.Routes, &FileRoute{
 			Type:        ActionRoute,
 			Path:        mtd + " /" + cleanpath(path),
-			Action:      fn.Name.String(),
+			Action:      name,
+			IsFn:        isfn,
+			IsPointer:   pointer,
 			Middlewares: middlewares,
 		})
 	}
@@ -594,7 +612,7 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 
 				file.NotFoundPage = &MetaPage{
 					Name:      name,
-					IsFnPage:  isfn,
+					IsFn:      isfn,
 					IsPointer: pointer,
 				}
 			case "error":
@@ -617,7 +635,7 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 
 				file.ErrorPage = &MetaPage{
 					Name:      name,
-					IsFnPage:  isfn,
+					IsFn:      isfn,
 					IsPointer: pointer,
 				}
 			case "robots":
@@ -700,7 +718,7 @@ func CreateFile(list *parser.DirectiveList, assets map[string]string) (*File, er
 			file.Routes = append(file.Routes, &FileRoute{
 				Type:        PageRoute,
 				Path:        "GET " + path,
-				IsFnPage:    isfn,
+				IsFn:        isfn,
 				IsPointer:   pointer,
 				Page:        name,
 				Layout:      layout,
