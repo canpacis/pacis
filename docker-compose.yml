@@ -1,7 +1,7 @@
-version: '3.8'
-
 services:
   webapp:
-    build: ./Dockerfile.www
+    build:
+      context: .
+      dockerfile: Dockerfile.www
     ports:
       - "8000:8080"
