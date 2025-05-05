@@ -77,7 +77,7 @@ func (p *AppError) Page(ctx *pages.Context) I {
 	// ctx.SetTitle("Error | Pacis")
 	var message string
 
-	if os.Getenv("Environment") == "development" {
+	if os.Getenv("ENVIRONMENT") == "development" {
 		message = p.Error()
 	} else {
 		message = "We don't know what happened"

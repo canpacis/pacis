@@ -5,10 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -18,14 +15,11 @@ import (
 	. "github.com/canpacis/pacis/ui/components"
 	. "github.com/canpacis/pacis/ui/html"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 var (
-	cachedb     *redis.Client
-	oauthConfig *oauth2.Config
-	auth        *authorizer.AuthorizerClient
+	cachedb *redis.Client
+	auth    *authorizer.AuthorizerClient
 )
 
 type CacheStorage struct {
@@ -41,24 +35,32 @@ func (cs *CacheStorage) Set(key string, val any) error {
 }
 
 func Init() error {
-	oauthConfig = &oauth2.Config{
-		RedirectURL:  os.Getenv("OAuthCallbackURL"),
-		ClientID:     os.Getenv("GoogleOAuthClientID"),
-		ClientSecret: os.Getenv("GoogleOAuthClientSecret"),
-		Scopes:       []string{"email", "profile"},
-		Endpoint:     google.Endpoint,
-	}
+	// oauthConfig = &oauth2.Config{
+	// 	RedirectURL:  os.Getenv("OAUTH_CALLBACK_URL"),
+	// 	ClientID:     os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
+	// 	ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
+	// 	Scopes:       []string{"email", "profile"},
+	// 	Endpoint:     google.Endpoint,
+	// }
 
 	cachedb = redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("RedisAddress"),
-		Username: os.Getenv("RedisUsername"),
-		Password: os.Getenv("RedisPassword"),
+		Addr:     os.Getenv("REDIS_URL"),
+		Username: os.Getenv("REDIS_USERNAME"),
+		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       0,
 	})
 
 	var err error
-	auth, err = authorizer.NewAuthorizerClient(os.Getenv("AuthorizerID"), os.Getenv("AuthorizerURL"), os.Getenv("OAuthCallbackURL"), map[string]string{})
-	return err
+	auth, err = authorizer.NewAuthorizerClient(
+		os.Getenv("AUTHORIZER_ID"),
+		os.Getenv("AUTHORIZER_URL"),
+		os.Getenv("OAUTH_CALLBACK_URL"),
+		map[string]string{},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to instantiate authorizer: %w", err)
+	}
+	return nil
 }
 
 func randstate() string {
@@ -89,51 +91,51 @@ func (u *User) UnmarshalBinary(data []byte) error {
 
 //pacis:middleware label=authentication
 func AuthHandler(r *http.Request) (*User, error) {
-	if oauthConfig == nil {
-		return nil, errors.New("no oauth2 config")
-	}
-	if cachedb == nil {
-		return nil, errors.New("no cachedb")
-	}
+	// if oauthConfig == nil {
+	// 	return nil, errors.New("no oauth2 config")
+	// }
+	// if cachedb == nil {
+	// 	return nil, errors.New("no cachedb")
+	// }
 
-	cookie, err := r.Cookie("auth_token")
-	if err != nil {
-		if errors.Is(err, http.ErrNoCookie) {
-			return nil, nil
-		}
-		return nil, err
-	}
+	// cookie, err := r.Cookie("auth_token")
+	// if err != nil {
+	// 	if errors.Is(err, http.ErrNoCookie) {
+	// 		return nil, nil
+	// 	}
+	// 	return nil, err
+	// }
 
-	client := oauthConfig.Client(r.Context(), &oauth2.Token{AccessToken: cookie.Value})
+	// client := oauthConfig.Client(r.Context(), &oauth2.Token{AccessToken: cookie.Value})
 
-	user := new(User)
-	err = cachedb.Get(r.Context(), cookie.Value).Scan(user)
-	if err == nil {
-		return user, nil
-	}
+	// user := new(User)
+	// err = cachedb.Get(r.Context(), cookie.Value).Scan(user)
+	// if err == nil {
+	// 	return user, nil
+	// }
 
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	// resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+	// data, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	if err := json.Unmarshal(data, user); err != nil {
-		return nil, err
-	}
+	// if err := json.Unmarshal(data, user); err != nil {
+	// 	return nil, err
+	// }
 
-	user.LoggedIn = true
-	err = cachedb.Set(r.Context(), cookie.Value, user, time.Hour).Err()
-	if err != nil {
-		slog.Error("failed to cache user data", "error", err)
-	}
+	// user.LoggedIn = true
+	// err = cachedb.Set(r.Context(), cookie.Value, user, time.Hour).Err()
+	// if err != nil {
+	// 	slog.Error("failed to cache user data", "error", err)
+	// }
 
-	return user, nil
+	return nil, nil
 }
 
 type LoginPage struct {
@@ -264,34 +266,34 @@ func LogoutPage(ctx *pages.Context) I {
 	return pages.Redirect(ctx, "/")
 }
 
-type AuthCallbackPage struct {
-	Code        string `query:"code"`
-	QueryState  string `query:"state"`
-	CookieState string `cookie:"auth_state"`
-}
+// type AuthCallbackPage struct {
+// 	Code        string `query:"code"`
+// 	QueryState  string `query:"state"`
+// 	CookieState string `cookie:"auth_state"`
+// }
 
-//pacis:page path=/auth/callback middlewares=auth
-func (p *AuthCallbackPage) Page(ctx *pages.Context) I {
-	if p.QueryState != p.CookieState {
-		return pages.Error(ctx, NewAppError(InvalidAuthStateError, ErrGenericAppError, http.StatusBadRequest))
-	}
+// //pacis:page path=/auth/callback middlewares=auth
+// func (p *AuthCallbackPage) Page(ctx *pages.Context) I {
+// 	if p.QueryState != p.CookieState {
+// 		return pages.Error(ctx, NewAppError(InvalidAuthStateError, ErrGenericAppError, http.StatusBadRequest))
+// 	}
 
-	token, err := oauthConfig.Exchange(ctx, p.Code)
-	if err != nil {
-		return pages.Error(ctx, NewAppError(AuthExchangeError, ErrGenericAppError, http.StatusBadRequest))
-	}
+// 	token, err := oauthConfig.Exchange(ctx, p.Code)
+// 	if err != nil {
+// 		return pages.Error(ctx, NewAppError(AuthExchangeError, ErrGenericAppError, http.StatusBadRequest))
+// 	}
 
-	pages.SetCookie(
-		ctx,
+// 	pages.SetCookie(
+// 		ctx,
 
-		&http.Cookie{
-			Name:     "auth_token",
-			Value:    token.AccessToken,
-			Path:     "/",
-			Secure:   true,
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-		},
-	)
-	return pages.Redirect(ctx, "/")
-}
+// 		&http.Cookie{
+// 			Name:     "auth_token",
+// 			Value:    token.AccessToken,
+// 			Path:     "/",
+// 			Secure:   true,
+// 			HttpOnly: true,
+// 			SameSite: http.SameSiteLaxMode,
+// 		},
+// 	)
+// 	return pages.Redirect(ctx, "/")
+// }

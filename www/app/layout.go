@@ -40,7 +40,7 @@ func (l *Layout) Layout(ctx *pages.Context) I {
 	desc := i18n.Text("desc").String(ctx)
 	keywords := strings.Split(i18n.Text("keywords").String(ctx), ",")
 
-	appurl := os.Getenv("AppURL")
+	appurl := os.Getenv("APP_URL")
 	banner := appurl + pages.Asset("banner.webp")
 
 	pages.SetMetadata(ctx, &pages.Metadata{

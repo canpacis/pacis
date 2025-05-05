@@ -4,4 +4,107 @@ services:
       context: .
       dockerfile: Dockerfile.www
     ports:
-      - "8000:8080"
+      - 8081
+    environment:
+      - ENVIRONMENT=development
+      - GOOGLE_OAUTH_CLIENT_ID=${WEBAPP_GOOGLE_OAUTH_CLIENT_ID}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${WEBAPP_GOOGLE_OAUTH_CLIENT_SECRET}
+      - APP_URL=http://localhost:8081
+      - OAUTH_CALLBACK_URL=http://localhost:8081/auth/callback
+      - REDIS_URL=redis://webapp-redis:6379
+      - REDIS_USERNAME=default
+      - REDIS_PASSWORD=password
+      - AUTHORIZER_ID=${WEBAPP_AUTHORIZER_ID}
+      - AUTHORIZER_SECRET={WEBAPP_AUTHORIZER_SECRET}
+      - AUTHORIZER_URL=https://authorizer.ui.canpacis.com
+      - UMAMI_URL=https://analytics.ui.canpacis.com
+    depends_on:
+      - umami
+      - authorizer
+      - webapp-redis
+
+  webapp-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6061:6379"
+    volumes:
+      - webapp_redis_data:/data
+
+  authorizer:
+    image: lakhansamani/authorizer:1.4.4
+    restart: unless-stopped
+    ports:
+      - 8080
+    environment:
+      - DATABASE_TYPE=postgres
+      - DATABASE_URL=postgres://postgres:${AUTHORIZER_DB_PASSWORD}@authorizer-db:5432/authorizer?sslmode=disable
+      - REDIS_URL=redis://authorizer-redis:6379
+      - ADMIN_SECRET=${AUTHORIZER_ADMIN_SECRET}
+      - JWT_SECRET=${AUTHORIZER_JWT_SECRET}
+      - COOKIE_NAME=authorizer
+      - ACCESS_TOKEN_EXPIRY_TIME=86400
+      - REFRESH_TOKEN_EXPIRY_TIME=86400
+      - DISABLE_PLAYGROUND=true
+    depends_on:
+      - authorizer-db
+      - authorizer-redis
+
+  authorizer-db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "5050:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${AUTHORIZER_DB_PASSWORD}
+      - POSTGRES_DB=authorizer
+    volumes:
+      - authorizer_db_data:/var/lib/postgresql/data
+
+  authorizer-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6060:6379"
+    volumes:
+      - authorizer_redis_data:/data
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-v2.16.1
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:3000/api/heartbeat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://umami:${UMAMI_DB_PASSWORD}@umami-db:5432/umami
+      - DATABASE_TYPE=postgresql
+      - APP_SECRET=${UMAMI_APP_SECRET}
+  umami-db:
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5052:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    volumes:
+      - umami_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=umami
+      - POSTGRES_PASSWORD=${UMAMI_DB_PASSWORD}
+      - POSTGRES_DB=umami
+
+volumes:
+  authorizer_db_data: {}
+  umami_db_data: {}
+  authorizer_redis_data: {}
+  webapp_redis_data: {}

@@ -2,6 +2,7 @@ package app
 
 import (
 	"embed"
+	"fmt"
 	"io"
 	"io/fs"
 	"path"
@@ -306,7 +307,10 @@ var dir *DocDir
 func InitDocs() error {
 	var err error
 	dir, err = ExtractDocs(docsfs, "docs")
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to extract docs: %w", err)
+	}
+	return nil
 }
 
 type GettingStartedPage struct {
