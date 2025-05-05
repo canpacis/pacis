@@ -9,15 +9,15 @@ services:
       - ENVIRONMENT=development
       - GOOGLE_OAUTH_CLIENT_ID=${WEBAPP_GOOGLE_OAUTH_CLIENT_ID}
       - GOOGLE_OAUTH_CLIENT_SECRET=${WEBAPP_GOOGLE_OAUTH_CLIENT_SECRET}
-      - APP_URL=http://localhost:8081
-      - OAUTH_CALLBACK_URL=http://localhost:8081/auth/callback
+      - OAUTH_CALLBACK_URL=${WEBAPP_URL}/auth/callback
       - REDIS_URL=redis://webapp-redis:6379
       - REDIS_USERNAME=default
       - REDIS_PASSWORD=password
       - AUTHORIZER_ID=${WEBAPP_AUTHORIZER_ID}
       - AUTHORIZER_SECRET={WEBAPP_AUTHORIZER_SECRET}
-      - AUTHORIZER_URL=https://authorizer.ui.canpacis.com
-      - UMAMI_URL=https://analytics.ui.canpacis.com
+      - APP_URL=${WEBAPP_URL}
+      - AUTHORIZER_URL=${AUTHORIZER_URL}
+      - UMAMI_URL=${UMAMI_URL}
     depends_on:
       - umami
       - authorizer

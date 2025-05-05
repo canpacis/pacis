@@ -13,6 +13,6 @@ COPY . .
 RUN pcpg c www
 RUN go build -o pacis-www ./www
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["./pacis-www"]
