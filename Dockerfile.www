@@ -3,11 +3,18 @@ FROM canpacis/pacis:latest
 # Set working directory
 WORKDIR /app
 
-# Copy the source code
-COPY . .
-
-# Install dependencies and build
+# Install dependencies
 RUN pcpg i
+
+# Copy the source code
+COPY ./go.mod ./go.mod
+COPY ./go.work ./go.work
+COPY ./go.work.sum ./go.work.sum
+COPY ./package.json ./package.json
+COPY ./bun.lockb ./bun.lockb
+COPY ./www ./www
+
+# Build
 RUN pcpg c www
 RUN go build -o pacis-www ./www
 
