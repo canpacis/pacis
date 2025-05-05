@@ -19,8 +19,6 @@ services:
       - AUTHORIZER_URL=${AUTHORIZER_URL}
       - UMAMI_URL=${UMAMI_URL}
     depends_on:
-      - umami
-      - authorizer
       - webapp-redis
 
   webapp-redis:
