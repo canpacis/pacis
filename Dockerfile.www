@@ -7,12 +7,7 @@ WORKDIR /app
 RUN pcpg i
 
 # Copy the source code
-COPY ./go.mod ./go.mod
-COPY ./go.work ./go.work
-COPY ./go.work.sum ./go.work.sum
-COPY ./package.json ./package.json
-COPY ./bun.lockb ./bun.lockb
-COPY ./www ./www
+COPY . .
 
 # Build
 RUN pcpg c www
