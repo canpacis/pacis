@@ -89,7 +89,7 @@ func (a *App) SetBuildDir(name string, dir fs.FS) error {
 
 	for name, item := range *manifest {
 		if item.IsEntry {
-			a.entries[strings.TrimPrefix(name, "web/src/")] = "/" + item.File
+			a.entries[strings.TrimPrefix(name, "src/web/")] = "/" + item.File
 		}
 	}
 
