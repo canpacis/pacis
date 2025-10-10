@@ -117,13 +117,20 @@ SpeculationHook represents a hook used for speculative execution within the syst
 It contains the eagerness level for speculation, a reference to the current context,
 and a flag indicating whether rendering should occur.
 
-The JSON structure contains one or more fields at the top level, each one representing an action to define speculation rules for. At present the supported actions are:
+The JSON structure contains one or more fields at the top level, each one representing
+an action to define speculation rules for. At present the supported actions are:
 
 "prefetch" Optional Experimental
-Rules for potential future navigations that should have their associated document response body downloaded, leading to significant performance improvements when those documents are navigated to. Note that none of the subresources referenced by the page are downloaded.
+Rules for potential future navigations that should have their associated document response
+body downloaded, leading to significant performance improvements when those documents are
+navigated to. Note that none of the subresources referenced by the page are downloaded.
 
 "prerender" Optional Experimental
-Rules for potential future navigations that should have their associated documents fully downloaded, rendered, and loaded into an invisible tab. This includes loading all subresources, running all JavaScript, and even loading subresources and performing data fetches started by JavaScript. When those documents are navigated to, navigations will be instant, leading to major performance improvements.
+Rules for potential future navigations that should have their associated documents fully
+downloaded, rendered, and loaded into an invisible tab. This includes loading all subresources,
+running all JavaScript, and even loading subresources and performing data fetches started by
+JavaScript. When those documents are navigated to, navigations will be instant, leading to
+major performance improvements.
 
 https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules
 */
@@ -144,13 +151,20 @@ SpeculationHook represents a hook used for speculative execution within the syst
 It contains the eagerness level for speculation, a reference to the current context,
 and a flag indicating whether rendering should occur.
 
-The JSON structure contains one or more fields at the top level, each one representing an action to define speculation rules for. At present the supported actions are:
+The JSON structure contains one or more fields at the top level, each one representing an
+action to define speculation rules for. At present the supported actions are:
 
 "prefetch" Optional Experimental
-Rules for potential future navigations that should have their associated document response body downloaded, leading to significant performance improvements when those documents are navigated to. Note that none of the subresources referenced by the page are downloaded.
+Rules for potential future navigations that should have their associated document response
+body downloaded, leading to significant performance improvements when those documents are
+navigated to. Note that none of the subresources referenced by the page are downloaded.
 
 "prerender" Optional Experimental
-Rules for potential future navigations that should have their associated documents fully downloaded, rendered, and loaded into an invisible tab. This includes loading all subresources, running all JavaScript, and even loading subresources and performing data fetches started by JavaScript. When those documents are navigated to, navigations will be instant, leading to major performance improvements.
+Rules for potential future navigations that should have their associated documents fully
+downloaded, rendered, and loaded into an invisible tab. This includes loading all subresources,
+running all JavaScript, and even loading subresources and performing data fetches started by
+JavaScript. When those documents are navigated to, navigations will be instant, leading to
+major performance improvements.
 
 https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules
 */

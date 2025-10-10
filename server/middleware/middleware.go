@@ -187,5 +187,6 @@ func Logger(logger *slog.Logger) func(next http.Handler) http.Handler {
 	}
 }
 
-// GzipHandler wraps an HTTP handler, to transparently gzip the response body if the client supports it (via the Accept-Encoding header). This will compress at the default compression level.
+// GzipHandler wraps an HTTP handler, to transparently gzip the response body if the client supports
+// it (via the Accept-Encoding header). This will compress at the default compression level.
 var Gzip = gziphandler.GzipHandler

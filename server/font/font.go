@@ -64,7 +64,8 @@ func (wl WeightList) String() string {
 /*
 Represents a font subset e.g: latin or cyrillic.
 
-Subsetting is the practice of creating a “subset” of a font—a file that contains a custom (and usually limited) collection of glyphs.
+Subsetting is the practice of creating a “subset” of a font—a file that contains a
+custom (and usually limited) collection of glyphs.
 
 https://fonts.google.com/knowledge/glossary/subsetting
 */
@@ -72,19 +73,22 @@ type Subset string
 
 const (
 	/*
-		In typography, “Latin script” refers to the most widely adopted writing system in the world (and is also often used as a term to mean placeholder copy).
+		In typography, “Latin script” refers to the most widely adopted writing system in
+		the world (and is also often used as a term to mean placeholder copy).
 
 		https://fonts.google.com/knowledge/glossary/latin
 	*/
 	Latin = Subset("latin")
 	/*
-		In typography, “Latin script” refers to the most widely adopted writing system in the world (and is also often used as a term to mean placeholder copy).
+		In typography, “Latin script” refers to the most widely adopted writing system in
+		the world (and is also often used as a term to mean placeholder copy).
 
 		https://fonts.google.com/knowledge/glossary/latin
 	*/
 	LatinExt = Subset("latin-ext")
 	/*
-		Cyrillic is a writing system, named after the missionary work of St. Cyril in the first Bulgarian Empire. The original Cyrillic script was based on uppercase Greek letterforms.
+		Cyrillic is a writing system, named after the missionary work of St. Cyril in the
+		first Bulgarian Empire. The original Cyrillic script was based on uppercase Greek letterforms.
 
 		https://fonts.google.com/knowledge/glossary/cyrillic
 	*/
@@ -92,7 +96,8 @@ const (
 )
 
 /*
-The font-display property lets you control what happens while the font is still loading or otherwise unavailable. Specifying a value other than the default auto is usually appropriate.
+The font-display property lets you control what happens while the font is still loading
+or otherwise unavailable. Specifying a value other than the default auto is usually appropriate.
 
 https://developers.google.com/fonts/docs/css2#optimizing_for_latency_and_file_size
 */
@@ -112,24 +117,38 @@ const (
 	*/
 	Block = Display("block")
 	/*
-		Gives the font face an extremely small block period (100ms or less is recommended in most cases) and an infinite swap period.
+		Gives the font face an extremely small block period (100ms or less is recommended in
+		most cases) and an infinite swap period.
 
 		https://www.w3.org/TR/css-fonts-4/#valdef-font-face-font-display-swap
 	*/
 	Swap = Display("swap")
 	/*
-		Gives the font face an extremely small block period (100ms or less is recommended in most cases) and a short swap period (3s is recommended in most cases).
+		Gives the font face an extremely small block period (100ms or less is recommended in
+		most cases) and a short swap period (3s is recommended in most cases).
 
 		https://www.w3.org/TR/css-fonts-4/#valdef-font-face-font-display-fallback
 	*/
 	Fallback = Display("fallback")
 	/*
-		If the font can be loaded "immediately" (such that it’s available to be used for the "first paint" of the text), the font is used.
-		Otherwise, the font is treated as if its block period and swap period both expired before it finished loading. If the font is not used due to this, the user agent may choose to abort the font download, or download it with a very low priority. If the user agent believes it would be useful for the user, it may avoid even starting the font download, and proceed immediately to using a fallback font.
+		If the font can be loaded "immediately" (such that it’s available to be used for
+		the "first paint" of the text), the font is used.
+		Otherwise, the font is treated as if its block period and swap period both expired
+		before it finished loading. If the font is not used due to this, the user agent may
+		choose to abort the font download, or download it with a very low priority. If the
+		user agent believes it would be useful for the user, it may avoid even starting the
+		font download, and proceed immediately to using a fallback font.
 
-		An optional font must never cause the layout of the page to "jump" as it loads in. A user agent may choose to slightly delay rendering an element using an optional font to give it time to load from a possibly-slow local cache, but once the text has been painted to the screen with a fallback font instead, it must not be rendered with the optional font for the rest of the page’s lifetime.
+		An optional font must never cause the layout of the page to "jump" as it loads in.
+		A user agent may choose to slightly delay rendering an element using an optional
+		font to give it time to load from a possibly-slow local cache, but once the text
+		has been painted to the screen with a fallback font instead, it must not be rendered
+		with the optional font for the rest of the page’s lifetime.
 
-		This value should be used for body text, or any other text where the chosen font is purely a decorative "nice-to-have". It should be used anytime it is more important that the web page render quickly on first visit, than it is that the user wait a longer time to see everything perfect immediately.
+		This value should be used for body text, or any other text where the chosen font is
+		purely a decorative "nice-to-have". It should be used anytime it is more important
+		that the web page render quickly on first visit, than it is that the user wait a
+		longer time to see everything perfect immediately.
 
 		https://www.w3.org/TR/css-fonts-4/#valdef-font-face-font-display-optional
 	*/
