@@ -1,67 +1,89 @@
+// Package server provides the core application structure and utilities for configuring and running
+// a web server with environment-specific behavior, middleware support, and static asset management.
+//
+// Types:
+//
+//   - Environment: Represents the application environment ("DEVELOPMENT" or "PRODUCTION").
+//   - AppOptions: Configuration options for the application, such as environment, dev server URL, web files path, and assets directory.
+//   - App: The main application struct, holding asset handlers, entry points, options, and middleware stack.
+//   - Route: Interface for defining HTTP routes with a path and handler.
+//
+// Functions:
+//
+//   - (*App) Register: Registers a Route with a given ServeMux using the GET method.
+//   - (*App) Use: Adds middleware(s) to the application's middleware stack.
+//   - (*App) SetBuildDir: Configures the asset handler and entry points from a build directory and manifest file.
+//   - (*App) ServeAssets: Returns the HTTP handler for serving static assets.
+//   - WithEnv: Returns an option function to set the application environment.
+//   - WithDevServer: Returns an option function to set the development server URL.
+//   - WithWebFiles: Returns an option function to set the web files path.
+//   - WithAssetsDir: Returns an option function to set the assets directory name.
+//   - NewApp: Constructs a new App instance with the provided options and default middleware.
+//
+// Usage:
+//
+//	The server package is designed to be flexible and extensible, allowing developers to configure
+//	environment-specific settings, register routes, apply middleware, and serve static assets efficiently.
 package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"path"
 	"strings"
 	"time"
 
-	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/server/middleware"
 )
 
+// Environment describes the app environment and lets the other parts of the app choose environment specific behaviour.
+// Valid values are "DEVELOPMENT" and "PRODUCTION".
 type Environment string
 
 const (
-	Dev  = Environment("DEVELOPMENT")
+	// Reprensents a development environment of the app.
+	Dev = Environment("DEVELOPMENT")
+	// Reprensents a production environment of the app.
 	Prod = Environment("PRODUCTION")
 )
 
+// Configuration options for the application, such as environment, dev server URL, web files path, and assets directory.
 type AppOptions struct {
 	env       Environment
 	devserver string
+	webfiles  string
+	assetsdir string
 }
 
-type SpeculationRule struct {
-	URLs []string `json:"urls,omitempty"`
-}
-
-type Speculation struct {
-	Prerender []SpeculationRule `json:"prerender,omitempty"`
-	Prefetch  []SpeculationRule `json:"prefetch,omitempty"`
-}
-
+// The main application struct, holding asset handlers, entry points, options, and middleware stack.
 type App struct {
 	assets      http.Handler
 	entries     map[string]string
 	options     *AppOptions
-	speculation Speculation
 	middlewares []func(http.Handler) http.Handler
 }
 
+// Interface for defining HTTP routes with a path and handler.
 type Route interface {
 	Path() string
 	Handler(*App) http.Handler
 }
 
+// Registers a Route with a given ServeMux using the GET method.
 func (a *App) Register(mux *http.ServeMux, route Route) {
 	mux.Handle("GET "+route.Path(), route.Handler(a))
 }
 
-func (a *App) Speculations() html.Node {
-	return html.Script(html.Type("speculationrules"), html.JSON(a.speculation))
-}
-
+// Adds middleware(s) to the application's middleware stack.
 func (a *App) Use(middlewares ...func(http.Handler) http.Handler) {
 	a.middlewares = append(a.middlewares, middlewares...)
 }
 
+// Configures the asset handler and entry points from a build directory and manifest file.
 func (a *App) SetBuildDir(name string, dir fs.FS) error {
-	assets, err := fs.Sub(dir, path.Join(name, "assets"))
+	assets, err := fs.Sub(dir, path.Join(name, a.options.assetsdir))
 	if err != nil {
 		return fmt.Errorf("failed to read asset directory: %w", err)
 	}
@@ -89,44 +111,53 @@ func (a *App) SetBuildDir(name string, dir fs.FS) error {
 
 	for name, item := range *manifest {
 		if item.IsEntry {
-			a.entries[strings.TrimPrefix(name, "src/web/")] = "/" + item.File
+			a.entries[strings.TrimPrefix(name, a.options.webfiles+"/")] = "/" + item.File
 		}
 	}
 
 	return nil
 }
 
+// Returns the HTTP handler for serving static assets.
 func (a *App) ServeAssets() http.Handler {
 	return a.assets
 }
 
-func Asset(app *App, name string) string {
-	if app.options.env == Dev {
-		return app.options.devserver + "/src/web/" + name
-	}
-	entry, ok := app.entries[name]
-	if !ok {
-		log.Fatalf("failed to retrieve asset %s", name)
-	}
-	return entry
-}
-
-func WithDevServer(url string) func(*AppOptions) {
-	return func(ao *AppOptions) {
-		ao.devserver = url
-	}
-}
-
+// Returns an option function to set the application environment.
 func WithEnv(env Environment) func(*AppOptions) {
 	return func(ao *AppOptions) {
 		ao.env = env
 	}
 }
 
+// Returns an option function to set the development server URL.
+func WithDevServer(url string) func(*AppOptions) {
+	return func(ao *AppOptions) {
+		ao.devserver = url
+	}
+}
+
+// Returns an option function to set the web files path.
+func WithWebFiles(path string) func(*AppOptions) {
+	return func(ao *AppOptions) {
+		ao.webfiles = path
+	}
+}
+
+// Returns an option function to set the assets directory name.
+func WithAssetsDir(name string) func(*AppOptions) {
+	return func(ao *AppOptions) {
+		ao.assetsdir = name
+	}
+}
+
+// Constructs a new App instance with the provided options and default middleware.
 func NewApp(options ...func(*AppOptions)) *App {
 	opts := &AppOptions{
 		env:       Dev,
 		devserver: "http://localhost:5173",
+		webfiles:  "src/web",
+		assetsdir: "assets",
 	}
 
 	for _, opt := range options {
