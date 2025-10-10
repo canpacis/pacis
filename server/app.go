@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
 	"path"
 	"strings"
@@ -103,7 +104,11 @@ func Asset(app *App, name string) string {
 	if app.options.env == Dev {
 		return app.options.devserver + "/src/web/" + name
 	}
-	return app.entries[name]
+	entry, ok := app.entries[name]
+	if !ok {
+		log.Fatalf("failed to retrieve asset %s", name)
+	}
+	return entry
 }
 
 func WithDevServer(url string) func(*AppOptions) {
