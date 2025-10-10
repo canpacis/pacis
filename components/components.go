@@ -1,3 +1,8 @@
+// Package components provides utilities for manipulating HTML elements with custom properties,
+// such as merging Tailwind CSS classes and handling child elements.
+//
+// The ItemsOf function combines multiple html.Item values, appending the TailwindMerge property
+// to the resulting slice for consistent class merging behavior.
 package components
 
 import (
@@ -9,26 +14,35 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
+/*
+The TailwindMergeProperty type applies Tailwind CSS class merging to an element's class list,
+ensuring that conflicting or duplicate classes are resolved according to Tailwind's rules.
+*/
 type TailwindMergeProperty struct{}
 
+// Implements the html.Property interface
 func (*TailwindMergeProperty) Apply(el *html.Element) {
 	el.ClassList.Items = strings.Split(twmerge.Merge(strings.Join(el.ClassList.Items, " ")), " ")
 }
+
+// Implements the html.Item interface
 func (*TailwindMergeProperty) Item() {}
 
+// TailwindMerge is a global instance of TailwindMergeProperty used to merge
+// conflicting or duplicate tailwind classes.
 var TailwindMerge = &TailwindMergeProperty{}
 
-func ItemsOf(passed []html.Item, items ...html.Item) []html.Item {
-	i := []html.Item{}
-	i = append(i, items...)
-	i = append(i, passed...)
-	i = append(i, TailwindMerge)
-	return i
-}
+/*
+The AsChildHook type allows an element to adopt the properties of its single child element,
+merging class lists and attributes, and replacing the parent element with the child.
+*/
+type AsChildHook struct{}
 
-type AsChildProperty struct{}
+// Implements the html.Item interface
+func (*AsChildHook) Item() {}
 
-func (*AsChildProperty) Apply(el *html.Element) {
+// Implements the html.Hook interface
+func (*AsChildHook) Hook(el *html.Element) {
 	if len(el.Children) != 1 {
 		log.Fatal("Exactly 1 child should be present in an element with AsChild property")
 	}
@@ -42,6 +56,16 @@ func (*AsChildProperty) Apply(el *html.Element) {
 	*el = *child
 }
 
-func (*AsChildProperty) Item() {}
+// AsChild is a global instance of AsChildHook used to provide hook functionality
+// for child components within the package. It can be used to manage or modify
+// behavior specific to child components.
+var AsChild = &AsChildHook{}
 
-var AsChild = &AsChildProperty{}
+// Merges a list of html.Items with another. Puts the first list of items at the end.
+func ItemsOf(passed []html.Item, items ...html.Item) []html.Item {
+	i := []html.Item{}
+	i = append(i, items...)
+	i = append(i, passed...)
+	i = append(i, TailwindMerge)
+	return i
+}
