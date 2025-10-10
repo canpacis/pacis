@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "skeleton",
+  "type": "registry:ui",
+  "title": "Skeleton",
+  "description": "Use to show a placeholder while content is loading.",
+  "files": [
+    {
+      "path": "registry/skeleton/skeleton.go",
+      "content": "package skeleton\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"skeleton\"),\n\t\t\thtml.Class(\"animate-pulse rounded-md bg-primary/10\"),\n\t\t)...,\n\t)\n}\n",
+      "type": "registry:ui",
+      "target": "components/ui/skeleton/skeleton.go"
+    }
+  ]
+}

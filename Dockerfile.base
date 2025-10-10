@@ -1,9 +1,0 @@
-FROM golang:1.24 AS builder
-WORKDIR /pcpg
-COPY . .
-RUN go build -o /usr/local/bin/pcpg ./pages/pcpg
-
-FROM golang:1.24
-COPY --from=builder /usr/local/bin/pcpg /usr/local/bin/pcpg
-RUN chmod +x /usr/local/bin/pcpg
-ENV PATH="/usr/local/bin:${PATH}"

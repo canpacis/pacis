@@ -1,0 +1,130 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "acme",
+  "homepage": "https://ui.canpacis.com",
+  "items": [
+    {
+      "name": "alert",
+      "type": "registry:ui",
+      "title": "Alert",
+      "description": "Displays a callout for user attention.",
+      "files": [
+        {
+          "path": "registry/alert/alert.go",
+          "type": "registry:ui",
+          "target": "components/ui/alert/alert.go"
+        }
+      ]
+    },
+    {
+      "name": "avatar",
+      "type": "registry:ui",
+      "title": "Avatar",
+      "description": "An image element with a fallback for representing the user.",
+      "files": [
+        {
+          "path": "registry/avatar/avatar.go",
+          "type": "registry:ui",
+          "target": "components/ui/avatar/avatar.go"
+        }
+      ]
+    },
+    {
+      "name": "badge",
+      "type": "registry:ui",
+      "title": "Badge",
+      "description": "Displays a badge or a component that looks like a badge.",
+      "files": [
+        {
+          "path": "registry/badge/badge.go",
+          "type": "registry:ui",
+          "target": "components/ui/badge/badge.go"
+        }
+      ]
+    },
+    {
+      "name": "breadcrumb",
+      "type": "registry:ui",
+      "title": "Breadcrumb",
+      "description": "Displays the path to the current resource using a hierarchy of links.",
+      "files": [
+        {
+          "path": "registry/breadcrumb/breadcrumb.go",
+          "type": "registry:ui",
+          "target": "components/ui/breadcrumb/breadcrumb.go"
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "type": "registry:ui",
+      "title": "Button",
+      "description": "Displays a button or a component that looks like a button.",
+      "registryDependencies": ["@pacis/separator"],
+      "files": [
+        {
+          "path": "registry/button/button.go",
+          "type": "registry:ui",
+          "target": "components/ui/button/button.go"
+        },
+        {
+          "path": "registry/button/group.go",
+          "type": "registry:ui",
+          "target": "components/ui/button/group.go"
+        }
+      ]
+    },
+    {
+      "name": "card",
+      "type": "registry:ui",
+      "title": "Card",
+      "description": "Displays a card with header, content, and footer.",
+      "files": [
+        {
+          "path": "registry/card/card.go",
+          "type": "registry:ui",
+          "target": "components/ui/card/card.go"
+        }
+      ]
+    },
+    {
+      "name": "label",
+      "type": "registry:ui",
+      "title": "Label",
+      "description": "Renders an accessible label associated with controls.",
+      "files": [
+        {
+          "path": "registry/label/label.go",
+          "type": "registry:ui",
+          "target": "components/ui/label/label.go"
+        }
+      ]
+    },
+    {
+      "name": "separator",
+      "type": "registry:ui",
+      "title": "Separator",
+      "description": "Visually or semantically separates content.",
+      "files": [
+        {
+          "path": "registry/separator/separator.go",
+          "type": "registry:ui",
+          "target": "components/ui/separator/separator.go"
+        }
+      ]
+    },
+    {
+      "name": "skeleton",
+      "type": "registry:ui",
+      "title": "Skeleton",
+      "description": "Use to show a placeholder while content is loading.",
+      "files": [
+        {
+          "path": "registry/skeleton/skeleton.go",
+          "type": "registry:ui",
+          "target": "components/ui/skeleton/skeleton.go"
+        }
+      ]
+    }
+  ]
+}

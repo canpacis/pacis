@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "card",
+  "type": "registry:ui",
+  "title": "Card",
+  "description": "Displays a card with header, content, and footer.",
+  "files": [
+    {
+      "path": "registry/card/card.go",
+      "content": "package card\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"card\"),\n\t\t\thtml.Class(\"rounded-xl border bg-card text-card-foreground shadow\"),\n\t\t)...,\n\t)\n}\n\nfunc Header(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"card-header\"),\n\t\t\thtml.Class(\"flex flex-col space-y-1.5 p-6\"),\n\t\t)...,\n\t)\n}\n\nfunc Title(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"card-title\"),\n\t\t\thtml.Class(\"font-semibold leading-none tracking-tight\"),\n\t\t)...,\n\t)\n}\n\nfunc Description(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"card-description\"),\n\t\t\thtml.Class(\"text-sm text-muted-foreground\"),\n\t\t)...,\n\t)\n}\n\nfunc Content(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"card-content\"),\n\t\t\thtml.Class(\"p-6 pt-0\"),\n\t\t)...,\n\t)\n}\n\nfunc Footer(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"card-footer\"),\n\t\t\thtml.Class(\"flex items-center p-6 pt-0\"),\n\t\t)...,\n\t)\n}\n",
+      "type": "registry:ui",
+      "target": "components/ui/card/card.go"
+    }
+  ]
+}
