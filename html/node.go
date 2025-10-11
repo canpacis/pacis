@@ -149,12 +149,13 @@ func Attr(key string, value string) *Attribute {
 // a map of its attributes, a slice of child nodes, and a flag indicating
 // whether the element is a void (self-closing) element.
 type Element struct {
-	Attributes map[string]string
-	ClassList  *ClassList
-	Children   []Node
-	name       string
-	void       bool
-	ctx        context.Context
+	ClassList     *ClassList
+	Children      []Node
+	attributes    map[string]string
+	attributelist []*Attribute
+	name          string
+	void          bool
+	ctx           context.Context
 }
 
 func (e *Element) Tag() string {
@@ -177,7 +178,23 @@ func (e *Element) Get(key any) any {
 }
 
 func (e *Element) SetAttribute(key, value string) {
-	e.Attributes[key] = value
+	e.attributes[key] = value
+	e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
+}
+
+func (e *Element) GetAttribute(key string) string {
+	return e.attributes[key]
+}
+
+func (e *Element) GetAttributes() map[string]string {
+	return e.attributes
+}
+
+func (e *Element) SetAttributes(list map[string]string) {
+	e.attributes = list
+	for key, value := range list {
+		e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
+	}
 }
 
 // Implements the Item interface.
@@ -193,10 +210,10 @@ func (e *Element) Render(ctx context.Context, w io.Writer) error {
 	}
 
 	if len(e.ClassList.Items) > 0 {
-		e.Attributes["class"] = strings.Join(e.ClassList.Items, " ")
+		e.SetAttribute("class", strings.Join(e.ClassList.Items, " "))
 	}
 
-	if len(e.Attributes) == 0 {
+	if len(e.attributelist) == 0 {
 		if _, err := bw.WriteString("<" + e.Tag() + ">"); err != nil {
 			return err
 		}
@@ -208,12 +225,12 @@ func (e *Element) Render(ctx context.Context, w io.Writer) error {
 			return err
 		}
 
-		for key, value := range e.Attributes {
+		for _, attr := range e.attributelist {
 			var rhs string
-			if len(value) != 0 {
-				rhs = "=" + "\"" + value + "\""
+			if len(attr.Value) != 0 {
+				rhs = "=" + "\"" + attr.Value + "\""
 			}
-			if _, err := bw.WriteString(" " + key + rhs); err != nil {
+			if _, err := bw.WriteString(" " + attr.Key + rhs); err != nil {
 				return err
 			}
 		}
@@ -278,7 +295,7 @@ func (l *ClassList) Toggle(class string) {
 func El(name string, items ...Item) *Element {
 	el := &Element{
 		name:       name,
-		Attributes: make(map[string]string),
+		attributes: make(map[string]string),
 		Children:   []Node{},
 		ClassList:  new(ClassList),
 		ctx:        context.Background(),

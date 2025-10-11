@@ -99,8 +99,8 @@ func (*SpeculationHook) Item() {}
 
 // Implements the html.Hook interface
 func (h *SpeculationHook) Done(el *html.Element) {
-	href, ok := el.Attributes["href"]
-	if !ok {
+	href := el.GetAttribute("href")
+	if len(href) == 0 {
 		log.Fatal("Speculation hook used in an element without an href attribute")
 	}
 	h.ctx.RegisterSpeculation(SpeculationRule{

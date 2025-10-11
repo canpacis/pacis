@@ -52,7 +52,10 @@ func (*AsChildHook) Hook(el *html.Element) {
 	}
 
 	child.ClassList.Items = append(child.ClassList.Items, el.ClassList.Items...)
-	maps.Copy(child.Attributes, el.Attributes)
+	attrs := map[string]string{}
+	maps.Copy(attrs, child.GetAttributes())
+	maps.Copy(attrs, el.GetAttributes())
+	child.SetAttributes(attrs)
 	*el = *child
 }
 
