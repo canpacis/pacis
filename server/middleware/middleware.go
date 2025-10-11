@@ -26,14 +26,25 @@ import (
 	"golang.org/x/text/language"
 )
 
-type keytyp string
+type KeyType string
+
+type Middleware interface {
+	Name() string
+	Apply(http.Handler) http.Handler
+}
 
 // ColorScheme is a middleware that manages the user's color scheme preference via a cookie.
 // It checks for the "pacis_color_scheme" cookie in the incoming request. If the cookie exists
 // and its value is "light" or "dark", it uses that value as the theme. Otherwise, it defaults
 // to "light" and sets the cookie accordingly. The selected theme is stored in the request's
 // context under the key "theme" for downstream handlers to access.
-func ColorScheme(h http.Handler) http.Handler {
+type ColorScheme struct{}
+
+func (*ColorScheme) Name() string {
+	return "ColorScheme"
+}
+
+func (*ColorScheme) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		set := func(theme string) {
 			http.SetCookie(w, &http.Cookie{
@@ -61,67 +72,80 @@ func ColorScheme(h http.Handler) http.Handler {
 			set(theme)
 		}
 
-		ctx := context.WithValue(r.Context(), keytyp("theme"), theme)
+		ctx := context.WithValue(r.Context(), KeyType("theme"), theme)
 
 		h.ServeHTTP(w, r.Clone(ctx))
 	})
 }
 
+var DefaultColorScheme = &ColorScheme{}
+
 // GetColorScheme retrieves the color scheme (theme) from the provided context.
 // It expects the context to have a value associated with the key "theme" of type string.
 // If the value is not present or not a string, this function will panic.
 func GetColorScheme(ctx context.Context) string {
-	return ctx.Value(keytyp("theme")).(string)
+	return ctx.Value(KeyType("theme")).(string)
 }
 
 // Locale is a middleware that determines the user's preferred language from a cookie ("pacis_locale"),
 // a "lang" form value, or the "Accept-Language" HTTP header, falling back to the provided default language
 // if none are set or valid. It parses the locale, creates an i18n.Localizer, and injects both the localizer
 // and the language tag into the request context for downstream handlers to use.
-func Locale(bundle *i18n.Bundle, defaultlang language.Tag) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var locale string
-			cookie, err := r.Cookie("pacis_locale")
-			if err == nil {
-				locale = cookie.Value
-			} else {
-				header := r.Header.Get("Accept-Language")
-				switch {
-				case len(r.FormValue("lang")) > 0:
-					locale = r.FormValue("lang")
-				case len(header) > 0:
-					locale = strings.Split(header, ",")[0]
-				default:
-					locale = defaultlang.String()
-				}
-			}
-			tag, err := language.Parse(locale)
-			if err != nil {
-				tag = defaultlang
-			}
+type Locale struct {
+	bundle      *i18n.Bundle
+	defaultlang language.Tag
+}
 
-			localizer := i18n.NewLocalizer(bundle, tag.String())
-			ctx := context.WithValue(r.Context(), keytyp("localizer"), localizer)
-			ctx = context.WithValue(ctx, keytyp("locale"), &tag)
+func (*Locale) Name() string {
+	return "Locale"
+}
 
-			h.ServeHTTP(w, r.Clone(ctx))
-		})
-	}
+func (l *Locale) Apply(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var locale string
+		cookie, err := r.Cookie("pacis_locale")
+		if err == nil {
+			locale = cookie.Value
+		} else {
+			header := r.Header.Get("Accept-Language")
+			switch {
+			case len(r.FormValue("lang")) > 0:
+				locale = r.FormValue("lang")
+			case len(header) > 0:
+				locale = strings.Split(header, ",")[0]
+			default:
+				locale = l.defaultlang.String()
+			}
+		}
+		tag, err := language.Parse(locale)
+		if err != nil {
+			tag = l.defaultlang
+		}
+
+		localizer := i18n.NewLocalizer(l.bundle, tag.String())
+		ctx := context.WithValue(r.Context(), KeyType("localizer"), localizer)
+		ctx = context.WithValue(ctx, KeyType("locale"), &tag)
+
+		h.ServeHTTP(w, r.Clone(ctx))
+	})
+}
+
+func NewLocale(bundle *i18n.Bundle, defaultlang language.Tag) *Locale {
+	return &Locale{bundle: bundle, defaultlang: defaultlang}
 }
 
 // GetLocalizer retrieves the localizer struct from the provided context.
 // It expects the context to have a value associated with the key "localizer" of type *i18n.Localizer
 // If the value is not present or not *i18n.Localizer, this function will panic.
 func GetLocalizer(ctx context.Context) *i18n.Localizer {
-	return ctx.Value(keytyp("localizer")).(*i18n.Localizer)
+	return ctx.Value(KeyType("localizer")).(*i18n.Localizer)
 }
 
 // GetLocale retrieves the locale value from the provided context.
 // It expects the context to have a value associated with the key "locale" of type *language.Tag
 // If the value is not present or not *language.Tag, this function will panic.
 func GetLocale(ctx context.Context) *language.Tag {
-	return ctx.Value(keytyp("locale")).(*language.Tag)
+	return ctx.Value(KeyType("locale")).(*language.Tag)
 }
 
 // Cache returns a middleware that sets the "Cache-Control" header on HTTP responses,
@@ -129,13 +153,23 @@ func GetLocale(ctx context.Context) *language.Tag {
 // (in seconds) that the response is considered fresh. The duration parameter determines
 // the max-age value. This middleware should be used to control client and proxy caching
 // behavior for HTTP handlers.
-func Cache(duration time.Duration) func(http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", int64(duration.Seconds())))
-			h.ServeHTTP(w, r)
-		})
-	}
+type Cache struct {
+	duration time.Duration
+}
+
+func (*Cache) Name() string {
+	return "Cache"
+}
+
+func (c *Cache) Apply(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", int64(c.duration.Seconds())))
+		h.ServeHTTP(w, r)
+	})
+}
+
+func NewCache(dur time.Duration) *Cache {
+	return &Cache{duration: dur}
 }
 
 type logwriter struct {
@@ -164,29 +198,48 @@ func (lw *logwriter) WriteHeader(code int) {
 // Returns:
 //
 //	A middleware function compatible with http.Handler.
-func Logger(logger *slog.Logger) func(next http.Handler) http.Handler {
+type Logger struct {
+	logger *slog.Logger
+}
 
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
+func (*Logger) Name() string {
+	return "Logger"
+}
 
-			rec := &logwriter{ResponseWriter: w, Flusher: w.(http.Flusher), status: http.StatusOK}
-			next.ServeHTTP(rec, r)
+func (l *Logger) Apply(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
 
-			agent := strings.Split(r.UserAgent(), " ")[0]
-			logger.Info(
-				"request",
-				slog.Duration("duration", time.Since(start)),
-				slog.String("method", r.Method),
-				slog.Int("status", rec.status),
-				slog.String("path", r.URL.Path),
-				slog.String("addr", r.RemoteAddr),
-				slog.String("agent", agent),
-			)
-		})
-	}
+		rec := &logwriter{ResponseWriter: w, Flusher: w.(http.Flusher), status: http.StatusOK}
+		h.ServeHTTP(rec, r)
+
+		agent := strings.Split(r.UserAgent(), " ")[0]
+		l.logger.Info(
+			"request",
+			slog.Duration("duration", time.Since(start)),
+			slog.String("method", r.Method),
+			slog.Int("status", rec.status),
+			slog.String("path", r.URL.Path),
+			slog.String("addr", r.RemoteAddr),
+			slog.String("agent", agent),
+		)
+	})
+}
+
+func NewLogger(logger *slog.Logger) *Logger {
+	return &Logger{logger: logger}
 }
 
 // GzipHandler wraps an HTTP handler, to transparently gzip the response body if the client supports
 // it (via the Accept-Encoding header). This will compress at the default compression level.
-var Gzip = gziphandler.GzipHandler
+type Gzip struct{}
+
+func (*Gzip) Name() string {
+	return "Gzip"
+}
+
+func (*Gzip) Apply(h http.Handler) http.Handler {
+	return gziphandler.GzipHandler(h)
+}
+
+var DefaultGzip = &Gzip{}

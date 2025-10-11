@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"net/http"
 
 	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/internal/util"
@@ -182,5 +183,26 @@ func Speculations(ctx context.Context) html.Node {
 	if !ok {
 		return html.Fragment()
 	}
+	if context.specs.isempty() {
+		return html.Fragment()
+	}
 	return html.Script(html.Type("speculationrules"), html.JSON(context.specs))
+}
+
+func Redirect(ctx context.Context, to string) html.Node {
+	context, ok := ctx.(*Context)
+	if !ok {
+		log.Fatal("Redirect node used outside of server rendering context")
+	}
+	context.Redirect(http.StatusFound, to)
+	return html.Fragment()
+}
+
+func RedirectWith(ctx context.Context, to string, status int) html.Node {
+	context, ok := ctx.(*Context)
+	if !ok {
+		log.Fatal("RedirectWith node used outside of server rendering context")
+	}
+	context.Redirect(status, to)
+	return html.Fragment()
 }

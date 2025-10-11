@@ -149,19 +149,23 @@ func Attr(key string, value string) *Attribute {
 // a map of its attributes, a slice of child nodes, and a flag indicating
 // whether the element is a void (self-closing) element.
 type Element struct {
-	Name       string
 	Attributes map[string]string
 	ClassList  *ClassList
 	Children   []Node
+	name       string
 	void       bool
 	ctx        context.Context
 }
 
-func (e *Element) tag() string {
-	if strings.HasPrefix(e.Name, "!") {
-		return e.Name
+func (e *Element) Tag() string {
+	if strings.HasPrefix(e.name, "!") {
+		return e.name
 	}
-	return strings.ToLower(e.Name)
+	return strings.ToLower(e.name)
+}
+
+func (e *Element) IsVoid() bool {
+	return e.void
 }
 
 func (e *Element) Set(key, value any) {
@@ -193,14 +197,14 @@ func (e *Element) Render(ctx context.Context, w io.Writer) error {
 	}
 
 	if len(e.Attributes) == 0 {
-		if _, err := bw.WriteString("<" + e.tag() + ">"); err != nil {
+		if _, err := bw.WriteString("<" + e.Tag() + ">"); err != nil {
 			return err
 		}
 		if e.void {
 			return bw.Flush()
 		}
 	} else {
-		if _, err := bw.WriteString("<" + e.tag()); err != nil {
+		if _, err := bw.WriteString("<" + e.Tag()); err != nil {
 			return err
 		}
 
@@ -228,7 +232,7 @@ func (e *Element) Render(ctx context.Context, w io.Writer) error {
 		}
 	}
 
-	if _, err := bw.WriteString("</" + e.tag() + ">"); err != nil {
+	if _, err := bw.WriteString("</" + e.Tag() + ">"); err != nil {
 		return err
 	}
 
@@ -273,7 +277,7 @@ func (l *ClassList) Toggle(class string) {
 // Returns a pointer to the constructed Element.
 func El(name string, items ...Item) *Element {
 	el := &Element{
-		Name:       name,
+		name:       name,
 		Attributes: make(map[string]string),
 		Children:   []Node{},
 		ClassList:  new(ClassList),

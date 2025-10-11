@@ -30,10 +30,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/canpacis/pacis/server/middleware"
 )
@@ -55,6 +55,7 @@ type AppOptions struct {
 	devserver string
 	webfiles  string
 	assetsdir string
+	logger    *slog.Logger
 }
 
 // The main application struct, holding asset handlers, entry points, options, and middleware stack.
@@ -62,7 +63,7 @@ type App struct {
 	assets      http.Handler
 	entries     map[string]string
 	options     *AppOptions
-	middlewares []func(http.Handler) http.Handler
+	middlewares []middleware.Middleware
 }
 
 // Interface for defining HTTP routes with a path and handler.
@@ -77,7 +78,7 @@ func (a *App) Register(mux *http.ServeMux, route Route) {
 }
 
 // Adds middleware(s) to the application's middleware stack.
-func (a *App) Use(middlewares ...func(http.Handler) http.Handler) {
+func (a *App) Use(middlewares ...middleware.Middleware) {
 	a.middlewares = append(a.middlewares, middlewares...)
 }
 
@@ -151,6 +152,13 @@ func WithAssetsDir(name string) func(*AppOptions) {
 	}
 }
 
+// Returns an option function to set the app logger.
+func WithLogger(logger *slog.Logger) func(*AppOptions) {
+	return func(ao *AppOptions) {
+		ao.logger = logger
+	}
+}
+
 // Constructs a new App instance with the provided options and default middleware.
 func NewApp(options ...func(*AppOptions)) *App {
 	opts := &AppOptions{
@@ -158,6 +166,7 @@ func NewApp(options ...func(*AppOptions)) *App {
 		devserver: "http://localhost:5173",
 		webfiles:  "src/web",
 		assetsdir: "assets",
+		logger:    slog.Default(),
 	}
 
 	for _, opt := range options {
@@ -169,6 +178,6 @@ func NewApp(options ...func(*AppOptions)) *App {
 		entries: make(map[string]string),
 		options: opts,
 	}
-	app.Use(middleware.ColorScheme, middleware.Cache(time.Hour*24*365))
+	app.Use(middleware.NewLogger(opts.logger), middleware.DefaultColorScheme)
 	return app
 }

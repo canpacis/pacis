@@ -2,10 +2,13 @@ package server
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"slices"
 
 	payload "github.com/canpacis/http-payload"
 	"github.com/canpacis/pacis/html"
+	"github.com/canpacis/pacis/server/middleware"
 )
 
 /*
@@ -104,9 +107,18 @@ type Speculation struct {
 	Prefetch  []SpeculationRule `json:"prefetch,omitempty"`
 }
 
+func (s *Speculation) isempty() bool {
+	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
+}
+
 type chunk struct {
 	id string
 	fn func() *html.Element
+}
+
+type redirect struct {
+	status int
+	to     string
 }
 
 // Context embeds context.Context and provides additional fields for application-specific data.
@@ -114,9 +126,10 @@ type chunk struct {
 type Context struct {
 	context.Context
 
-	app    *App
-	chunks []chunk
-	specs  Speculation
+	app      *App
+	chunks   []chunk
+	specs    Speculation
+	redirect *redirect
 }
 
 // RegisterChunk registers a new chunk with the given identifier and a function that returns an *html.Element.
@@ -142,6 +155,10 @@ func (c *Context) RegisterSpeculation(rule SpeculationRule, render bool) {
 	} else {
 		c.specs.Prefetch = append(c.specs.Prefetch, rule)
 	}
+}
+
+func (c *Context) Redirect(status int, to string) {
+	c.redirect = &redirect{status: status, to: to}
 }
 
 // LayoutFn defines a function type that takes a context and an html.Node as input,
@@ -171,9 +188,7 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout LayoutFn, middlewares ...func(http.Handler) http.Handler) http.Handler {
-	middlewares = append(middlewares, app.middlewares...)
-
+func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" {
 			http.NotFoundHandler().ServeHTTP(w, r)
@@ -203,17 +218,25 @@ func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout L
 			w.WriteHeader(http.StatusBadRequest)
 			node = html.Error(err)
 		} else {
-			w.WriteHeader(http.StatusOK)
 			node = fn(ctx, p)
 		}
 
 		var flusher http.Flusher
-		wrapper(ctx, node).Render(ctx, w)
+
+		result := wrapper(ctx, node)
+		if ctx.redirect != nil {
+			w.WriteHeader(ctx.redirect.status)
+			http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		result.Render(ctx, w)
 		if len(ctx.chunks) != 0 {
 			var ok bool
 			flusher, ok = w.(http.Flusher)
 			if !ok {
-				// TODO: Maybe log?
+				log.Fatal("http.ResponseWriter interface is not an http.Flusher, could not send chunked data")
 				return
 			}
 		}
@@ -230,8 +253,11 @@ func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout L
 		}
 	})
 
-	for _, middleware := range middlewares {
-		handler = middleware(handler)
+	for _, middleware := range slices.Backward(app.middlewares) {
+		handler = middleware.Apply(handler)
+	}
+	for _, middleware := range slices.Backward(middlewares) {
+		handler = middleware.Apply(handler)
 	}
 
 	return handler
@@ -258,7 +284,7 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func BareHandlerOf(app *App, fn func(context.Context) html.Node, layout LayoutFn, middlewares ...func(http.Handler) http.Handler) http.Handler {
+func BareHandlerOf(app *App, fn func(context.Context) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	return HandlerOf(app, func(ctx context.Context, p *handler) html.Node {
 		return fn(ctx)
 	}, layout, middlewares...)
