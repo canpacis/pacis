@@ -141,11 +141,17 @@ func (*Attribute) Item() {}
 
 // Implements the Propterty interface.
 func (a *Attribute) Apply(el *Element) {
-	// if a.Key == "class" {
-	// 	el.ClassList.Add(a.Value)
-	// } else {
-	// }
-	el.SetAttribute(a.Key, a.Value)
+	if a.Key == "class" {
+		class := el.GetAttribute("class")
+		if len(class) == 0 {
+			class = a.Value
+		} else {
+			class = class + " " + a.Value
+		}
+		el.SetAttribute("class", class)
+	} else {
+		el.SetAttribute(a.Key, a.Value)
+	}
 }
 
 // Creates a new Attribute with given key and value.
@@ -176,15 +182,11 @@ func (c Component) Chunks() iter.Seq[Chunk] {
 // a map of its attributes, a slice of child nodes, and a flag indicating
 // whether the element is a void (self-closing) element.
 type Element struct {
-	// ClassList     *ClassList
-	nodes     []Node
-	deferreds []Deferred
-	// attributes    map[string]string
+	nodes         []Node
+	deferreds     []Deferred
 	attributelist []*Attribute
 	name          string
-	void          bool
-	// ctx           context.Context
-	// mu            *sync.Mutex
+	meta          map[string]any
 }
 
 func (e *Element) Tag() string {
@@ -194,35 +196,32 @@ func (e *Element) Tag() string {
 	return strings.ToLower(e.name)
 }
 
-func (e *Element) IsVoid() bool {
-	return e.void
+func (e *Element) Set(key string, value any) {
+	e.meta[key] = value
 }
 
-// func (e *Element) Set(key, value any) {
-// 	e.ctx = context.WithValue(e.ctx, key, value)
-// }
-
-// func (e *Element) Get(key any) any {
-// 	return e.ctx.Value(key)
-// }
+func (e *Element) Get(key string) any {
+	return e.meta[key]
+}
 
 func (e *Element) SetAttribute(key, value string) {
-	// e.attributes[key] = value
 	e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
 }
 
 func (e *Element) GetAttribute(key string) string {
+	for _, attr := range e.attributelist {
+		if attr.Key == key {
+			return attr.Value
+		}
+	}
 	return ""
-	// return e.attributes[key]
 }
 
 func (e *Element) GetAttributes() map[string]string {
 	return make(map[string]string)
-	// return e.attributes
 }
 
 func (e *Element) SetAttributes(list map[string]string) {
-	// e.attributes = list
 	e.attributelist = []*Attribute{}
 	for key, value := range list {
 		e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
@@ -239,6 +238,8 @@ func (e *Element) AppendNode(node Node) {
 
 // Implements the Item interface.
 func (*Element) Item() {}
+
+var voidelements = []string{"!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 // Implements the Node interface.
 func (e *Element) Chunks() iter.Seq[Chunk] {
@@ -288,7 +289,7 @@ func (e *Element) Chunks() iter.Seq[Chunk] {
 			return
 		}
 
-		if e.void {
+		if slices.Contains(voidelements, e.Tag()) {
 			return
 		}
 
@@ -341,11 +342,11 @@ var propspool = sync.Pool{
 	},
 }
 
-// var hookspool = sync.Pool{
-// 	New: func() any {
-// 		return &[]Property{}
-// 	},
-// }
+var hookspool = sync.Pool{
+	New: func() any {
+		return &[]Hook{}
+	},
+}
 
 // El creates a new Element with the specified tag name and a variadic list of items,
 // which can be either Node or Property types. Nodes are added as children of the element,
@@ -358,11 +359,12 @@ func El(name string, items ...Item) *Element {
 		nodes:         make([]Node, 0, len(items)),
 		deferreds:     make([]Deferred, 0, len(items)),
 		attributelist: make([]*Attribute, 0, len(items)),
+		meta:          make(map[string]any),
 	}
 	props := propspool.New().(*[]Property)
 	defer propspool.Put(props)
-	// hooks := hookspool.New().(*[]Hook)
-	// defer hookspool.Put(hooks)
+	hooks := hookspool.New().(*[]Hook)
+	defer hookspool.Put(hooks)
 
 	for _, item := range items {
 		switch item := item.(type) {
@@ -372,14 +374,14 @@ func El(name string, items ...Item) *Element {
 			el.nodes = append(el.nodes, item)
 		case Property:
 			*props = append(*props, item)
-			// if hook, ok := item.(Hook); ok {
-			// 	*hooks = append(*hooks, hook)
-			// }
-		// case Hook:
-		// 	*hooks = append(*hooks, item)
-		// 	if prop, ok := item.(Property); ok {
-		// 		*props = append(*props, prop)
-		// 	}
+			if hook, ok := item.(Hook); ok {
+				*hooks = append(*hooks, hook)
+			}
+		case Hook:
+			*hooks = append(*hooks, item)
+			if prop, ok := item.(Property); ok {
+				*props = append(*props, prop)
+			}
 		default:
 			panic(fmt.Sprintf("unknown item type: %T", item))
 		}
@@ -388,9 +390,9 @@ func El(name string, items ...Item) *Element {
 	for _, prop := range *props {
 		prop.Apply(el)
 	}
-	// for _, hook := range *hooks {
-	// 	hook.Done(el)
-	// }
+	for _, hook := range *hooks {
+		hook.Done(el)
+	}
 
 	return el
 }
@@ -399,9 +401,7 @@ func El(name string, items ...Item) *Element {
 // Void elements are HTML elements that do not have closing tags (e.g., <img>, <br>, <input>).
 // The function marks the created element as void and returns a pointer to the Element.
 func VoidEl(name string, items ...Item) *Element {
-	el := El(name, items...)
-	el.void = true
-	return el
+	return El(name, items...)
 }
 
 // Map applies the provided function fn to each element of the input slice s,

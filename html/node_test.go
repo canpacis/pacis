@@ -51,6 +51,10 @@ func TestNodeChunks(t *testing.T) {
 			Rendered: "<!DOCTYPE html>",
 		},
 		{
+			Node:     html.Input(html.P()),
+			Rendered: "<input>",
+		},
+		{
 			Node:     html.Div(html.ID("app"), html.Data("app", "pacis")),
 			Rendered: `<div id="app" data-app="pacis"></div>`,
 		},
