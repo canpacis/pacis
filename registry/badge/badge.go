@@ -1,15 +1,14 @@
 package badge
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/canpacis/pacis/components"
 	"github.com/canpacis/pacis/html"
 )
 
-type Variant int
-
-func (Variant) Item() {}
+type Variant = components.Variant
 
 const (
 	Default = Variant(iota)
@@ -18,18 +17,13 @@ const (
 	Secondary
 )
 
-func (v Variant) Apply(el *html.Element) {
-	el.Set("badge-variant", v)
-}
-
-func (Variant) Done(el *html.Element) {
-	v := el.Get("badge-variant").(Variant)
-
+var variant = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
 	switch v {
 	case Default:
 		el.AddClass("border-transparent bg-primary text-primary-foreground hover:bg-primary/80")
 	case Destructive:
 		el.AddClass("border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80")
+		fmt.Println(el)
 	case Outline:
 		el.AddClass("text-foreground")
 	case Secondary:
@@ -37,7 +31,7 @@ func (Variant) Done(el *html.Element) {
 	default:
 		log.Fatalf("invalid badge variant: %d", v)
 	}
-}
+})
 
 func New(items ...html.Item) html.Node {
 	return html.Span(
@@ -46,6 +40,7 @@ func New(items ...html.Item) html.Node {
 			html.Data("slot", "badge"),
 			html.Class("inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"),
 			Default,
+			variant,
 		)...,
 	)
 }

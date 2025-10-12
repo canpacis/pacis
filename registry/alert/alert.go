@@ -7,22 +7,14 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
-type Variant int
-
-func (Variant) Item() {}
+type Variant = components.Variant
 
 const (
 	Default = Variant(iota)
 	Destructive
 )
 
-func (v Variant) Apply(el *html.Element) {
-	el.Set("alert-variant", v)
-}
-
-func (Variant) Done(el *html.Element) {
-	v := el.Get("alert-variant").(Variant)
-
+var variant = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
 	switch v {
 	case Default:
 		el.AddClass("bg-background text-foreground")
@@ -31,7 +23,7 @@ func (Variant) Done(el *html.Element) {
 	default:
 		log.Fatalf("invalid alert variant: %d", v)
 	}
-}
+})
 
 func New(items ...html.Item) html.Node {
 	return html.Div(
@@ -41,6 +33,7 @@ func New(items ...html.Item) html.Node {
 			html.Data("slot", "alert"),
 			html.Class("relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground"),
 			Default,
+			variant,
 		)...,
 	)
 }

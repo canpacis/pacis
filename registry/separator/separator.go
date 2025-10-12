@@ -7,16 +7,15 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
-type Orientation int
+type Orientation = components.Variant
 
-func (o Orientation) Apply(el *html.Element) {
-	el.Set("orientation", o)
-}
+const (
+	Horizontal = Orientation(iota)
+	Vertical
+)
 
-func (Orientation) Done(el *html.Element) {
-	o := el.Get("orientation").(Orientation)
-
-	switch o {
+var orientation = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
+	switch v {
 	case Horizontal:
 		el.AddClass("h-[1px] w-full")
 		el.SetAttribute("data-orientation", "horizontal")
@@ -24,16 +23,9 @@ func (Orientation) Done(el *html.Element) {
 		el.AddClass("h-full w-[1px]")
 		el.SetAttribute("data-orientation", "vertical")
 	default:
-		log.Fatalf("invalid group orientation: %d", o)
+		log.Fatalf("invalid group orientation: %d", v)
 	}
-}
-
-func (Orientation) Item() {}
-
-const (
-	Horizontal = Orientation(iota)
-	Vertical
-)
+})
 
 func New(items ...html.Item) html.Node {
 	return html.Div(
@@ -43,6 +35,7 @@ func New(items ...html.Item) html.Node {
 			html.Data("slot", "separator"),
 			html.Class("shrink-0 bg-border"),
 			Horizontal,
+			orientation,
 		)...,
 	)
 }

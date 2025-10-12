@@ -9,16 +9,15 @@ import (
 	"components/ui/separator"
 )
 
-type GroupOrientation int
+type GroupOrientation = components.Variant
 
-func (o GroupOrientation) Apply(el *html.Element) {
-	el.Set("group-orientation", o)
-}
+const (
+	GroupHorizontal = GroupOrientation(iota)
+	GroupVertical
+)
 
-func (GroupOrientation) Done(el *html.Element) {
-	o := el.Get("group-orientation").(GroupOrientation)
-
-	switch o {
+var orientation = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
+	switch v {
 	case GroupHorizontal:
 		el.AddClass("[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none")
 		el.SetAttribute("data-orientation", "horizontal")
@@ -26,16 +25,9 @@ func (GroupOrientation) Done(el *html.Element) {
 		el.AddClass("flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none")
 		el.SetAttribute("data-orientation", "vertical")
 	default:
-		log.Fatalf("invalid group orientation: %d", o)
+		log.Fatalf("invalid group orientation: %d", v)
 	}
-}
-
-func (GroupOrientation) Item() {}
-
-const (
-	GroupHorizontal = GroupOrientation(iota)
-	GroupVertical
-)
+})
 
 func Group(items ...html.Item) html.Node {
 	return html.Div(
@@ -45,6 +37,7 @@ func Group(items ...html.Item) html.Node {
 			html.Data("slot", "button-group"),
 			html.Class("flex w-fit items-stretch has-[>[data-slot=button-group]]:gap-2 [&>*]:focus-visible:relative [&>*]:focus-visible:z-10 has-[select[aria-hidden=true]:last-child]:[&>[data-slot=select-trigger]:last-of-type]:rounded-r-md [&>[data-slot=select-trigger]:not([class*='w-'])]:w-fit [&>input]:flex-1"),
 			GroupHorizontal,
+			orientation,
 		)...,
 	)
 }

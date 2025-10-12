@@ -13,6 +13,36 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
+type Variant int
+
+func (Variant) Item() {}
+
+func (Variant) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleImmediate
+}
+
+func (v Variant) Apply(el *html.Element) {
+	el.Set("variant", v)
+}
+
+type VariantApplier struct {
+	fn func(*html.Element, Variant)
+}
+
+func (*VariantApplier) Item() {}
+
+func (*VariantApplier) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleStatic
+}
+
+func (va *VariantApplier) Apply(el *html.Element) {
+	va.fn(el, el.Get("variant").(Variant))
+}
+
+func NewVariantApplier(fn func(*html.Element, Variant)) *VariantApplier {
+	return &VariantApplier{fn: fn}
+}
+
 /*
 The TailwindMergeProperty type applies Tailwind CSS class merging to an element's class list,
 ensuring that conflicting or duplicate classes are resolved according to Tailwind's rules.
@@ -23,30 +53,29 @@ func (*TailwindMergeProperty) LifeCycle() html.PropertyLifeCycle {
 	return html.LifeCycleImmediate
 }
 
-// Implements the html.Property interface
-func (*TailwindMergeProperty) Apply(el *html.Element) {
-	// el.ClassList.Items = strings.Split(twmerge.Merge(strings.Join(el.ClassList.Items, " ")), " ")
-	el.SetAttribute("class", twmerge.Merge(el.GetAttribute("class")))
-}
-
 // Implements the html.Item interface
 func (*TailwindMergeProperty) Item() {}
+
+// Implements the html.Property interface
+func (*TailwindMergeProperty) Apply(el *html.Element) {
+	el.SetAttribute("class", twmerge.Merge(el.GetAttribute("class")))
+}
 
 // TailwindMerge is a global instance of TailwindMergeProperty used to merge
 // conflicting or duplicate tailwind classes.
 var TailwindMerge = &TailwindMergeProperty{}
 
 /*
-The AsChildHook type allows an element to adopt the properties of its single child element,
+The AsChildProperty type allows an element to adopt the properties of its single child element,
 merging class lists and attributes, and replacing the parent element with the child.
 */
-type AsChildHook struct{}
+type AsChildProperty struct{}
 
 // Implements the html.Item interface
-func (*AsChildHook) Item() {}
+func (*AsChildProperty) Item() {}
 
 // Implements the html.Hook interface
-func (*AsChildHook) Hook(el *html.Element) {
+func (*AsChildProperty) Apply(el *html.Element) {
 	nodes := el.GetNodes()
 	if len(nodes) != 1 {
 		log.Fatal("Exactly 1 child should be present in an element with AsChild property")
@@ -60,6 +89,7 @@ func (*AsChildHook) Hook(el *html.Element) {
 	attrs := map[string]string{}
 	maps.Copy(attrs, child.GetAttributes())
 	maps.Copy(attrs, el.GetAttributes())
+	// TODO: Deferred properties are not copied this way
 	child.SetAttributes(attrs)
 	*el = *child
 }
@@ -67,13 +97,13 @@ func (*AsChildHook) Hook(el *html.Element) {
 // AsChild is a global instance of AsChildHook used to provide hook functionality
 // for child components within the package. It can be used to manage or modify
 // behavior specific to child components.
-var AsChild = &AsChildHook{}
+var AsChild = &AsChildProperty{}
 
 // Merges a list of html.Items with another. Puts the first list of items at the end.
 func ItemsOf(passed []html.Item, items ...html.Item) []html.Item {
-	i := []html.Item{}
-	i = append(i, items...)
-	i = append(i, passed...)
-	i = append(i, TailwindMerge)
-	return i
+	itms := make([]html.Item, len(passed)+len(items)+1)
+	copy(itms[:len(items)], items)
+	copy(itms[len(items):], passed)
+	itms[len(itms)-1] = TailwindMerge
+	return itms
 }

@@ -7,11 +7,7 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
-type keytyp string
-
-type Variant int
-
-func (Variant) Item() {}
+type Variant = components.Variant
 
 const (
 	Default = Variant(iota)
@@ -22,13 +18,7 @@ const (
 	Link
 )
 
-func (v Variant) Apply(el *html.Element) {
-	el.Set("button-variant", v)
-}
-
-func (Variant) Done(el *html.Element) {
-	v := el.Get("button-variant").(Variant)
-
+var variant = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
 	switch v {
 	case Default:
 		el.AddClass("bg-primary text-primary-foreground shadow hover:bg-primary/90")
@@ -45,11 +35,9 @@ func (Variant) Done(el *html.Element) {
 	default:
 		log.Fatalf("invalid button variant: %d", v)
 	}
-}
+})
 
-type Size int
-
-func (Size) Item() {}
+type Size = components.Variant
 
 const (
 	Md = Size(iota)
@@ -58,14 +46,8 @@ const (
 	Icon
 )
 
-func (s Size) Apply(el *html.Element) {
-	el.Set("button-size", s)
-}
-
-func (Size) Done(el *html.Element) {
-	s := el.Get("button-size").(Size)
-
-	switch s {
+var size = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
+	switch v {
 	case Md:
 		el.AddClass("h-10 px-4 py-2")
 	case Sm:
@@ -75,9 +57,9 @@ func (Size) Done(el *html.Element) {
 	case Icon:
 		el.AddClass("h-10 w-10")
 	default:
-		log.Fatalf("invalid button size: %d", s)
+		log.Fatalf("invalid button size: %d", v)
 	}
-}
+})
 
 func New(items ...html.Item) html.Node {
 	return html.Button(
@@ -87,6 +69,8 @@ func New(items ...html.Item) html.Node {
 			html.Class("inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"),
 			Default,
 			Md,
+			variant,
+			size,
 		)...,
 	)
 }
