@@ -43,11 +43,10 @@ func (r *StaticRenderer) Build(node html.Node) error {
 			buf = bufpool.New().(*bytes.Buffer)
 			*r.chunks = append(*r.chunks, chunk)
 		default:
-			return fmt.Errorf("invalid chunk type %t", chunk)
+			return fmt.Errorf("invalid chunk type %T", chunk)
 		}
 	}
 	*r.chunks = append(*r.chunks, buf.Bytes())
-
 	return nil
 }
 

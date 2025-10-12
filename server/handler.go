@@ -26,25 +26,10 @@ type redirect struct {
 	to     string
 }
 
-type specrule struct {
-	URLs      []string             `json:"urls,omitempty"`
-	Eagerness SpeculationEagerness `json:"eagerness"`
-}
-
-type specs struct {
-	Prerender []specrule `json:"prerender,omitempty"`
-	Prefetch  []specrule `json:"prefetch,omitempty"`
-}
-
-func (s *specs) isempty() bool {
-	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
-}
-
 type serverctx struct {
 	context.Context
 
 	async    []async
-	specs    specs
 	redirect *redirect
 	notfound bool
 }
@@ -103,7 +88,6 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 			if err := renderer.Render(ctx, bw); err != nil {
 				return
 			}
-			renderer.Release()
 
 			bw.Flush()
 
@@ -112,9 +96,10 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 				log.Fatal("http writer does not support chunked encoding")
 				return
 			}
-			if len(ctx.async) > 0 {
-				flusher.Flush()
+			if len(ctx.async) == 0 {
+				return
 			}
+			flusher.Flush()
 
 			renderers := make(chan *StaticRenderer)
 			wg := sync.WaitGroup{}

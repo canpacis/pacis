@@ -36,6 +36,7 @@ import (
 	"html"
 	"io"
 	"iter"
+	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -127,7 +128,7 @@ const (
 // Property represents an interface for applying a property to an Element.
 // Implementations of Property should define how the property modifies or affects the given Element.
 type Property interface {
-	// Apply(*Element)
+	Item()
 	LifeCycle() PropertyLifeCycle
 }
 
@@ -166,8 +167,14 @@ func (*DeferredAttribute) LifeCycle() PropertyLifeCycle {
 }
 
 // Implements the Propterty interface.
-func (a *DeferredAttribute) Apply(ctx context.Context, el *Element) {
-	el.SetAttribute(a.key, a.fn(ctx))
+func (a *DeferredAttribute) Apply(ctx context.Context, w io.Writer) error {
+	var rhs = ""
+	value := a.fn(ctx)
+	if len(value) > 0 {
+		rhs = "=" + "\"" + value + "\""
+	}
+	_, err := fmt.Fprintf(w, " %s%s", a.key, rhs)
+	return err
 }
 
 func DeferredAttr(key string, fn func(context.Context) string) *DeferredAttribute {
@@ -225,6 +232,12 @@ func (e *Element) Get(key string) any {
 }
 
 func (e *Element) SetAttribute(key, value string) {
+	for i, attr := range e.attributelist {
+		if attr.Key == key {
+			e.attributelist[i].Value = value
+			return
+		}
+	}
 	e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
 }
 
@@ -248,7 +261,11 @@ func (e *Element) GetAttribute(key string) string {
 }
 
 func (e *Element) GetAttributes() map[string]string {
-	return make(map[string]string)
+	attrs := map[string]string{}
+	for _, attr := range e.attributelist {
+		attrs[attr.Key] = attr.Value
+	}
+	return attrs
 }
 
 func (e *Element) SetAttributes(list map[string]string) {
@@ -280,44 +297,25 @@ func (e *Element) Chunks() iter.Seq[Chunk] {
 
 		if len(e.properties) > 0 {
 			for _, prop := range e.properties {
-				if !yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
-					applier, ok := prop.(interface {
-						Apply(context.Context, *Element)
-					})
-					if !ok {
-						return fmt.Errorf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, *Element) method", prop)
-					}
-					// TODO: need syncing?
-					applier.Apply(ctx, e)
-					return nil
-				})) {
+				applier, ok := prop.(interface {
+					Apply(context.Context, io.Writer) error
+				})
+				if !ok {
+					log.Fatalf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
+				}
+				if !yield(DynamicChunk(applier.Apply)) {
 					return
 				}
 			}
-			if !yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
-				// TODO: needs updated class list which needs syncing
-				for _, attr := range e.attributelist {
-					var rhs string
-					if len(attr.Value) != 0 {
-						rhs = "=" + "\"" + attr.Value + "\""
-					}
-					if _, err := fmt.Fprintf(w, " %s%s", attr.Key, rhs); err != nil {
-						return err
-					}
-				}
-				return nil
-			})) {
+		}
+
+		for _, attr := range e.attributelist {
+			var rhs string
+			if len(attr.Value) != 0 {
+				rhs = "=" + "\"" + attr.Value + "\""
+			}
+			if !yield(StaticChunk(fmt.Appendf(nil, " %s%s", attr.Key, rhs))) {
 				return
-			}
-		} else {
-			for _, attr := range e.attributelist {
-				var rhs string
-				if len(attr.Value) != 0 {
-					rhs = "=" + "\"" + attr.Value + "\""
-				}
-				if !yield(StaticChunk(fmt.Appendf(nil, " %s%s", attr.Key, rhs))) {
-					return
-				}
 			}
 		}
 
@@ -341,6 +339,19 @@ func (e *Element) Chunks() iter.Seq[Chunk] {
 	}
 }
 
+func (e *Element) Clone() *Element {
+	attributelist := make([]*Attribute, len(e.attributelist))
+	copy(attributelist, e.attributelist)
+
+	return &Element{
+		nodes:         e.nodes,
+		properties:    e.properties,
+		attributelist: attributelist,
+		name:          e.name,
+		meta:          e.meta,
+	}
+}
+
 var propspool = sync.Pool{
 	New: func() any {
 		return &[]Property{}
@@ -356,8 +367,8 @@ func El(name string, items ...Item) *Element {
 	el := &Element{
 		name:          name,
 		nodes:         make([]Node, 0, len(items)),
-		properties:    make([]Property, 0, len(items)),
-		attributelist: make([]*Attribute, 0, len(items)),
+		properties:    []Property{},
+		attributelist: []*Attribute{},
 		meta:          make(map[string]any),
 	}
 	immediate := propspool.New().(*[]Property)
@@ -377,6 +388,7 @@ func El(name string, items ...Item) *Element {
 			case LifeCycleStatic:
 				*static = append(*static, item)
 			case LifeCycleDeferred:
+				// TODO: Deferred properties have a serious bug
 				el.properties = append(el.properties, item)
 			default:
 				panic(fmt.Sprintf("illegal property lifecycle: %T", item))

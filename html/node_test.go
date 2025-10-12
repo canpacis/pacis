@@ -79,8 +79,9 @@ func TestNodeChunks(t *testing.T) {
 			Impure:   true,
 		},
 		{
-			Node:     html.Body(html.ID("app"), html.DeferredAttr("class", func(ctx context.Context) string { return "dark" })),
-			Rendered: `<body id="app" class="dark"></body>`,
+			Node: html.Body(html.ID("app"), html.DeferredAttr("class", func(ctx context.Context) string { return "dark" })),
+			// Deferred attributes will be applied first
+			Rendered: `<body class="dark" id="app"></body>`,
 			Impure:   true,
 		},
 	}
