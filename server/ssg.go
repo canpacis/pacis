@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -51,21 +52,23 @@ func (r *StaticRenderer) Build(node html.Node) error {
 }
 
 func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
+	bw := bufio.NewWriter(w)
+
 	for _, chunk := range *r.chunks {
 		switch chunk := chunk.(type) {
 		case []byte:
-			if _, err := w.Write(chunk); err != nil {
+			if _, err := bw.Write(chunk); err != nil {
 				return err
 			}
 		case html.DynamicChunk:
-			if err := chunk(ctx, w); err != nil {
+			if err := chunk(ctx, bw); err != nil {
 				return err
 			}
 		default:
 			return fmt.Errorf("invalid chunk type %t", chunk)
 		}
 	}
-	return nil
+	return bw.Flush()
 }
 
 func (r *StaticRenderer) Release() {

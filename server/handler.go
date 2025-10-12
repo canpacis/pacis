@@ -5,146 +5,11 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/server/middleware"
 )
-
-/*
-# Speculation Rules API
-
-A string providing a hint to the browser as to how eagerly it should prefetch/prerender
-link targets in order to balance performance advantages against resource overheads.
-
-https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#eagerness
-*/
-type SpeculationEagerness string
-
-const (
-	/*
-		# Speculation Rules API
-
-		The author thinks the link is very likely to be followed, and/or the document may take
-		significant time to fetch. Prefetch/prerender should start as soon as possible, subject
-		only to considerations such as user preferences and resource limits.
-
-		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#immediate
-	*/
-	ImmediateEagerness = SpeculationEagerness("immediate")
-	/*
-		# Speculation Rules API
-
-		The author wants to prefetch/prerender a large number of navigations, as early as possible.
-		Prefetch/prerender should start on any slight suggestion that a link may be followed.
-		For example, the user could move their mouse cursor towards the link, hover/focus it for a
-		moment, or pause scrolling with the link in a prominent place.
-
-		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#eager
-	*/
-	EagerEagerness = SpeculationEagerness("eager")
-	/*
-		# Speculation Rules API
-
-		The author is looking for a balance between eager and conservative. Prefetch/prerender
-		should start when there is a reasonable suggestion that the user will follow a link
-		in the near future. For example, the user could scroll a link into the viewport and
-		hover/focus it for some time.
-
-		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#moderate
-	*/
-	ModerateEagerness = SpeculationEagerness("moderate")
-	/*
-		# Speculation Rules API
-
-		The author wishes to get some benefit from speculative loading with a fairly small
-		tradeoff of resources. Prefetch/prerender should start only when the user is starting
-		to click on the link, for example on mousedown or pointerdown.
-
-		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#conservative
-	*/
-	ConservativeEagerness = SpeculationEagerness("conservative")
-)
-
-/*
-# Speculation Rules API
-
-The speculationrules value of the type attribute of the <script> element indicates that
-the body of the element contains speculation rules.
-
-Speculation rules take the form of a JSON structure that determine what resources should
-be prefetched or prerendered by the browser. This is part of the Speculation Rules API.
-
-https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules
-*/
-type SpeculationRule struct {
-	URLs      []string             `json:"urls,omitempty"`
-	Eagerness SpeculationEagerness `json:"eagerness"`
-}
-
-/*
-# Speculation Rules API
-
-The JSON structure contains one or more fields at the top level, each one representing an
-action to define speculation rules for. At present the supported actions are:
-
-"prefetch" Optional Experimental
-Rules for potential future navigations that should have their associated document response
-body downloaded, leading to significant performance improvements when those documents are
-navigated to. Note that none of the subresources referenced by the page are downloaded.
-
-"prerender" Optional Experimental
-Rules for potential future navigations that should have their associated documents fully
-downloaded, rendered, and loaded into an invisible tab. This includes loading all subresources,
-running all JavaScript, and even loading subresources and performing data fetches started by
-JavaScript. When those documents are navigated to, navigations will be instant, leading to
-major performance improvements.
-
-https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules
-*/
-type Speculation struct {
-	Prerender []SpeculationRule `json:"prerender,omitempty"`
-	Prefetch  []SpeculationRule `json:"prefetch,omitempty"`
-}
-
-// func (s *Speculation) isempty() bool {
-// 	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
-// }
-
-type redirect struct {
-	status int
-	to     string
-}
-
-// Page embeds context.Page and provides additional fields for application-specific data.
-// It holds a reference to the App, a slice of chunk objects, and Speculation data for request handling.
-type Page struct {
-	specs    Speculation
-	redirect *redirect
-	notfound bool
-}
-
-// RegisterSpeculation adds a SpeculationRule to either the Prerender or Prefetch list
-// in the Context's specs, depending on the value of the render parameter.
-// If render is true, the rule is added to the Prerender list; otherwise, it is added to the Prefetch list.
-//
-// Parameters:
-//   - rule:   The SpeculationRule to be registered.
-//   - render: A boolean indicating whether to add the rule to Prerender (true) or Prefetch (false).
-func (c *Page) RegisterSpeculation(rule SpeculationRule, render bool) {
-	if render {
-		c.specs.Prerender = append(c.specs.Prerender, rule)
-	} else {
-		c.specs.Prefetch = append(c.specs.Prefetch, rule)
-	}
-}
-
-func (c *Page) MarkRedirect(status int, to string) {
-	c.redirect = &redirect{status: status, to: to}
-}
-
-func (c *Page) MarkNotFound() {
-	c.notfound = true
-}
 
 // LayoutFn defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
@@ -156,10 +21,18 @@ type async struct {
 	comp html.Component
 }
 
+type redirect struct {
+	status int
+	to     string
+}
+
 type serverctx struct {
 	context.Context
 
 	async []async
+	// specs    Speculation
+	redirect *redirect
+	notfound bool
 }
 
 /*
@@ -184,13 +57,12 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
+func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var wrapper LayoutFn = layout
 	if wrapper == nil {
 		wrapper = func(app *App, n html.Node) html.Node { return n }
 	}
-	page := &Page{}
-	node := wrapper(app, fn(page))
+	node := wrapper(app, fn())
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -205,10 +77,10 @@ func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares 
 
 		ctx := &serverctx{Context: r.Context()}
 
-		if page.redirect != nil {
-			w.WriteHeader(page.redirect.status)
-			http.Redirect(w, r, page.redirect.to, page.redirect.status)
-		} else if page.notfound {
+		if ctx.redirect != nil {
+			w.WriteHeader(ctx.redirect.status)
+			http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
+		} else if ctx.notfound {
 			w.WriteHeader(http.StatusNotFound)
 			http.NotFoundHandler().ServeHTTP(w, r)
 		} else {
@@ -230,28 +102,43 @@ func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares 
 				flusher.Flush()
 			}
 
-			renderer := NewStaticRenderer()
-			for _, async := range ctx.async {
-				var node html.Node
-				node = async.comp(ctx)
-				elem, ok := node.(*html.Element)
-				if !ok {
-					node = html.Template(html.SlotAttr(async.id), node)
-				} else {
-					elem.SetAttribute("slot", async.id)
-				}
+			renderers := make(chan *StaticRenderer)
+			wg := sync.WaitGroup{}
 
-				if err := renderer.Build(node); err != nil {
-					log.Fatalf("Failed to statically render page: %s", err.Error())
-					return
-				}
+			for _, chunk := range ctx.async {
+				wg.Add(1)
+				go func(chunk async) {
+					defer wg.Done()
 
-				renderer.Render(ctx, bw)
-				bw.Flush()
-				flusher.Flush()
-				renderer.Clear()
+					renderer := NewStaticRenderer()
+					var node html.Node
+					node = chunk.comp(ctx)
+					elem, ok := node.(*html.Element)
+					if !ok {
+						node = html.Template(html.SlotAttr(chunk.id), node)
+					} else {
+						elem.SetAttribute("slot", chunk.id)
+					}
+
+					if err := renderer.Build(node); err != nil {
+						log.Fatalf("Failed to statically render page: %s", err.Error())
+						return
+					}
+
+					renderers <- renderer
+				}(chunk)
 			}
-			renderer.Release()
+
+			go func() {
+				wg.Wait()
+				close(renderers)
+			}()
+
+			for renderer := range renderers {
+				renderer.Render(ctx, w)
+				flusher.Flush()
+				renderer.Release()
+			}
 		}
 	})
 
