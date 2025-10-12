@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bufio"
 	"context"
+	"log"
 	"net/http"
 	"slices"
 
@@ -105,39 +107,21 @@ type Speculation struct {
 	Prefetch  []SpeculationRule `json:"prefetch,omitempty"`
 }
 
-func (s *Speculation) isempty() bool {
-	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
-}
-
-type chunk struct {
-	id string
-	fn func() *html.Element
-}
+// func (s *Speculation) isempty() bool {
+// 	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
+// }
 
 type redirect struct {
 	status int
 	to     string
 }
 
-// Context embeds context.Context and provides additional fields for application-specific data.
+// Page embeds context.Page and provides additional fields for application-specific data.
 // It holds a reference to the App, a slice of chunk objects, and Speculation data for request handling.
-type Context struct {
-	context.Context
-
-	app      *App
-	chunks   []chunk
+type Page struct {
 	specs    Speculation
 	redirect *redirect
-}
-
-// RegisterChunk registers a new chunk with the given identifier and a function that returns an *html.Element.
-// The chunk is appended to the context's list of chunks for later processing or rendering.
-//
-// Parameters:
-//   - id: A unique string identifier for the chunk.
-//   - fn: A function that returns a pointer to an html.Element representing the chunk's content.
-func (c *Context) RegisterChunk(id string, fn func() *html.Element) {
-	c.chunks = append(c.chunks, chunk{id: id, fn: fn})
+	notfound bool
 }
 
 // RegisterSpeculation adds a SpeculationRule to either the Prerender or Prefetch list
@@ -147,7 +131,7 @@ func (c *Context) RegisterChunk(id string, fn func() *html.Element) {
 // Parameters:
 //   - rule:   The SpeculationRule to be registered.
 //   - render: A boolean indicating whether to add the rule to Prerender (true) or Prefetch (false).
-func (c *Context) RegisterSpeculation(rule SpeculationRule, render bool) {
+func (c *Page) RegisterSpeculation(rule SpeculationRule, render bool) {
 	if render {
 		c.specs.Prerender = append(c.specs.Prerender, rule)
 	} else {
@@ -155,14 +139,29 @@ func (c *Context) RegisterSpeculation(rule SpeculationRule, render bool) {
 	}
 }
 
-func (c *Context) Redirect(status int, to string) {
+func (c *Page) MarkRedirect(status int, to string) {
 	c.redirect = &redirect{status: status, to: to}
+}
+
+func (c *Page) MarkNotFound() {
+	c.notfound = true
 }
 
 // LayoutFn defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
-type LayoutFn func(context.Context, html.Node) html.Node
+type LayoutFn func(*App, html.Node) html.Node
+
+type async struct {
+	id   string
+	comp html.Component
+}
+
+type serverctx struct {
+	context.Context
+
+	async []async
+}
 
 /*
 HandlerOf creates an HTTP handler that processes requests using the provided function `fn`,
@@ -186,71 +185,69 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
-	// var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" {
-	// 		http.NotFoundHandler().ServeHTTP(w, r)
-	// 		return
-	// 	}
+func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
+	var wrapper LayoutFn = layout
+	if wrapper == nil {
+		wrapper = func(app *App, n html.Node) html.Node { return n }
+	}
+	page := &Page{}
+	node := wrapper(app, fn(page))
 
-	// 	p := new(P)
-	// 	ctx := &Context{
-	// 		Context: r.Context(),
-	// 		app:     app,
-	// 	}
+	renderer := &StaticRenderer{}
+	if err := renderer.Build(node); err != nil {
+		log.Fatalf("Failed to statically render page: %s", err.Error())
+	}
 
-	// 	scanner := payload.NewPipeScanner(
-	// 		payload.NewQueryScanner(r.URL.Query()),
-	// 		payload.NewHeaderScanner(&r.Header),
-	// 		payload.NewCookieScanner(r.Cookies()),
-	// 		payload.NewPathScanner(r),
-	// 	)
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" {
+			http.NotFoundHandler().ServeHTTP(w, r)
+			return
+		}
 
-	// 	var node html.Node
-	// 	var wrapper LayoutFn = layout
-	// 	if wrapper == nil {
-	// 		wrapper = func(ctx context.Context, n html.Node) html.Node { return n }
-	// 	}
+		ctx := &serverctx{Context: r.Context()}
 
-	// 	if err := scanner.Scan(p); err != nil {
-	// 		w.WriteHeader(http.StatusBadRequest)
-	// 		node = html.Error(err)
-	// 	} else {
-	// 		node = fn(ctx, p)
-	// 	}
+		if page.redirect != nil {
+			w.WriteHeader(page.redirect.status)
+			http.Redirect(w, r, page.redirect.to, page.redirect.status)
+		} else if page.notfound {
+			w.WriteHeader(http.StatusNotFound)
+			http.NotFoundHandler().ServeHTTP(w, r)
+		} else {
+			bw := bufio.NewWriter(w)
 
-	// 	var flusher http.Flusher
+			if err := renderer.Render(ctx, bw); err != nil {
+				return
+			}
 
-	// 	result := wrapper(ctx, node)
-	// 	if ctx.redirect != nil {
-	// 		w.WriteHeader(ctx.redirect.status)
-	// 		http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
-	// 		return
-	// 	}
+			bw.Flush()
 
-	// 	w.WriteHeader(http.StatusOK)
-	// 	result.Render(ctx, w)
-	// 	if len(ctx.chunks) != 0 {
-	// 		var ok bool
-	// 		flusher, ok = w.(http.Flusher)
-	// 		if !ok {
-	// 			log.Fatal("http.ResponseWriter interface is not an http.Flusher, could not send chunked data")
-	// 			return
-	// 		}
-	// 	}
+			flusher, ok := w.(http.Flusher)
+			if !ok {
+				log.Fatal("http writer does not support chunked encoding")
+				return
+			}
+			if len(ctx.async) > 0 {
+				flusher.Flush()
+			}
 
-	// 	if flusher != nil {
-	// 		flusher.Flush()
-
-	// 		for _, chunk := range ctx.chunks {
-	// 			element := chunk.fn()
-	// 			element.SetAttribute("slot", chunk.id)
-	// 			element.Render(ctx, w)
-	// 			flusher.Flush()
-	// 		}
-	// 	}
-	// })
-	var handler http.Handler = http.NotFoundHandler()
+			for _, async := range ctx.async {
+				var node html.Node
+				node = async.comp(ctx)
+				elem, ok := node.(*html.Element)
+				if !ok {
+					node = html.Template(html.SlotAttr(async.id), node)
+				} else {
+					elem.SetAttribute("slot", async.id)
+				}
+				for chunk := range node.Chunks() {
+					// fmt.Println("got chunk", chunk)
+					chunk.Render(ctx, bw)
+				}
+				bw.Flush()
+				flusher.Flush()
+			}
+		}
+	})
 
 	for _, middleware := range slices.Backward(app.middlewares) {
 		handler = middleware.Apply(handler)
@@ -260,31 +257,4 @@ func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout L
 	}
 
 	return handler
-}
-
-type handler struct{}
-
-/*
-BareHandlerOf creates an HTTP handler that processes requests using the provided function `fn`,
-which takes only a context. The handler applies the specified layout function `layout` to the
-resulting HTML node, and supports an optional list of middleware functions. The handler
-automatically scans and populates the parameter struct from the request's query parameters,
-headers, cookies, and path variables. If scanning fails, it responds with a 400 Bad Request
-and an error node. Otherwise, it renders the node returned by `fn`, applies the layout, and
-supports chunked rendering if needed. All provided and application-level middlewares are applied
-in order.
-
-Parameters:
-  - app: The application context containing shared resources and middlewares.
-  - fn: A function that generates an HTML node given a context.
-  - layout: A layout function to wrap the generated HTML node. If nil, a default passthrough is used.
-  - middlewares: Optional HTTP middleware functions to wrap the handler.
-
-Returns:
-  - http.Handler: The composed HTTP handler ready to be registered with a router or server.
-*/
-func BareHandlerOf(app *App, fn func(context.Context) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
-	return HandlerOf(app, func(ctx context.Context, p *handler) html.Node {
-		return fn(ctx)
-	}, layout, middlewares...)
 }

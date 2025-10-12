@@ -27,13 +27,19 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/canpacis/pacis/server/middleware"
 )
@@ -127,14 +133,18 @@ func (a *App) ServeAssets() http.Handler {
 // Returns an option function to set the application environment.
 func WithEnv(env Environment) func(*AppOptions) {
 	return func(ao *AppOptions) {
-		ao.env = env
+		if len(env) > 0 {
+			ao.env = env
+		}
 	}
 }
 
 // Returns an option function to set the development server URL.
 func WithDevServer(url string) func(*AppOptions) {
 	return func(ao *AppOptions) {
-		ao.devserver = url
+		if len(url) > 0 {
+			ao.devserver = url
+		}
 	}
 }
 
@@ -180,4 +190,36 @@ func NewApp(options ...func(*AppOptions)) *App {
 	}
 	app.Use(middleware.NewLogger(opts.logger), middleware.DefaultColorScheme)
 	return app
+}
+
+func Serve(app *App, handler http.Handler) {
+	server := &http.Server{
+		Addr:              ":8081",
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      10 * time.Second,
+	}
+
+	logger := app.options.logger
+	go func() {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("App setup failed", "error", err)
+			os.Exit(1)
+		}
+		logger.Info("Stopped serving new connections")
+	}()
+
+	logger.Info("Server is running", "address", server.Addr)
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
+
+	ctx, release := context.WithTimeout(context.Background(), 10*time.Second)
+	defer release()
+
+	if err := server.Shutdown(ctx); err != nil {
+		logger.Error("App setup failed", "error", err)
+		os.Exit(1)
+	}
+	logger.Info("Server shutdowwn")
 }
