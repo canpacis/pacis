@@ -26,11 +26,25 @@ type redirect struct {
 	to     string
 }
 
+type specrule struct {
+	URLs      []string             `json:"urls,omitempty"`
+	Eagerness SpeculationEagerness `json:"eagerness"`
+}
+
+type specs struct {
+	Prerender []specrule `json:"prerender,omitempty"`
+	Prefetch  []specrule `json:"prefetch,omitempty"`
+}
+
+func (s *specs) isempty() bool {
+	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
+}
+
 type serverctx struct {
 	context.Context
 
-	async []async
-	// specs    Speculation
+	async    []async
+	specs    specs
 	redirect *redirect
 	notfound bool
 }

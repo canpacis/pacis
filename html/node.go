@@ -116,19 +116,19 @@ func Fragment(nodes ...Node) Frag {
 	return Frag(nodes)
 }
 
+type PropertyLifeCycle int
+
+const (
+	LifeCycleImmediate = PropertyLifeCycle(iota)
+	LifeCycleStatic
+	LifeCycleDeferred
+)
+
 // Property represents an interface for applying a property to an Element.
 // Implementations of Property should define how the property modifies or affects the given Element.
 type Property interface {
-	Apply(*Element)
-}
-
-type Deferred func(context.Context) Property
-
-// Implements the Item interface
-func (Deferred) Item() {}
-
-type Hook interface {
-	Done(*Element)
+	// Apply(*Element)
+	LifeCycle() PropertyLifeCycle
 }
 
 // Attribute represents a key-value pair used as an attribute in an HTML node.
@@ -140,6 +140,10 @@ type Attribute struct {
 // Implements the Item interface.
 func (*Attribute) Item() {}
 
+func (*Attribute) LifeCycle() PropertyLifeCycle {
+	return LifeCycleImmediate
+}
+
 // Implements the Propterty interface.
 func (a *Attribute) Apply(el *Element) {
 	if a.Key == "class" {
@@ -147,6 +151,27 @@ func (a *Attribute) Apply(el *Element) {
 	} else {
 		el.SetAttribute(a.Key, a.Value)
 	}
+}
+
+type DeferredAttribute struct {
+	key string
+	fn  func(context.Context) string
+}
+
+// Implements the Item interface.
+func (*DeferredAttribute) Item() {}
+
+func (*DeferredAttribute) LifeCycle() PropertyLifeCycle {
+	return LifeCycleDeferred
+}
+
+// Implements the Propterty interface.
+func (a *DeferredAttribute) Apply(ctx context.Context, el *Element) {
+	el.SetAttribute(a.key, a.fn(ctx))
+}
+
+func DeferredAttr(key string, fn func(context.Context) string) *DeferredAttribute {
+	return &DeferredAttribute{key: key, fn: fn}
 }
 
 // Creates a new Attribute with given key and value.
@@ -178,7 +203,7 @@ func (c Component) Chunks() iter.Seq[Chunk] {
 // whether the element is a void (self-closing) element.
 type Element struct {
 	nodes         []Node
-	deferreds     []Deferred
+	properties    []Property
 	attributelist []*Attribute
 	name          string
 	meta          map[string]any
@@ -253,11 +278,17 @@ func (e *Element) Chunks() iter.Seq[Chunk] {
 			return
 		}
 
-		if len(e.deferreds) > 0 {
-			for _, deferred := range e.deferreds {
+		if len(e.properties) > 0 {
+			for _, prop := range e.properties {
 				if !yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
+					applier, ok := prop.(interface {
+						Apply(context.Context, *Element)
+					})
+					if !ok {
+						return fmt.Errorf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, *Element) method", prop)
+					}
 					// TODO: need syncing?
-					deferred(ctx).Apply(e)
+					applier.Apply(ctx, e)
 					return nil
 				})) {
 					return
@@ -316,12 +347,6 @@ var propspool = sync.Pool{
 	},
 }
 
-var hookspool = sync.Pool{
-	New: func() any {
-		return &[]Hook{}
-	},
-}
-
 // El creates a new Element with the specified tag name and a variadic list of items,
 // which can be either Node or Property types. Nodes are added as children of the element,
 // while Properties are collected and applied to the element after all children are processed.
@@ -331,43 +356,51 @@ func El(name string, items ...Item) *Element {
 	el := &Element{
 		name:          name,
 		nodes:         make([]Node, 0, len(items)),
-		deferreds:     make([]Deferred, 0, len(items)),
+		properties:    make([]Property, 0, len(items)),
 		attributelist: make([]*Attribute, 0, len(items)),
 		meta:          make(map[string]any),
 	}
-	props := propspool.New().(*[]Property)
-	defer propspool.Put(props)
-	hooks := hookspool.New().(*[]Hook)
-	defer hookspool.Put(hooks)
+	immediate := propspool.New().(*[]Property)
+	defer propspool.Put(immediate)
+	static := propspool.New().(*[]Property)
+	defer propspool.Put(static)
 
 	for _, item := range items {
 		switch item := item.(type) {
-		case Deferred:
-			el.deferreds = append(el.deferreds, item)
 		case Node:
 			el.nodes = append(el.nodes, item)
 		case Property:
-			*props = append(*props, item)
-			if hook, ok := item.(Hook); ok {
-				*hooks = append(*hooks, hook)
-			}
-		case Hook:
-			*hooks = append(*hooks, item)
-			if prop, ok := item.(Property); ok {
-				*props = append(*props, prop)
+			cycle := item.LifeCycle()
+			switch cycle {
+			case LifeCycleImmediate:
+				*immediate = append(*immediate, item)
+			case LifeCycleStatic:
+				*static = append(*static, item)
+			case LifeCycleDeferred:
+				el.properties = append(el.properties, item)
+			default:
+				panic(fmt.Sprintf("illegal property lifecycle: %T", item))
 			}
 		default:
-			panic(fmt.Sprintf("unknown item type: %T", item))
+			panic(fmt.Sprintf("illegal item type: %T", item))
 		}
 	}
 
-	for _, prop := range *props {
-		prop.Apply(el)
-	}
-	for _, hook := range *hooks {
-		hook.Done(el)
+	for _, prop := range *immediate {
+		applier, ok := prop.(interface{ Apply(*Element) })
+		if !ok {
+			panic(fmt.Sprintf("property with immediate life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop))
+		}
+		applier.Apply(el)
 	}
 
+	for _, prop := range *static {
+		applier, ok := prop.(interface{ Apply(*Element) })
+		if !ok {
+			panic(fmt.Sprintf("property with static life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop))
+		}
+		applier.Apply(el)
+	}
 	return el
 }
 

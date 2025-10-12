@@ -77,68 +77,52 @@ link targets in order to balance performance advantages against resource overhea
 
 https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#eagerness
 */
-// type SpeculationEagerness string
+type SpeculationEagerness string
 
-// const (
-// 	/*
-// 		# Speculation Rules API
+const (
+	/*
+		# Speculation Rules API
 
-// 		The author thinks the link is very likely to be followed, and/or the document may take
-// 		significant time to fetch. Prefetch/prerender should start as soon as possible, subject
-// 		only to considerations such as user preferences and resource limits.
+		The author thinks the link is very likely to be followed, and/or the document may take
+		significant time to fetch. Prefetch/prerender should start as soon as possible, subject
+		only to considerations such as user preferences and resource limits.
 
-// 		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#immediate
-// 	*/
-// 	ImmediateEagerness = SpeculationEagerness("immediate")
-// 	/*
-// 		# Speculation Rules API
+		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#immediate
+	*/
+	ImmediateEagerness = SpeculationEagerness("immediate")
+	/*
+		# Speculation Rules API
 
-// 		The author wants to prefetch/prerender a large number of navigations, as early as possible.
-// 		Prefetch/prerender should start on any slight suggestion that a link may be followed.
-// 		For example, the user could move their mouse cursor towards the link, hover/focus it for a
-// 		moment, or pause scrolling with the link in a prominent place.
+		The author wants to prefetch/prerender a large number of navigations, as early as possible.
+		Prefetch/prerender should start on any slight suggestion that a link may be followed.
+		For example, the user could move their mouse cursor towards the link, hover/focus it for a
+		moment, or pause scrolling with the link in a prominent place.
 
-// 		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#eager
-// 	*/
-// 	EagerEagerness = SpeculationEagerness("eager")
-// 	/*
-// 		# Speculation Rules API
+		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#eager
+	*/
+	EagerEagerness = SpeculationEagerness("eager")
+	/*
+		# Speculation Rules API
 
-// 		The author is looking for a balance between eager and conservative. Prefetch/prerender
-// 		should start when there is a reasonable suggestion that the user will follow a link
-// 		in the near future. For example, the user could scroll a link into the viewport and
-// 		hover/focus it for some time.
+		The author is looking for a balance between eager and conservative. Prefetch/prerender
+		should start when there is a reasonable suggestion that the user will follow a link
+		in the near future. For example, the user could scroll a link into the viewport and
+		hover/focus it for some time.
 
-// 		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#moderate
-// 	*/
-// 	ModerateEagerness = SpeculationEagerness("moderate")
-// 	/*
-// 		# Speculation Rules API
+		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#moderate
+	*/
+	ModerateEagerness = SpeculationEagerness("moderate")
+	/*
+		# Speculation Rules API
 
-// 		The author wishes to get some benefit from speculative loading with a fairly small
-// 		tradeoff of resources. Prefetch/prerender should start only when the user is starting
-// 		to click on the link, for example on mousedown or pointerdown.
+		The author wishes to get some benefit from speculative loading with a fairly small
+		tradeoff of resources. Prefetch/prerender should start only when the user is starting
+		to click on the link, for example on mousedown or pointerdown.
 
-// 		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#conservative
-// 	*/
-// 	ConservativeEagerness = SpeculationEagerness("conservative")
-// )
-
-// /*
-// # Speculation Rules API
-
-// The speculationrules value of the type attribute of the <script> element indicates that
-// the body of the element contains speculation rules.
-
-// Speculation rules take the form of a JSON structure that determine what resources should
-// be prefetched or prerendered by the browser. This is part of the Speculation Rules API.
-
-// https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules
-// */
-// type SpeculationRule struct {
-// 	URLs      []string             `json:"urls,omitempty"`
-// 	Eagerness SpeculationEagerness `json:"eagerness"`
-// }
+		https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules#conservative
+	*/
+	ConservativeEagerness = SpeculationEagerness("conservative")
+)
 
 // /*
 // # Speculation Rules API
@@ -160,40 +144,46 @@ https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/speculationrules
 // */
-// type Speculation struct {
-// 	Prerender []SpeculationRule `json:"prerender,omitempty"`
-// 	Prefetch  []SpeculationRule `json:"prefetch,omitempty"`
-// }
-
-// func (s *Speculation) isempty() bool {
-// 	return len(s.Prefetch) == 0 && len(s.Prerender) == 0
-// }
 
 /*
-SpeculationHook represents a hook used for speculative execution within the system.
+SpeculationProperty represents a hook used for speculative execution within the system.
 It contains the eagerness level for speculation, a reference to the current context,
 and a flag indicating whether rendering should occur.
 */
-// type SpeculationHook struct {
-// 	eagerness SpeculationEagerness
-// 	ctx       *Page
-// 	render    bool
-// }
+type SpeculationProperty struct {
+	eagerness SpeculationEagerness
+	render    bool
+}
 
-// // Implements the html.Item interface
-// func (*SpeculationHook) Item() {}
+func (*SpeculationProperty) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleStatic
+}
 
-// // Implements the html.Hook interface
-// func (h *SpeculationHook) Done(el *html.Element) {
-// 	href := el.GetAttribute("href")
-// 	if len(href) == 0 {
-// 		log.Fatal("Speculation hook used in an element without an href attribute")
-// 	}
-// 	h.ctx.RegisterSpeculation(SpeculationRule{
-// 		URLs:      []string{href},
-// 		Eagerness: h.eagerness,
-// 	}, h.render)
-// }
+// Implements the html.Item interface
+func (*SpeculationProperty) Item() {}
+
+// Implements the html.Hook interface
+func (h *SpeculationProperty) Apply(ctx context.Context, el *html.Element) {
+	context, ok := ctx.(*serverctx)
+	if !ok {
+		log.Fatal("Speculation property used outside of server rendering context")
+	}
+	href := el.GetAttribute("href")
+	if len(href) == 0 {
+		log.Fatal("Speculation property used in an element without an href attribute")
+	}
+	if h.render {
+		context.specs.Prerender = append(context.specs.Prerender, specrule{
+			URLs:      []string{href},
+			Eagerness: h.eagerness,
+		})
+	} else {
+		context.specs.Prefetch = append(context.specs.Prefetch, specrule{
+			URLs:      []string{href},
+			Eagerness: h.eagerness,
+		})
+	}
+}
 
 /*
 # Speculation Rules API
@@ -263,14 +253,17 @@ https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type
 // 	return &SpeculationHook{eagerness: eagerness, ctx: context, render: true}
 // }
 
-// // Returns an html.Node for rendering speculation rules script. Should be used inside the <head> tag.
-// func Speculations(ctx context.Context) html.Node {
-// 	context, ok := ctx.(*Page)
-// 	if !ok {
-// 		return html.Fragment()
-// 	}
-// 	if context.specs.isempty() {
-// 		return html.Fragment()
-// 	}
-// 	return html.Script(html.Type("speculationrules"), html.JSON(context.specs))
-// }
+func Prerender(eagerness SpeculationEagerness) html.Property {
+	return &SpeculationProperty{eagerness: eagerness, render: true}
+}
+
+func Speculations(ctx context.Context) html.Node {
+	context, ok := ctx.(*serverctx)
+	if !ok {
+		return html.Fragment()
+	}
+	if context.specs.isempty() {
+		return html.Fragment()
+	}
+	return html.Script(html.Type("speculationrules"), html.JSON(context.specs))
+}

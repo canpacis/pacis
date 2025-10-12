@@ -19,6 +19,10 @@ ensuring that conflicting or duplicate classes are resolved according to Tailwin
 */
 type TailwindMergeProperty struct{}
 
+func (*TailwindMergeProperty) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleImmediate
+}
+
 // Implements the html.Property interface
 func (*TailwindMergeProperty) Apply(el *html.Element) {
 	// el.ClassList.Items = strings.Split(twmerge.Merge(strings.Join(el.ClassList.Items, " ")), " ")

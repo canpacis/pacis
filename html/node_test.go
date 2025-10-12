@@ -74,12 +74,12 @@ func TestNodeChunks(t *testing.T) {
 			Impure:   true,
 		},
 		{
-			Node:     html.Body(html.Deferred(func(ctx context.Context) html.Property { return html.Class("dark") })),
+			Node:     html.Body(html.DeferredAttr("class", func(ctx context.Context) string { return "dark" })),
 			Rendered: `<body class="dark"></body>`,
 			Impure:   true,
 		},
 		{
-			Node:     html.Body(html.ID("app"), html.Deferred(func(ctx context.Context) html.Property { return html.Class("dark") })),
+			Node:     html.Body(html.ID("app"), html.DeferredAttr("class", func(ctx context.Context) string { return "dark" })),
 			Rendered: `<body id="app" class="dark"></body>`,
 			Impure:   true,
 		},

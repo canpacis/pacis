@@ -12,6 +12,10 @@ type DataProperty struct {
 	data any
 }
 
+func (*DataProperty) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleStatic
+}
+
 func (*DataProperty) Item() {}
 
 func (p *DataProperty) Apply(el *html.Element) {
