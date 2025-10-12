@@ -8,7 +8,6 @@ package components
 import (
 	"log"
 	"maps"
-	"strings"
 
 	twmerge "github.com/Oudwins/tailwind-merge-go"
 	"github.com/canpacis/pacis/html"
@@ -22,7 +21,8 @@ type TailwindMergeProperty struct{}
 
 // Implements the html.Property interface
 func (*TailwindMergeProperty) Apply(el *html.Element) {
-	el.ClassList.Items = strings.Split(twmerge.Merge(strings.Join(el.ClassList.Items, " ")), " ")
+	// el.ClassList.Items = strings.Split(twmerge.Merge(strings.Join(el.ClassList.Items, " ")), " ")
+	el.SetAttribute("class", twmerge.Merge(el.GetAttribute("class")))
 }
 
 // Implements the html.Item interface
@@ -52,7 +52,7 @@ func (*AsChildHook) Hook(el *html.Element) {
 		log.Fatal("Non element node is passed to the element with AsChild propery")
 	}
 
-	child.ClassList.Items = append(child.ClassList.Items, el.ClassList.Items...)
+	// child.ClassList.Items = append(child.ClassList.Items, el.ClassList.Items...)
 	attrs := map[string]string{}
 	maps.Copy(attrs, child.GetAttributes())
 	maps.Copy(attrs, el.GetAttributes())

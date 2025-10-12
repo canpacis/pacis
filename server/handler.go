@@ -5,7 +5,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"slices"
 
 	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/server/middleware"
@@ -193,7 +192,7 @@ func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares 
 	page := &Page{}
 	node := wrapper(app, fn(page))
 
-	renderer := &StaticRenderer{}
+	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
 		log.Fatalf("Failed to statically render page: %s", err.Error())
 	}
@@ -218,6 +217,7 @@ func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares 
 			if err := renderer.Render(ctx, bw); err != nil {
 				return
 			}
+			renderer.Release()
 
 			bw.Flush()
 
@@ -230,6 +230,7 @@ func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares 
 				flusher.Flush()
 			}
 
+			renderer := NewStaticRenderer()
 			for _, async := range ctx.async {
 				var node html.Node
 				node = async.comp(ctx)
@@ -239,21 +240,26 @@ func HandlerOf(app *App, fn func(*Page) html.Node, layout LayoutFn, middlewares 
 				} else {
 					elem.SetAttribute("slot", async.id)
 				}
-				for chunk := range node.Chunks() {
-					// fmt.Println("got chunk", chunk)
-					chunk.Render(ctx, bw)
+
+				if err := renderer.Build(node); err != nil {
+					log.Fatalf("Failed to statically render page: %s", err.Error())
+					return
 				}
+
+				renderer.Render(ctx, bw)
 				bw.Flush()
 				flusher.Flush()
+				renderer.Clear()
 			}
+			renderer.Release()
 		}
 	})
 
-	for _, middleware := range slices.Backward(app.middlewares) {
-		handler = middleware.Apply(handler)
+	for i := len(app.middlewares) - 1; i >= 0; i-- {
+		handler = app.middlewares[i].Apply(handler)
 	}
-	for _, middleware := range slices.Backward(middlewares) {
-		handler = middleware.Apply(handler)
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i].Apply(handler)
 	}
 
 	return handler

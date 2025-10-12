@@ -37,6 +37,7 @@ import (
 	"iter"
 	"slices"
 	"strings"
+	"sync"
 )
 
 // Item is an alias for any type.
@@ -44,24 +45,34 @@ type Item interface {
 	Item()
 }
 
+type Chunk interface {
+	chunk()
+}
+
+type StaticChunk []byte
+
+type DynamicChunk func(context.Context, io.Writer) error
+
+func (StaticChunk) chunk()  {}
+func (DynamicChunk) chunk() {}
+
+func Render(chunk Chunk, ctx context.Context, w io.Writer) error {
+	switch chunk := chunk.(type) {
+	case DynamicChunk:
+		return chunk(ctx, w)
+	case StaticChunk:
+		_, err := w.Write(chunk)
+		return err
+	default:
+		return fmt.Errorf("invalid chunk type %t", chunk)
+	}
+}
+
 // Node represents an element that can be rendered to an io.Writer within a given context.
 // Implementations of Node should define the Render method to output their content.
 type Node interface {
 	Item
 	Chunks() iter.Seq[Chunk]
-}
-
-type Chunk struct {
-	fn   func(context.Context, io.Writer) error
-	pure bool
-}
-
-func (c Chunk) Render(ctx context.Context, w io.Writer) error {
-	return c.fn(ctx, w)
-}
-
-func (c Chunk) IsPure() bool {
-	return c.pure
 }
 
 // Text represents a node containing plain text content within the HTML renderer.
@@ -73,13 +84,7 @@ func (Text) Item() {}
 // Implements the Node interface.
 func (t Text) Chunks() iter.Seq[Chunk] {
 	return func(yield func(Chunk) bool) {
-		yield(Chunk{
-			fn: func(ctx context.Context, w io.Writer) error {
-				_, err := w.Write([]byte(html.EscapeString(string(t))))
-				return err
-			},
-			pure: true,
-		})
+		yield(StaticChunk(html.EscapeString(string(t))))
 	}
 }
 
@@ -96,15 +101,12 @@ func (Frag) Item() {}
 
 // Implements the Node interface.
 func (f Frag) Chunks() iter.Seq[Chunk] {
-	return func(yield func(Chunk) bool) {
-		for _, node := range f {
-			for chunk := range node.Chunks() {
-				if !yield(chunk) {
-					return
-				}
-			}
-		}
+	chunks := []Chunk{}
+	for _, node := range f {
+		chunks = slices.AppendSeq(chunks, node.Chunks())
 	}
+
+	return slices.Values(chunks)
 }
 
 // Fragment creates a Frag from the provided nodes, allowing multiple nodes to be grouped together.
@@ -139,11 +141,11 @@ func (*Attribute) Item() {}
 
 // Implements the Propterty interface.
 func (a *Attribute) Apply(el *Element) {
-	if a.Key == "class" {
-		el.ClassList.Add(a.Value)
-	} else {
-		el.SetAttribute(a.Key, a.Value)
-	}
+	// if a.Key == "class" {
+	// 	el.ClassList.Add(a.Value)
+	// } else {
+	// }
+	el.SetAttribute(a.Key, a.Value)
 }
 
 // Creates a new Attribute with given key and value.
@@ -159,17 +161,14 @@ func (Component) Item() {}
 // Implements the Node interface.
 func (c Component) Chunks() iter.Seq[Chunk] {
 	return func(yield func(Chunk) bool) {
-		yield(Chunk{
-			fn: func(ctx context.Context, w io.Writer) error {
-				for chunk := range c(ctx).Chunks() {
-					if err := chunk.Render(ctx, w); err != nil {
-						return err
-					}
+		yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
+			for chunk := range c(ctx).Chunks() {
+				if err := Render(chunk, ctx, w); err != nil {
+					return err
 				}
-				return nil
-			},
-			pure: false,
-		})
+			}
+			return nil
+		}))
 	}
 }
 
@@ -177,14 +176,15 @@ func (c Component) Chunks() iter.Seq[Chunk] {
 // a map of its attributes, a slice of child nodes, and a flag indicating
 // whether the element is a void (self-closing) element.
 type Element struct {
-	ClassList     *ClassList
-	nodes         []Node
-	deferreds     []Deferred
-	attributes    map[string]string
+	// ClassList     *ClassList
+	nodes     []Node
+	deferreds []Deferred
+	// attributes    map[string]string
 	attributelist []*Attribute
 	name          string
 	void          bool
-	ctx           context.Context
+	// ctx           context.Context
+	// mu            *sync.Mutex
 }
 
 func (e *Element) Tag() string {
@@ -198,29 +198,31 @@ func (e *Element) IsVoid() bool {
 	return e.void
 }
 
-func (e *Element) Set(key, value any) {
-	e.ctx = context.WithValue(e.ctx, key, value)
-}
+// func (e *Element) Set(key, value any) {
+// 	e.ctx = context.WithValue(e.ctx, key, value)
+// }
 
-func (e *Element) Get(key any) any {
-	return e.ctx.Value(key)
-}
+// func (e *Element) Get(key any) any {
+// 	return e.ctx.Value(key)
+// }
 
 func (e *Element) SetAttribute(key, value string) {
-	e.attributes[key] = value
+	// e.attributes[key] = value
 	e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
 }
 
 func (e *Element) GetAttribute(key string) string {
-	return e.attributes[key]
+	return ""
+	// return e.attributes[key]
 }
 
 func (e *Element) GetAttributes() map[string]string {
-	return e.attributes
+	return make(map[string]string)
+	// return e.attributes
 }
 
 func (e *Element) SetAttributes(list map[string]string) {
-	e.attributes = list
+	// e.attributes = list
 	e.attributelist = []*Attribute{}
 	for key, value := range list {
 		e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
@@ -241,78 +243,52 @@ func (*Element) Item() {}
 // Implements the Node interface.
 func (e *Element) Chunks() iter.Seq[Chunk] {
 	return func(yield func(Chunk) bool) {
-		if !yield(Chunk{
-			fn: func(ctx context.Context, w io.Writer) error {
-				_, err := fmt.Fprintf(w, "<%s", e.Tag())
-				return err
-			},
-			pure: true,
-		}) {
+		if !yield(StaticChunk(fmt.Appendf(nil, "<%s", e.Tag()))) {
 			return
 		}
 
 		if len(e.deferreds) > 0 {
 			for _, deferred := range e.deferreds {
-				if !yield(Chunk{
-					fn: func(ctx context.Context, w io.Writer) error {
-						deferred(ctx).Apply(e)
-						return nil
-					},
-					pure: false,
-				}) {
+				if !yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
+					// TODO: need syncing?
+					deferred(ctx).Apply(e)
+					return nil
+				})) {
 					return
 				}
 			}
-			if !yield(Chunk{
-				fn: func(ctx context.Context, w io.Writer) error {
-					if len(e.ClassList.Items) > 0 {
-						e.SetAttribute("class", strings.Join(e.ClassList.Items, " "))
+			if !yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
+				// TODO: needs updated class list which needs syncing
+				for _, attr := range e.attributelist {
+					var rhs string
+					if len(attr.Value) != 0 {
+						rhs = "=" + "\"" + attr.Value + "\""
 					}
-
-					for _, attr := range e.attributelist {
-						var rhs string
-						if len(attr.Value) != 0 {
-							rhs = "=" + "\"" + attr.Value + "\""
-						}
-						if _, err := fmt.Fprintf(w, " %s%s", attr.Key, rhs); err != nil {
-							return err
-						}
+					if _, err := fmt.Fprintf(w, " %s%s", attr.Key, rhs); err != nil {
+						return err
 					}
-					return nil
-				},
-				pure: false,
-			}) {
+				}
+				return nil
+			})) {
 				return
 			}
 		} else {
-			if len(e.ClassList.Items) > 0 {
-				e.SetAttribute("class", strings.Join(e.ClassList.Items, " "))
-			}
-
 			for _, attr := range e.attributelist {
-				if !yield(Chunk{
-					fn: func(ctx context.Context, w io.Writer) error {
-						var rhs string
-						if len(attr.Value) != 0 {
-							rhs = "=" + "\"" + attr.Value + "\""
-						}
-						_, err := fmt.Fprintf(w, " %s%s", attr.Key, rhs)
-						return err
-					},
-					pure: true,
-				}) {
+				var rhs string
+				if len(attr.Value) != 0 {
+					rhs = "=" + "\"" + attr.Value + "\""
+				}
+				if !yield(StaticChunk(fmt.Appendf(nil, " %s%s", attr.Key, rhs))) {
 					return
 				}
 			}
 		}
 
-		if !yield(Chunk{
-			fn: func(ctx context.Context, w io.Writer) error {
-				_, err := fmt.Fprint(w, ">")
-				return err
-			},
-			pure: true,
-		}) {
+		if !yield(StaticChunk(">")) {
+			return
+		}
+
+		if e.void {
 			return
 		}
 
@@ -324,13 +300,7 @@ func (e *Element) Chunks() iter.Seq[Chunk] {
 			}
 		}
 
-		yield(Chunk{
-			fn: func(ctx context.Context, w io.Writer) error {
-				_, err := fmt.Fprintf(w, "</%s>", e.Tag())
-				return err
-			},
-			pure: true,
-		})
+		yield(StaticChunk(fmt.Appendf(nil, "</%s>", e.Tag())))
 	}
 }
 
@@ -365,6 +335,18 @@ func (l *ClassList) Toggle(class string) {
 	}
 }
 
+var propspool = sync.Pool{
+	New: func() any {
+		return &[]Property{}
+	},
+}
+
+// var hookspool = sync.Pool{
+// 	New: func() any {
+// 		return &[]Property{}
+// 	},
+// }
+
 // El creates a new Element with the specified tag name and a variadic list of items,
 // which can be either Node or Property types. Nodes are added as children of the element,
 // while Properties are collected and applied to the element after all children are processed.
@@ -372,13 +354,15 @@ func (l *ClassList) Toggle(class string) {
 // Returns a pointer to the constructed Element.
 func El(name string, items ...Item) *Element {
 	el := &Element{
-		name:       name,
-		attributes: make(map[string]string),
-		ctx:        context.Background(),
-		ClassList:  new(ClassList),
+		name:          name,
+		nodes:         make([]Node, 0, len(items)),
+		deferreds:     make([]Deferred, 0, len(items)),
+		attributelist: make([]*Attribute, 0, len(items)),
 	}
-	props := []Property{}
-	hooks := []Hook{}
+	props := propspool.New().(*[]Property)
+	defer propspool.Put(props)
+	// hooks := hookspool.New().(*[]Hook)
+	// defer hookspool.Put(hooks)
 
 	for _, item := range items {
 		switch item := item.(type) {
@@ -387,26 +371,26 @@ func El(name string, items ...Item) *Element {
 		case Node:
 			el.nodes = append(el.nodes, item)
 		case Property:
-			props = append(props, item)
-			if hook, ok := item.(Hook); ok {
-				hooks = append(hooks, hook)
-			}
-		case Hook:
-			hooks = append(hooks, item)
-			if prop, ok := item.(Property); ok {
-				props = append(props, prop)
-			}
+			*props = append(*props, item)
+			// if hook, ok := item.(Hook); ok {
+			// 	*hooks = append(*hooks, hook)
+			// }
+		// case Hook:
+		// 	*hooks = append(*hooks, item)
+		// 	if prop, ok := item.(Property); ok {
+		// 		*props = append(*props, prop)
+		// 	}
 		default:
 			panic(fmt.Sprintf("unknown item type: %T", item))
 		}
 	}
 
-	for _, prop := range props {
+	for _, prop := range *props {
 		prop.Apply(el)
 	}
-	for _, hook := range hooks {
-		hook.Done(el)
-	}
+	// for _, hook := range *hooks {
+	// 	hook.Done(el)
+	// }
 
 	return el
 }
@@ -442,9 +426,9 @@ func Map[E any](s []E, fn func(E) Node) Node {
 
 // If returns the provided node if the condition is true; otherwise, it returns an empty Fragment node.
 // This is useful for conditional rendering of nodes.
-func If(cond bool, node Node) Node {
+func If(cond bool, item Item) Item {
 	if cond {
-		return node
+		return item
 	}
 	return Fragment()
 }
@@ -452,7 +436,7 @@ func If(cond bool, node Node) Node {
 // IfFn conditionally returns the result of the provided function as a Node.
 // If cond is true, it calls and returns fn(); otherwise, it returns an empty Fragment Node.
 // This is useful for conditional rendering of nodes.
-func IfFn(cond bool, fn func() Node) Node {
+func IfFn(cond bool, fn func() Item) Item {
 	if cond {
 		return fn()
 	}
@@ -464,7 +448,7 @@ func IfFn(cond bool, fn func() Node) Node {
 // to be executed if the case matches. The generic type T must be comparable.
 type SwitchCase[T comparable] struct {
 	Value   T
-	Fn      func() Node
+	Fn      func() Item
 	Default bool
 }
 
@@ -472,7 +456,7 @@ type SwitchCase[T comparable] struct {
 // of the first SwitchCase whose Value matches the given expr. If no cases match, it returns
 // an empty Fragment Node. The generic type T must be comparable. Use Case and CaseFn
 // functions for creating switch cases.
-func Switch[T comparable](expr T, cases ...*SwitchCase[T]) Node {
+func Switch[T comparable](expr T, cases ...*SwitchCase[T]) Item {
 	var d *SwitchCase[T]
 	for _, c := range cases {
 		if expr == c.Value {
@@ -501,11 +485,11 @@ func Switch[T comparable](expr T, cases ...*SwitchCase[T]) Node {
 // Returns:
 //
 //	A pointer to a SwitchCase[T] containing the value and associated node function.
-func Case[T comparable](v T, node Node) *SwitchCase[T] {
+func Case[T comparable](v T, item Item) *SwitchCase[T] {
 	return &SwitchCase[T]{
 		Value: v,
-		Fn: func() Node {
-			return node
+		Fn: func() Item {
+			return item
 		},
 	}
 }
@@ -523,7 +507,7 @@ func Case[T comparable](v T, node Node) *SwitchCase[T] {
 // Returns:
 //
 //	A pointer to a SwitchCase[T] containing the value and associated node function.
-func CaseFn[T comparable](v T, fn func() Node) *SwitchCase[T] {
+func CaseFn[T comparable](v T, fn func() Item) *SwitchCase[T] {
 	return &SwitchCase[T]{
 		Value: v,
 		Fn:    fn,
@@ -533,10 +517,10 @@ func CaseFn[T comparable](v T, fn func() Node) *SwitchCase[T] {
 // Default creates a new SwitchCase for the given node that acts as the default case.
 // The returned SwitchCase will always return the provided node when matched.
 // This function is generic over type T, which must be comparable.
-func Default[T comparable](node Node) *SwitchCase[T] {
+func Default[T comparable](item Item) *SwitchCase[T] {
 	return &SwitchCase[T]{
-		Fn: func() Node {
-			return node
+		Fn: func() Item {
+			return item
 		},
 		Default: true,
 	}
@@ -546,7 +530,7 @@ func Default[T comparable](node Node) *SwitchCase[T] {
 // The returned SwitchCase will always return the provided node when matched.
 // The function fn is executed if the default case matches during a switch operation.
 // This function is generic over type T, which must be comparable.
-func DefaultFn[T comparable](fn func() Node) *SwitchCase[T] {
+func DefaultFn[T comparable](fn func() Item) *SwitchCase[T] {
 	return &SwitchCase[T]{
 		Fn:      fn,
 		Default: true,

@@ -27,10 +27,7 @@ func (c ChunkTest) Assert(a *assert.Assertions) {
 	buf := new(bytes.Buffer)
 
 	for _, chunk := range chunks {
-		if !chunk.IsPure() {
-			a.True(c.Impure)
-		}
-		if err := chunk.Render(context.Background(), buf); err != nil {
+		if err := html.Render(chunk, context.Background(), buf); err != nil {
 			a.Fail(err.Error())
 		}
 	}
@@ -48,6 +45,10 @@ func TestNodeChunks(t *testing.T) {
 		{
 			Node:     html.Div(),
 			Rendered: "<div></div>",
+		},
+		{
+			Node:     html.Doctype,
+			Rendered: "<!DOCTYPE html>",
 		},
 		{
 			Node:     html.Div(html.ID("app"), html.Data("app", "pacis")),
@@ -71,6 +72,11 @@ func TestNodeChunks(t *testing.T) {
 		{
 			Node:     html.Body(html.Deferred(func(ctx context.Context) html.Property { return html.Class("dark") })),
 			Rendered: `<body class="dark"></body>`,
+			Impure:   true,
+		},
+		{
+			Node:     html.Body(html.ID("app"), html.Deferred(func(ctx context.Context) html.Property { return html.Class("dark") })),
+			Rendered: `<body id="app" class="dark"></body>`,
 			Impure:   true,
 		},
 	}
