@@ -9,7 +9,7 @@
       "path": "registry/label/label.go",
       "content": "package label\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Label(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"label\"),\n\t\t\thtml.Class(\"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70\"),\n\t\t)...,\n\t)\n}\n",
       "type": "registry:ui",
-      "target": "components/ui/label/label.go"
+      "target": "src/components/ui/label/label.go"
     }
   ]
 }

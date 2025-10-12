@@ -3,6 +3,8 @@
     "registry:build": "shadcn build"
   },
   "dependencies": {
+    "@types/alpinejs": "^3.13.11",
+    "alpinejs": "^3.15.0",
     "shadcn": "^2.9.3-canary.0"
   }
 }

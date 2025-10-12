@@ -29,6 +29,7 @@
 package html
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -560,10 +561,16 @@ func (n *JSONNode) WithIndent(indent string) *JSONNode {
 }
 
 // Implements the Node interface.
-func (n *JSONNode) Render(ctx context.Context, w io.Writer) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", n.Indent)
-	return enc.Encode(n.Data)
+func (n *JSONNode) Chunks() iter.Seq[Chunk] {
+	return func(yield func(Chunk) bool) {
+		buf := new(bytes.Buffer)
+		enc := json.NewEncoder(buf)
+		enc.SetIndent("", n.Indent)
+		if err := enc.Encode(n.Data); err != nil {
+			panic(err)
+		}
+		yield(StaticChunk(buf.Bytes()))
+	}
 }
 
 // Creates a new JSONNode for serializing arbitrary json data.

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "scripts",
+  "type": "registry:lib",
+  "title": "Scripts",
+  "description": "Script files for working with AlpineJS and async streams.",
+  "dependencies": [
+    "alpinejs",
+    "@types/alpinejs"
+  ],
+  "files": [
+    {
+      "path": "registry/script/alpine.ts",
+      "content": "import Alpine from \"alpinejs\";\n\nAlpine.data(\"data\", (id: string) => {\n  const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n    ?.textContent ?? \"{}\";\n  return JSON.parse(raw);\n});\n\nAlpine.start();\n",
+      "type": "registry:lib",
+      "target": "src/web/alpine.ts"
+    },
+    {
+      "path": "registry/script/stream.ts",
+      "content": "const observer = new MutationObserver((mutations) => {\n  for (const mutation of mutations) {\n    if (mutation.addedNodes.length > 0) {\n      for (const node of mutation.addedNodes) {\n        const elem = node;\n        if (!(elem instanceof HTMLElement)) {\n          return;\n        }\n        const slot = elem.getAttribute(\"slot\");\n        if (!slot) {\n          throw new Error(\"Slotless element has been streamed to the DOM\");\n        }\n        document.querySelectorAll(`slot[name=${slot}]`).forEach((target) => {\n          target.replaceWith(elem);\n        });\n      }\n    }\n  }\n});\n\nobserver.observe(document.body, { childList: true });\nwindow.addEventListener(\"DOMContentLoaded\", () => {\n  observer.disconnect();\n});\n",
+      "type": "registry:lib",
+      "target": "src/web/stream.ts"
+    }
+  ]
+}

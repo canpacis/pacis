@@ -4,6 +4,25 @@
   "homepage": "https://ui.canpacis.com",
   "items": [
     {
+      "name": "scripts",
+      "type": "registry:lib",
+      "title": "Scripts",
+      "description": "Script files for working with AlpineJS and async streams.",
+      "dependencies": ["alpinejs", "@types/alpinejs"],
+      "files": [
+        {
+          "path": "registry/script/alpine.ts",
+          "type": "registry:lib",
+          "target": "src/web/alpine.ts"
+        },
+        {
+          "path": "registry/script/stream.ts",
+          "type": "registry:lib",
+          "target": "src/web/stream.ts"
+        }
+      ]
+    },
+    {
       "name": "alert",
       "type": "registry:ui",
       "title": "Alert",
@@ -12,7 +31,7 @@
         {
           "path": "registry/alert/alert.go",
           "type": "registry:ui",
-          "target": "components/ui/alert/alert.go"
+          "target": "src/components/ui/alert/alert.go"
         }
       ]
     },
@@ -25,7 +44,7 @@
         {
           "path": "registry/avatar/avatar.go",
           "type": "registry:ui",
-          "target": "components/ui/avatar/avatar.go"
+          "target": "src/components/ui/avatar/avatar.go"
         }
       ]
     },
@@ -38,7 +57,7 @@
         {
           "path": "registry/badge/badge.go",
           "type": "registry:ui",
-          "target": "components/ui/badge/badge.go"
+          "target": "src/components/ui/badge/badge.go"
         }
       ]
     },
@@ -51,7 +70,7 @@
         {
           "path": "registry/breadcrumb/breadcrumb.go",
           "type": "registry:ui",
-          "target": "components/ui/breadcrumb/breadcrumb.go"
+          "target": "src/components/ui/breadcrumb/breadcrumb.go"
         }
       ]
     },
@@ -65,12 +84,12 @@
         {
           "path": "registry/button/button.go",
           "type": "registry:ui",
-          "target": "components/ui/button/button.go"
+          "target": "src/components/ui/button/button.go"
         },
         {
           "path": "registry/button/group.go",
           "type": "registry:ui",
-          "target": "components/ui/button/group.go"
+          "target": "src/components/ui/button/group.go"
         }
       ]
     },
@@ -83,7 +102,7 @@
         {
           "path": "registry/card/card.go",
           "type": "registry:ui",
-          "target": "components/ui/card/card.go"
+          "target": "src/components/ui/card/card.go"
         }
       ]
     },
@@ -96,7 +115,7 @@
         {
           "path": "registry/label/label.go",
           "type": "registry:ui",
-          "target": "components/ui/label/label.go"
+          "target": "src/components/ui/label/label.go"
         }
       ]
     },
@@ -109,7 +128,7 @@
         {
           "path": "registry/separator/separator.go",
           "type": "registry:ui",
-          "target": "components/ui/separator/separator.go"
+          "target": "src/components/ui/separator/separator.go"
         }
       ]
     },
@@ -122,7 +141,7 @@
         {
           "path": "registry/skeleton/skeleton.go",
           "type": "registry:ui",
-          "target": "components/ui/skeleton/skeleton.go"
+          "target": "src/components/ui/skeleton/skeleton.go"
         }
       ]
     }
