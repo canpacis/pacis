@@ -33,6 +33,13 @@ func Asset(app *App, name string) string {
 	return entry
 }
 
+func HMR(app *App) html.Node {
+	if app.options.env == Prod {
+		return html.Fragment()
+	}
+	return html.Script(html.Type("module"), html.Src(app.options.devserver+"/@vite/client"))
+}
+
 func Async(comp html.Component, fallback html.Node) html.Node {
 	id := util.PrefixedID("pacis")
 	if fallback == nil {
