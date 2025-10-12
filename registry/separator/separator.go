@@ -7,23 +7,21 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
-type keytyp string
-
 type Orientation int
 
 func (o Orientation) Apply(el *html.Element) {
-	el.Set(keytyp("group-orientation"), o)
+	el.Set("orientation", o)
 }
 
 func (Orientation) Done(el *html.Element) {
-	o := el.Get(keytyp("group-orientation")).(Orientation)
+	o := el.Get("orientation").(Orientation)
 
 	switch o {
 	case Horizontal:
-		el.ClassList.Add("h-[1px] w-full")
+		el.AddClass("h-[1px] w-full")
 		el.SetAttribute("data-orientation", "horizontal")
 	case Vertical:
-		el.ClassList.Add("h-full w-[1px]")
+		el.AddClass("h-full w-[1px]")
 		el.SetAttribute("data-orientation", "vertical")
 	default:
 		log.Fatalf("invalid group orientation: %d", o)

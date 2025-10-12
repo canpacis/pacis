@@ -7,8 +7,6 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
-type keytyp string
-
 type Variant int
 
 func (Variant) Item() {}
@@ -21,21 +19,21 @@ const (
 )
 
 func (v Variant) Apply(el *html.Element) {
-	el.Set(keytyp("variant"), v)
+	el.Set("badge-variant", v)
 }
 
 func (Variant) Done(el *html.Element) {
-	v := el.Get(keytyp("variant")).(Variant)
+	v := el.Get("badge-variant").(Variant)
 
 	switch v {
 	case Default:
-		el.ClassList.Add("border-transparent bg-primary text-primary-foreground hover:bg-primary/80")
+		el.AddClass("border-transparent bg-primary text-primary-foreground hover:bg-primary/80")
 	case Destructive:
-		el.ClassList.Add("border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80")
+		el.AddClass("border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80")
 	case Outline:
-		el.ClassList.Add("text-foreground")
+		el.AddClass("text-foreground")
 	case Secondary:
-		el.ClassList.Add("border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80")
+		el.AddClass("border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80")
 	default:
 		log.Fatalf("invalid badge variant: %d", v)
 	}

@@ -11,7 +11,7 @@
   "files": [
     {
       "path": "registry/script/alpine.ts",
-      "content": "import Alpine from \"alpinejs\";\n\nAlpine.data(\"data\", (id: string) => {\n  const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n    ?.textContent ?? \"{}\";\n  return JSON.parse(raw);\n});\n\nAlpine.start();\n",
+      "content": "import Alpine from \"alpinejs\";\n\n// Alpine.data(\"data\", (id: string) => {\n//   const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n//     ?.textContent ?? \"{}\";\n//   return JSON.parse(raw);\n// });\n\n// const dropdownStore = new Map<string, any>();\n\n// Alpine.magic(\"dropdown\", () => (id: string) => dropdownStore.get(id));\n\n// Alpine.data(\"dropdown\", (open = false, id = null) => ({\n//   id: id,\n//   open: open,\n//   usedKeyboard: false,\n\n//   init() {\n//     if (this.id !== null) {\n//       dropdownStore.set(this.id, this);\n//     }\n//     this.$dispatch(\"init\", { open: this.open });\n//   },\n//   async openDropdown() {\n//     this.open = true;\n//     await this.$nextTick();\n//     this.$dispatch(\"opened\");\n//   },\n//   async closeDropdown(value: string) {\n//     this.open = false;\n//     await this.$nextTick();\n//     this.$dispatch(\"closed\", { value: value });\n//   },\n//   async dismissDropdown() {\n//     this.open = false;\n//     await this.$nextTick();\n//     this.$dispatch(\"dismissed\");\n//   },\n// }));\n\nAlpine.start();\n",
       "type": "registry:lib",
       "target": "src/web/alpine.ts"
     },

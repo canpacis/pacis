@@ -12,18 +12,18 @@ import (
 type GroupOrientation int
 
 func (o GroupOrientation) Apply(el *html.Element) {
-	el.Set(keytyp("group-orientation"), o)
+	el.Set("group-orientation", o)
 }
 
 func (GroupOrientation) Done(el *html.Element) {
-	o := el.Get(keytyp("group-orientation")).(GroupOrientation)
+	o := el.Get("group-orientation").(GroupOrientation)
 
 	switch o {
 	case GroupHorizontal:
-		el.ClassList.Add("[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none")
+		el.AddClass("[&>*:not(:first-child)]:rounded-l-none [&>*:not(:first-child)]:border-l-0 [&>*:not(:last-child)]:rounded-r-none")
 		el.SetAttribute("data-orientation", "horizontal")
 	case GroupVertical:
-		el.ClassList.Add("flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none")
+		el.AddClass("flex-col [&>*:not(:first-child)]:rounded-t-none [&>*:not(:first-child)]:border-t-0 [&>*:not(:last-child)]:rounded-b-none")
 		el.SetAttribute("data-orientation", "vertical")
 	default:
 		log.Fatalf("invalid group orientation: %d", o)

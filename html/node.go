@@ -143,13 +143,7 @@ func (*Attribute) Item() {}
 // Implements the Propterty interface.
 func (a *Attribute) Apply(el *Element) {
 	if a.Key == "class" {
-		class := el.GetAttribute("class")
-		if len(class) == 0 {
-			class = a.Value
-		} else {
-			class = class + " " + a.Value
-		}
-		el.SetAttribute("class", class)
+		el.AddClass(a.Value)
 	} else {
 		el.SetAttribute(a.Key, a.Value)
 	}
@@ -207,6 +201,16 @@ func (e *Element) Get(key string) any {
 
 func (e *Element) SetAttribute(key, value string) {
 	e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
+}
+
+func (e *Element) AddClass(class string) {
+	attr := e.GetAttribute("class")
+	if len(attr) == 0 {
+		attr = class
+	} else {
+		attr = attr + " " + class
+	}
+	e.SetAttribute("class", attr)
 }
 
 func (e *Element) GetAttribute(key string) string {
@@ -303,37 +307,6 @@ func (e *Element) Chunks() iter.Seq[Chunk] {
 		}
 
 		yield(StaticChunk(fmt.Appendf(nil, "</%s>", e.Tag())))
-	}
-}
-
-// ClassList represents a collection of CSS class names associated with an HTML element.
-type ClassList struct {
-	Items []string
-}
-
-// Checks if a given class is present.
-func (l *ClassList) Has(class string) bool {
-	return slices.Contains(l.Items, class)
-}
-
-// Adds the give class.
-func (l *ClassList) Add(class string) {
-	l.Items = append(l.Items, class)
-}
-
-// Removes the given class.
-func (l *ClassList) Remove(class string) {
-	l.Items = slices.DeleteFunc(l.Items, func(v string) bool {
-		return class == v
-	})
-}
-
-// Toggles the given class, removing if it is present or adding if not.
-func (l *ClassList) Toggle(class string) {
-	if l.Has(class) {
-		l.Remove(class)
-	} else {
-		l.Add(class)
 	}
 }
 

@@ -7,8 +7,6 @@ import (
 	"github.com/canpacis/pacis/html"
 )
 
-type keytyp string
-
 type Variant int
 
 func (Variant) Item() {}
@@ -19,17 +17,17 @@ const (
 )
 
 func (v Variant) Apply(el *html.Element) {
-	el.Set(keytyp("variant"), v)
+	el.Set("alert-variant", v)
 }
 
 func (Variant) Done(el *html.Element) {
-	v := el.Get(keytyp("variant")).(Variant)
+	v := el.Get("alert-variant").(Variant)
 
 	switch v {
 	case Default:
-		el.ClassList.Add("bg-background text-foreground")
+		el.AddClass("bg-background text-foreground")
 	case Destructive:
-		el.ClassList.Add("border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive")
+		el.AddClass("border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive")
 	default:
 		log.Fatalf("invalid alert variant: %d", v)
 	}
