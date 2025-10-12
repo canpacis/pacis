@@ -43,10 +43,11 @@ func (*AsChildHook) Item() {}
 
 // Implements the html.Hook interface
 func (*AsChildHook) Hook(el *html.Element) {
-	if len(el.Children) != 1 {
+	nodes := el.GetNodes()
+	if len(nodes) != 1 {
 		log.Fatal("Exactly 1 child should be present in an element with AsChild property")
 	}
-	child, ok := el.Children[0].(*html.Element)
+	child, ok := nodes[0].(*html.Element)
 	if !ok {
 		log.Fatal("Non element node is passed to the element with AsChild propery")
 	}

@@ -15,7 +15,7 @@ type DataProperty struct {
 func (*DataProperty) Item() {}
 
 func (p *DataProperty) Apply(el *html.Element) {
-	el.Children = append(el.Children, html.Script(html.Type("application/json"), html.ID(p.id), html.JSON(p.data)))
+	el.AppendNode(html.Script(html.Type("application/json"), html.ID(p.id), html.JSON(p.data)))
 	el.SetAttribute("x-data", fmt.Sprintf("data('%s')", p.id))
 }
 

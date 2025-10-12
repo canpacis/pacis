@@ -15,13 +15,10 @@ package i18n
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	p "path"
 
-	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/server/middleware"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -73,22 +70,23 @@ type Message struct {
 // Implements the html.Item interface
 func (Message) Item() {}
 
-// Implements the html.Node interface
-func (m Message) Render(ctx context.Context, w io.Writer) error {
-	localizer := middleware.GetLocalizer(ctx)
-	if localizer == nil {
-		return fmt.Errorf("no localizer in the context, have you registered the i18n middleware correctly?")
-	}
+// TODO: Fix
+// // Implements the html.Node interface
+// func (m Message) Render(ctx context.Context, w io.Writer) error {
+// 	localizer := middleware.GetLocalizer(ctx)
+// 	if localizer == nil {
+// 		return fmt.Errorf("no localizer in the context, have you registered the i18n middleware correctly?")
+// 	}
 
-	message, err := localizer.Localize(&i18n.LocalizeConfig{
-		MessageID:    m.key,
-		TemplateData: m.data,
-	})
-	if err != nil {
-		return err
-	}
-	return html.Text(message).Render(ctx, w)
-}
+// 	message, err := localizer.Localize(&i18n.LocalizeConfig{
+// 		MessageID:    m.key,
+// 		TemplateData: m.data,
+// 	})
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return html.Text(message).Render(ctx, w)
+// }
 
 // Returns the string value for the message based on the context.
 // Used for rendering the key in places like element attributes.

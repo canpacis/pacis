@@ -29,13 +29,12 @@
 package html
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"html"
 	"io"
-	"reflect"
+	"iter"
 	"slices"
 	"strings"
 )
@@ -49,21 +48,20 @@ type Item interface {
 // Implementations of Node should define the Render method to output their content.
 type Node interface {
 	Item
-	Render(context.Context, io.Writer) error
+	Chunks() iter.Seq[Chunk]
 }
 
-type RenderError struct {
-	err  error
-	Node Node   `json:"node"`
-	Type string `json:"type"`
+type Chunk struct {
+	fn   func(context.Context, io.Writer) error
+	pure bool
 }
 
-func (re *RenderError) Error() string {
-	return re.err.Error()
+func (c Chunk) Render(ctx context.Context, w io.Writer) error {
+	return c.fn(ctx, w)
 }
 
-func (re *RenderError) Unwrap() error {
-	return re.err
+func (c Chunk) IsPure() bool {
+	return c.pure
 }
 
 // Text represents a node containing plain text content within the HTML renderer.
@@ -73,9 +71,16 @@ type Text string
 func (Text) Item() {}
 
 // Implements the Node interface.
-func (t Text) Render(ctx context.Context, w io.Writer) error {
-	_, err := w.Write([]byte(html.EscapeString(string(t))))
-	return err
+func (t Text) Chunks() iter.Seq[Chunk] {
+	return func(yield func(Chunk) bool) {
+		yield(Chunk{
+			fn: func(ctx context.Context, w io.Writer) error {
+				_, err := w.Write([]byte(html.EscapeString(string(t))))
+				return err
+			},
+			pure: true,
+		})
+	}
 }
 
 // Textf formats according to a format specifier and returns the resulting Text.
@@ -90,20 +95,16 @@ type Frag []Node
 func (Frag) Item() {}
 
 // Implements the Node interface.
-func (f Frag) Render(ctx context.Context, w io.Writer) error {
-	var bw *bufio.Writer
-	var ok bool
-	bw, ok = w.(*bufio.Writer)
-	if !ok {
-		bw = bufio.NewWriter(w)
-	}
-
-	for _, child := range f {
-		if err := child.Render(ctx, w); err != nil {
-			Error(&RenderError{err: err, Node: child, Type: reflect.TypeOf(child).String()}).Render(ctx, bw)
+func (f Frag) Chunks() iter.Seq[Chunk] {
+	return func(yield func(Chunk) bool) {
+		for _, node := range f {
+			for chunk := range node.Chunks() {
+				if !yield(chunk) {
+					return
+				}
+			}
 		}
 	}
-	return bw.Flush()
 }
 
 // Fragment creates a Frag from the provided nodes, allowing multiple nodes to be grouped together.
@@ -117,6 +118,11 @@ func Fragment(nodes ...Node) Frag {
 type Property interface {
 	Apply(*Element)
 }
+
+type Deferred func(context.Context) Property
+
+// Implements the Item interface
+func (Deferred) Item() {}
 
 type Hook interface {
 	Done(*Element)
@@ -145,12 +151,35 @@ func Attr(key string, value string) *Attribute {
 	return &Attribute{Key: key, Value: value}
 }
 
+type Component func(context.Context) Node
+
+// Implements the Item interface.
+func (Component) Item() {}
+
+// Implements the Node interface.
+func (c Component) Chunks() iter.Seq[Chunk] {
+	return func(yield func(Chunk) bool) {
+		yield(Chunk{
+			fn: func(ctx context.Context, w io.Writer) error {
+				for chunk := range c(ctx).Chunks() {
+					if err := chunk.Render(ctx, w); err != nil {
+						return err
+					}
+				}
+				return nil
+			},
+			pure: false,
+		})
+	}
+}
+
 // Element represents an HTML element node, containing the element's name,
 // a map of its attributes, a slice of child nodes, and a flag indicating
 // whether the element is a void (self-closing) element.
 type Element struct {
 	ClassList     *ClassList
-	Children      []Node
+	nodes         []Node
+	deferreds     []Deferred
 	attributes    map[string]string
 	attributelist []*Attribute
 	name          string
@@ -192,68 +221,117 @@ func (e *Element) GetAttributes() map[string]string {
 
 func (e *Element) SetAttributes(list map[string]string) {
 	e.attributes = list
+	e.attributelist = []*Attribute{}
 	for key, value := range list {
 		e.attributelist = append(e.attributelist, &Attribute{Key: key, Value: value})
 	}
+}
+
+func (e *Element) GetNodes() []Node {
+	return e.nodes
+}
+
+func (e *Element) AppendNode(node Node) {
+	e.nodes = append(e.nodes, node)
 }
 
 // Implements the Item interface.
 func (*Element) Item() {}
 
 // Implements the Node interface.
-func (e *Element) Render(ctx context.Context, w io.Writer) error {
-	var bw *bufio.Writer
-	var ok bool
-	bw, ok = w.(*bufio.Writer)
-	if !ok {
-		bw = bufio.NewWriter(w)
-	}
-
-	if len(e.ClassList.Items) > 0 {
-		e.SetAttribute("class", strings.Join(e.ClassList.Items, " "))
-	}
-
-	if len(e.attributelist) == 0 {
-		if _, err := bw.WriteString("<" + e.Tag() + ">"); err != nil {
-			return err
-		}
-		if e.void {
-			return bw.Flush()
-		}
-	} else {
-		if _, err := bw.WriteString("<" + e.Tag()); err != nil {
-			return err
-		}
-
-		for _, attr := range e.attributelist {
-			var rhs string
-			if len(attr.Value) != 0 {
-				rhs = "=" + "\"" + attr.Value + "\""
-			}
-			if _, err := bw.WriteString(" " + attr.Key + rhs); err != nil {
+func (e *Element) Chunks() iter.Seq[Chunk] {
+	return func(yield func(Chunk) bool) {
+		if !yield(Chunk{
+			fn: func(ctx context.Context, w io.Writer) error {
+				_, err := fmt.Fprintf(w, "<%s", e.Tag())
 				return err
+			},
+			pure: true,
+		}) {
+			return
+		}
+
+		if len(e.deferreds) > 0 {
+			for _, deferred := range e.deferreds {
+				if !yield(Chunk{
+					fn: func(ctx context.Context, w io.Writer) error {
+						deferred(ctx).Apply(e)
+						return nil
+					},
+					pure: false,
+				}) {
+					return
+				}
+			}
+			if !yield(Chunk{
+				fn: func(ctx context.Context, w io.Writer) error {
+					if len(e.ClassList.Items) > 0 {
+						e.SetAttribute("class", strings.Join(e.ClassList.Items, " "))
+					}
+
+					for _, attr := range e.attributelist {
+						var rhs string
+						if len(attr.Value) != 0 {
+							rhs = "=" + "\"" + attr.Value + "\""
+						}
+						if _, err := fmt.Fprintf(w, " %s%s", attr.Key, rhs); err != nil {
+							return err
+						}
+					}
+					return nil
+				},
+				pure: false,
+			}) {
+				return
+			}
+		} else {
+			if len(e.ClassList.Items) > 0 {
+				e.SetAttribute("class", strings.Join(e.ClassList.Items, " "))
+			}
+
+			for _, attr := range e.attributelist {
+				if !yield(Chunk{
+					fn: func(ctx context.Context, w io.Writer) error {
+						var rhs string
+						if len(attr.Value) != 0 {
+							rhs = "=" + "\"" + attr.Value + "\""
+						}
+						_, err := fmt.Fprintf(w, " %s%s", attr.Key, rhs)
+						return err
+					},
+					pure: true,
+				}) {
+					return
+				}
 			}
 		}
 
-		if _, err := bw.WriteString(">"); err != nil {
-			return err
+		if !yield(Chunk{
+			fn: func(ctx context.Context, w io.Writer) error {
+				_, err := fmt.Fprint(w, ">")
+				return err
+			},
+			pure: true,
+		}) {
+			return
 		}
-		if e.void {
-			return bw.Flush()
+
+		for _, node := range e.nodes {
+			for chunk := range node.Chunks() {
+				if !yield(chunk) {
+					return
+				}
+			}
 		}
-	}
 
-	for _, child := range e.Children {
-		if err := child.Render(ctx, bw); err != nil {
-			Error(&RenderError{err: err, Node: child, Type: reflect.TypeOf(child).String()}).Render(ctx, bw)
-		}
+		yield(Chunk{
+			fn: func(ctx context.Context, w io.Writer) error {
+				_, err := fmt.Fprintf(w, "</%s>", e.Tag())
+				return err
+			},
+			pure: true,
+		})
 	}
-
-	if _, err := bw.WriteString("</" + e.Tag() + ">"); err != nil {
-		return err
-	}
-
-	return bw.Flush()
 }
 
 // ClassList represents a collection of CSS class names associated with an HTML element.
@@ -296,17 +374,18 @@ func El(name string, items ...Item) *Element {
 	el := &Element{
 		name:       name,
 		attributes: make(map[string]string),
-		Children:   []Node{},
-		ClassList:  new(ClassList),
 		ctx:        context.Background(),
+		ClassList:  new(ClassList),
 	}
 	props := []Property{}
 	hooks := []Hook{}
 
 	for _, item := range items {
 		switch item := item.(type) {
+		case Deferred:
+			el.deferreds = append(el.deferreds, item)
 		case Node:
-			el.Children = append(el.Children, item)
+			el.nodes = append(el.nodes, item)
 		case Property:
 			props = append(props, item)
 			if hook, ok := item.(Hook); ok {
@@ -506,9 +585,4 @@ func (n *JSONNode) Render(ctx context.Context, w io.Writer) error {
 // Creates a new JSONNode for serializing arbitrary json data.
 func JSON(data any) *JSONNode {
 	return &JSONNode{Data: data}
-}
-
-// Wraps an error and displays it for debug purposes.
-func Error(err error) Node {
-	return Pre(JSON(map[string]any{"error": err.Error(), "details": err}).WithIndent("\t"))
 }

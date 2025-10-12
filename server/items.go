@@ -2,12 +2,10 @@ package server
 
 import (
 	"context"
-	"io"
 	"log"
 	"net/http"
 
 	"github.com/canpacis/pacis/html"
-	"github.com/canpacis/pacis/internal/util"
 )
 
 // Asset returns the URL or path for a given asset name based on the current application context.
@@ -47,41 +45,41 @@ intended to be computed or fetched asynchronously. The 'fallback' field provides
 a default html.Node to be used while the asynchronous operation is in progress
 or if it fails.
 */
-type AsyncNode struct {
-	fn       func() *html.Element
-	fallback html.Node
-}
+// type AsyncNode struct {
+// 	fn       func() *html.Element
+// 	fallback html.Node
+// }
+// TODO: Fix
+// // Implements the html.Item interface
+// func (*AsyncNode) Item() {}
 
-// Implements the html.Item interface
-func (*AsyncNode) Item() {}
+// // Implements the html.Node interface
+// func (n *AsyncNode) Render(ctx context.Context, w io.Writer) error {
+// 	context, ok := ctx.(*Context)
+// 	if ok {
+// 		id := util.PrefixedID("pacis")
+// 		context.RegisterChunk(id, n.fn)
+// 		return html.Slot(html.Name(id), html.Fragment(n.fallback)).Render(ctx, w)
+// 	}
 
-// Implements the html.Node interface
-func (n *AsyncNode) Render(ctx context.Context, w io.Writer) error {
-	context, ok := ctx.(*Context)
-	if ok {
-		id := util.PrefixedID("pacis")
-		context.RegisterChunk(id, n.fn)
-		return html.Slot(html.Name(id), html.Fragment(n.fallback)).Render(ctx, w)
-	}
+// 	return n.fn().Render(ctx, w)
+// }
 
-	return n.fn().Render(ctx, w)
-}
+// /*
+// Creates a new AsyncNode
 
-/*
-Creates a new AsyncNode
-
-AsyncNode represents a node that can asynchronously generate an HTML element.
-The 'fn' field is a function that returns a pointer to an html.Element, which is
-intended to be computed or fetched asynchronously. The 'fallback' field provides
-a default html.Node to be used while the asynchronous operation is in progress
-or if it fails.
-*/
-func Async(fn func() *html.Element, fallback html.Node) *AsyncNode {
-	if fallback == nil {
-		fallback = html.Fragment()
-	}
-	return &AsyncNode{fn: fn, fallback: fallback}
-}
+// AsyncNode represents a node that can asynchronously generate an HTML element.
+// The 'fn' field is a function that returns a pointer to an html.Element, which is
+// intended to be computed or fetched asynchronously. The 'fallback' field provides
+// a default html.Node to be used while the asynchronous operation is in progress
+// or if it fails.
+// */
+// func Async(fn func() *html.Element, fallback html.Node) *AsyncNode {
+// 	if fallback == nil {
+// 		fallback = html.Fragment()
+// 	}
+// 	return &AsyncNode{fn: fn, fallback: fallback}
+// }
 
 /*
 SpeculationHook represents a hook used for speculative execution within the system.

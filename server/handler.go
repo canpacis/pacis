@@ -2,11 +2,9 @@ package server
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"slices"
 
-	payload "github.com/canpacis/http-payload"
 	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/server/middleware"
 )
@@ -189,69 +187,70 @@ Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
 func HandlerOf[P any](app *App, fn func(context.Context, *P) html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" {
-			http.NotFoundHandler().ServeHTTP(w, r)
-			return
-		}
+	// var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" {
+	// 		http.NotFoundHandler().ServeHTTP(w, r)
+	// 		return
+	// 	}
 
-		p := new(P)
-		ctx := &Context{
-			Context: r.Context(),
-			app:     app,
-		}
+	// 	p := new(P)
+	// 	ctx := &Context{
+	// 		Context: r.Context(),
+	// 		app:     app,
+	// 	}
 
-		scanner := payload.NewPipeScanner(
-			payload.NewQueryScanner(r.URL.Query()),
-			payload.NewHeaderScanner(&r.Header),
-			payload.NewCookieScanner(r.Cookies()),
-			payload.NewPathScanner(r),
-		)
+	// 	scanner := payload.NewPipeScanner(
+	// 		payload.NewQueryScanner(r.URL.Query()),
+	// 		payload.NewHeaderScanner(&r.Header),
+	// 		payload.NewCookieScanner(r.Cookies()),
+	// 		payload.NewPathScanner(r),
+	// 	)
 
-		var node html.Node
-		var wrapper LayoutFn = layout
-		if wrapper == nil {
-			wrapper = func(ctx context.Context, n html.Node) html.Node { return n }
-		}
+	// 	var node html.Node
+	// 	var wrapper LayoutFn = layout
+	// 	if wrapper == nil {
+	// 		wrapper = func(ctx context.Context, n html.Node) html.Node { return n }
+	// 	}
 
-		if err := scanner.Scan(p); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			node = html.Error(err)
-		} else {
-			node = fn(ctx, p)
-		}
+	// 	if err := scanner.Scan(p); err != nil {
+	// 		w.WriteHeader(http.StatusBadRequest)
+	// 		node = html.Error(err)
+	// 	} else {
+	// 		node = fn(ctx, p)
+	// 	}
 
-		var flusher http.Flusher
+	// 	var flusher http.Flusher
 
-		result := wrapper(ctx, node)
-		if ctx.redirect != nil {
-			w.WriteHeader(ctx.redirect.status)
-			http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
-			return
-		}
+	// 	result := wrapper(ctx, node)
+	// 	if ctx.redirect != nil {
+	// 		w.WriteHeader(ctx.redirect.status)
+	// 		http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
+	// 		return
+	// 	}
 
-		w.WriteHeader(http.StatusOK)
-		result.Render(ctx, w)
-		if len(ctx.chunks) != 0 {
-			var ok bool
-			flusher, ok = w.(http.Flusher)
-			if !ok {
-				log.Fatal("http.ResponseWriter interface is not an http.Flusher, could not send chunked data")
-				return
-			}
-		}
+	// 	w.WriteHeader(http.StatusOK)
+	// 	result.Render(ctx, w)
+	// 	if len(ctx.chunks) != 0 {
+	// 		var ok bool
+	// 		flusher, ok = w.(http.Flusher)
+	// 		if !ok {
+	// 			log.Fatal("http.ResponseWriter interface is not an http.Flusher, could not send chunked data")
+	// 			return
+	// 		}
+	// 	}
 
-		if flusher != nil {
-			flusher.Flush()
+	// 	if flusher != nil {
+	// 		flusher.Flush()
 
-			for _, chunk := range ctx.chunks {
-				element := chunk.fn()
-				element.SetAttribute("slot", chunk.id)
-				element.Render(ctx, w)
-				flusher.Flush()
-			}
-		}
-	})
+	// 		for _, chunk := range ctx.chunks {
+	// 			element := chunk.fn()
+	// 			element.SetAttribute("slot", chunk.id)
+	// 			element.Render(ctx, w)
+	// 			flusher.Flush()
+	// 		}
+	// 	}
+	// })
+	var handler http.Handler = http.NotFoundHandler()
 
 	for _, middleware := range slices.Backward(app.middlewares) {
 		handler = middleware.Apply(handler)
