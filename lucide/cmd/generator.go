@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -12,19 +13,63 @@ import (
 	"unicode"
 )
 
-func toPascalCase(s string) string {
-	words := strings.FieldsFunc(s, func(r rune) bool {
-		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
-	})
-
-	for i, word := range words {
-		words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
-	}
-
-	return strings.Join(words, "")
+type Options struct {
+	PackageName string
+	OutDir      string
+	IconsDir    string
 }
 
-var filetempl = `package {{.Package}}
+type Icon struct {
+	Name    string
+	Content string
+}
+
+type TemplateData struct {
+	PackageName string
+	HTMLPackage string
+	Icons       []Icon
+}
+
+var icontempl = `package {{.PackageName}}
+
+import (
+	"strconv"
+
+	html "{{ .HTMLPackage }}"
+)
+
+func join(props []html.Item, rest ...html.Item) []html.Item {
+	return append(rest, props...)
+}
+
+func Fill(fill string) *html.Attribute {
+	return html.Attr("fill", fill)
+}
+
+func Stroke(fill string) *html.Attribute {
+	return html.Attr("stroke", fill)
+}
+
+func StrokeWidth(n float64) *html.Attribute {
+	return html.Attr("stroke-width", strconv.FormatFloat(float64(n), 'f', -1, 64))
+}
+
+func Icon(items ...html.Item) *html.Element {
+	items = join(items,
+		Fill("none"),
+		Stroke("currentColor"),
+		StrokeWidth(2),
+		html.Width("24"),
+		html.Height("24"),
+		html.Attr("viewBox", "0 0 24 24"),
+		html.Attr("stroke-linecap", "round"),
+		html.Attr("stroke-linejoin", "round"),
+	)
+	return html.El("svg", items...)
+}
+`
+
+var iconstempl = `package {{.PackageName}}
 
 import html "{{.HTMLPackage}}"
 
@@ -37,26 +82,26 @@ func {{.Name}}(items ...html.Item) html.Node {
 {{ end }}
 `
 
-type Icon struct {
-	Name    string
-	Content string
-}
-
-type TemplateData struct {
-	Package     string
-	HTMLPackage string
-	Icons       []Icon
-}
-
 func main() {
+	var options Options
+
+	flag.StringVar(&options.PackageName, "package", "icons", "Generated go package name")
+	flag.StringVar(&options.OutDir, "out", "icons", "Output directory")
+
+	flag.Parse()
+	options.IconsDir = flag.Arg(0)
+
+	if len(options.IconsDir) == 0 {
+		log.Fatal("Provide an input path")
+	}
+
 	data := &TemplateData{
-		Package:     "lucide",
+		PackageName: options.PackageName,
 		HTMLPackage: "github.com/canpacis/pacis/html",
 		Icons:       []Icon{},
 	}
 
-	dir := "lucide/module/icons"
-	entries, err := os.ReadDir(dir)
+	entries, err := os.ReadDir(options.IconsDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +119,7 @@ func main() {
 
 		var svg svg
 
-		file, err := os.OpenFile(path.Join(dir, name), os.O_RDONLY, 0o644)
+		file, err := os.OpenFile(path.Join(options.IconsDir, name), os.O_RDONLY, 0o644)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -97,19 +142,37 @@ func main() {
 		data.Icons = append(data.Icons, icon)
 	}
 
-	templ, err := template.New("file").Parse(filetempl)
-	if err != nil {
+	if err := writeFile(icontempl, path.Join(options.OutDir, "icon.go"), data); err != nil {
 		log.Fatal(err)
 	}
-
-	os.Remove("lucide/icons.go")
-	file, err := os.OpenFile("lucide/icons.go", os.O_CREATE|os.O_RDWR, 0o644)
-	if err != nil {
+	if err := writeFile(iconstempl, path.Join(options.OutDir, "icons.go"), data); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func writeFile(templ, name string, data *TemplateData) error {
+	os.Remove(name)
+	file, err := os.OpenFile(name, os.O_CREATE|os.O_RDWR, 0o644)
+	if err != nil {
+		return err
 	}
 	defer file.Close()
 
-	if err := templ.Execute(file, data); err != nil {
-		log.Fatal(err)
+	tmp, err := template.New(name).Parse(templ)
+	if err != nil {
+		return err
 	}
+	return tmp.Execute(file, data)
+}
+
+func toPascalCase(s string) string {
+	words := strings.FieldsFunc(s, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	})
+
+	for i, word := range words {
+		words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+	}
+
+	return strings.Join(words, "")
 }

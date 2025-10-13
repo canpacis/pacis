@@ -3,7 +3,7 @@ package lucide
 import (
 	"strconv"
 
-	"github.com/canpacis/pacis/html"
+	html "github.com/canpacis/pacis/html"
 )
 
 func join(props []html.Item, rest ...html.Item) []html.Item {
