@@ -35,6 +35,10 @@ func Bind(attr, value string) *html.Attribute {
 	return html.Attr(":"+attr, value)
 }
 
+func On(event, handler string) *html.Attribute {
+	return html.Attr("x-on:"+event, handler)
+}
+
 func Text(value string) *html.Attribute {
 	return html.Attr("x-text", value)
 }

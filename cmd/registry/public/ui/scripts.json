@@ -11,13 +11,13 @@
   "files": [
     {
       "path": "registry/script/alpine.ts",
-      "content": "import Alpine from \"alpinejs\";\n\n// Alpine.data(\"data\", (id: string) => {\n//   const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n//     ?.textContent ?? \"{}\";\n//   return JSON.parse(raw);\n// });\n\n// const dropdownStore = new Map<string, any>();\n\n// Alpine.magic(\"dropdown\", () => (id: string) => dropdownStore.get(id));\n\n// Alpine.data(\"dropdown\", (open = false, id = null) => ({\n//   id: id,\n//   open: open,\n//   usedKeyboard: false,\n\n//   init() {\n//     if (this.id !== null) {\n//       dropdownStore.set(this.id, this);\n//     }\n//     this.$dispatch(\"init\", { open: this.open });\n//   },\n//   async openDropdown() {\n//     this.open = true;\n//     await this.$nextTick();\n//     this.$dispatch(\"opened\");\n//   },\n//   async closeDropdown(value: string) {\n//     this.open = false;\n//     await this.$nextTick();\n//     this.$dispatch(\"closed\", { value: value });\n//   },\n//   async dismissDropdown() {\n//     this.open = false;\n//     await this.$nextTick();\n//     this.$dispatch(\"dismissed\");\n//   },\n// }));\n\nAlpine.start();\n",
+      "content": "import Alpine from \"alpinejs\";\n\nAlpine.data(\"data\", (id: string) => {\n  const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n    ?.textContent ?? \"{}\";\n  return JSON.parse(raw);\n});\n\nAlpine.start();\n",
       "type": "registry:lib",
       "target": "src/web/alpine.ts"
     },
     {
       "path": "registry/script/stream.ts",
-      "content": "const observer = new MutationObserver((mutations) => {\n  for (const mutation of mutations) {\n    if (mutation.addedNodes.length > 0) {\n      for (const node of mutation.addedNodes) {\n        const elem = node;\n        if (!(elem instanceof HTMLElement)) {\n          return;\n        }\n        const slot = elem.getAttribute(\"slot\");\n        if (!slot) {\n          throw new Error(\"Slotless element has been streamed to the DOM\");\n        }\n        document.querySelectorAll(`slot[name=${slot}]`).forEach((target) => {\n          target.replaceWith(elem);\n        });\n      }\n    }\n  }\n});\n\nobserver.observe(document.body, { childList: true });\nwindow.addEventListener(\"DOMContentLoaded\", () => {\n  observer.disconnect();\n});\n",
+      "content": "const observer = new MutationObserver((mutations) => {\n  for (const mutation of mutations) {\n    if (mutation.addedNodes.length > 0) {\n      for (const node of mutation.addedNodes) {\n        const elem = node;\n        if (!(elem instanceof HTMLElement)) {\n          return;\n        }\n        const slot = elem.getAttribute(\"slot\");\n        if (!slot) {\n          return;\n        }\n        document.querySelectorAll(`slot[name=${slot}]`).forEach((target) => {\n          target.replaceWith(elem);\n        });\n      }\n    }\n  }\n});\n\nobserver.observe(document.body, { childList: true });\nwindow.addEventListener(\"DOMContentLoaded\", () => {\n  observer.disconnect();\n});\n",
       "type": "registry:lib",
       "target": "src/web/stream.ts"
     }

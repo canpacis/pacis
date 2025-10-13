@@ -107,6 +107,19 @@
       ]
     },
     {
+      "name": "checkbox",
+      "type": "registry:ui",
+      "title": "Checkbox",
+      "description": "A control that allows the user to toggle between checked and not checked.",
+      "files": [
+        {
+          "path": "registry/checkbox/checkbox.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/checkbox/checkbox.go"
+        }
+      ]
+    },
+    {
       "name": "label",
       "type": "registry:ui",
       "title": "Label",

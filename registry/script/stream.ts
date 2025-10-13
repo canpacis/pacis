@@ -8,7 +8,7 @@ const observer = new MutationObserver((mutations) => {
         }
         const slot = elem.getAttribute("slot");
         if (!slot) {
-          throw new Error("Slotless element has been streamed to the DOM");
+          return;
         }
         document.querySelectorAll(`slot[name=${slot}]`).forEach((target) => {
           target.replaceWith(elem);
