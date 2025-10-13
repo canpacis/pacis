@@ -77,68 +77,72 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 
 		ctx := &serverctx{Context: r.Context(), req: r}
 
+		if ctx.notfound {
+			w.WriteHeader(http.StatusNotFound)
+			http.NotFoundHandler().ServeHTTP(w, r)
+			return
+		}
 		if ctx.redirect != nil {
 			w.WriteHeader(ctx.redirect.status)
 			http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
-		} else if ctx.notfound {
-			w.WriteHeader(http.StatusNotFound)
-			http.NotFoundHandler().ServeHTTP(w, r)
-		} else {
-			bw := bufio.NewWriter(w)
+			return
+		}
 
-			if err := renderer.Render(ctx, bw); err != nil {
-				return
-			}
+		w.WriteHeader(http.StatusOK)
+		bw := bufio.NewWriter(w)
 
-			bw.Flush()
+		if err := renderer.Render(ctx, bw); err != nil {
+			return
+		}
 
-			flusher, ok := w.(http.Flusher)
-			if !ok {
-				log.Fatal("http writer does not support chunked encoding")
-				return
-			}
-			if len(ctx.async) == 0 {
-				return
-			}
+		bw.Flush()
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			log.Fatal("http writer does not support chunked encoding")
+			return
+		}
+		if len(ctx.async) == 0 {
+			return
+		}
+		flusher.Flush()
+
+		renderers := make(chan *StaticRenderer)
+		wg := sync.WaitGroup{}
+
+		for _, chunk := range ctx.async {
+			wg.Add(1)
+			go func(chunk async) {
+				defer wg.Done()
+
+				renderer := NewStaticRenderer()
+				var node html.Node
+				node = chunk.comp(ctx)
+				elem, ok := node.(*html.Element)
+				if !ok {
+					node = html.Template(html.SlotAttr(chunk.id), node)
+				} else {
+					elem.SetAttribute("slot", chunk.id)
+				}
+
+				if err := renderer.Build(node); err != nil {
+					log.Fatalf("Failed to statically render page: %s", err.Error())
+					return
+				}
+
+				renderers <- renderer
+			}(chunk)
+		}
+
+		go func() {
+			wg.Wait()
+			close(renderers)
+		}()
+
+		for renderer := range renderers {
+			renderer.Render(ctx, w)
 			flusher.Flush()
-
-			renderers := make(chan *StaticRenderer)
-			wg := sync.WaitGroup{}
-
-			for _, chunk := range ctx.async {
-				wg.Add(1)
-				go func(chunk async) {
-					defer wg.Done()
-
-					renderer := NewStaticRenderer()
-					var node html.Node
-					node = chunk.comp(ctx)
-					elem, ok := node.(*html.Element)
-					if !ok {
-						node = html.Template(html.SlotAttr(chunk.id), node)
-					} else {
-						elem.SetAttribute("slot", chunk.id)
-					}
-
-					if err := renderer.Build(node); err != nil {
-						log.Fatalf("Failed to statically render page: %s", err.Error())
-						return
-					}
-
-					renderers <- renderer
-				}(chunk)
-			}
-
-			go func() {
-				wg.Wait()
-				close(renderers)
-			}()
-
-			for renderer := range renderers {
-				renderer.Render(ctx, w)
-				flusher.Flush()
-				renderer.Release()
-			}
+			renderer.Release()
 		}
 	})
 
