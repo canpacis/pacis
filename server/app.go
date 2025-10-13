@@ -62,6 +62,7 @@ type AppOptions struct {
 	webfiles  string
 	assetsdir string
 	logger    *slog.Logger
+	port      string
 }
 
 // The main application struct, holding asset handlers, entry points, options, and middleware stack.
@@ -172,6 +173,13 @@ func WithLogger(logger *slog.Logger) func(*AppOptions) {
 	}
 }
 
+// Returns an option function to set the server port.
+func WithPort(port string) func(*AppOptions) {
+	return func(ao *AppOptions) {
+		ao.port = port
+	}
+}
+
 // Constructs a new App instance with the provided options and default middleware.
 func NewApp(options ...func(*AppOptions)) *App {
 	opts := &AppOptions{
@@ -180,6 +188,7 @@ func NewApp(options ...func(*AppOptions)) *App {
 		webfiles:  "src/web",
 		assetsdir: "assets",
 		logger:    slog.Default(),
+		port:      ":8080",
 	}
 
 	for _, opt := range options {
@@ -197,7 +206,7 @@ func NewApp(options ...func(*AppOptions)) *App {
 
 func Serve(app *App, handler http.Handler) {
 	server := &http.Server{
-		Addr:              ":8081",
+		Addr:              app.options.port,
 		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		WriteTimeout:      10 * time.Second,

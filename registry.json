@@ -14,11 +14,6 @@
           "path": "registry/script/alpine.ts",
           "type": "registry:lib",
           "target": "src/web/alpine.ts"
-        },
-        {
-          "path": "registry/script/stream.ts",
-          "type": "registry:lib",
-          "target": "src/web/stream.ts"
         }
       ]
     },
