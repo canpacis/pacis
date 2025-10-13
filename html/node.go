@@ -595,3 +595,15 @@ func (n *JSONNode) Chunks() iter.Seq[Chunk] {
 func JSON(data any) *JSONNode {
 	return &JSONNode{Data: data}
 }
+
+type RawUnsafe string
+
+// Implements the Item interface.
+func (RawUnsafe) Item() {}
+
+// Implements the Node interface.
+func (t RawUnsafe) Chunks() iter.Seq[Chunk] {
+	return func(yield func(Chunk) bool) {
+		yield(StaticChunk(string(t)))
+	}
+}
