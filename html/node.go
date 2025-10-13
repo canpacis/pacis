@@ -443,6 +443,27 @@ func Map[E any](s []E, fn func(E) Node) Node {
 	return Fragment(children...)
 }
 
+// MapIdx applies the provided function fn to each element of the input slice s,
+// along with each element's index converting each element to a Node. It returns
+// a single Node that is a Fragment containing all resulting child Nodes.
+//
+// E is a generic type parameter representing the element type of the input slice.
+//
+// Parameters:
+//   - s: A slice of elements of type E.
+//   - fn: A function that takes an element of type E, an index of type int and
+//     returns a Node.
+//
+// Returns:
+//   - A Node that is a Fragment containing all Nodes produced by applying fn to each element of s.
+func MapIdx[E any](s []E, fn func(E, int) Node) Node {
+	children := make([]Node, len(s))
+	for i, item := range s {
+		children[i] = fn(item, i)
+	}
+	return Fragment(children...)
+}
+
 // If returns the provided node if the condition is true; otherwise, it returns an empty Fragment node.
 // This is useful for conditional rendering of nodes.
 func If(cond bool, item Item) Item {
