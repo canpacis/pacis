@@ -95,6 +95,9 @@ func (a *App) SetBuildDir(name string, dir fs.FS) error {
 		return fmt.Errorf("failed to read asset directory: %w", err)
 	}
 	a.assets = http.FileServerFS(assets)
+	if a.options.env == Prod {
+		a.assets = middleware.NewCache(time.Hour * 24 * 365).Apply(a.assets)
+	}
 
 	file, err := dir.Open(path.Join(name, ".vite/manifest.json"))
 	if err != nil {
