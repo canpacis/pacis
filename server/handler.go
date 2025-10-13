@@ -32,6 +32,7 @@ type serverctx struct {
 	async    []async
 	redirect *redirect
 	notfound bool
+	req      *http.Request
 }
 
 /*
@@ -74,7 +75,7 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 			return
 		}
 
-		ctx := &serverctx{Context: r.Context()}
+		ctx := &serverctx{Context: r.Context(), req: r}
 
 		if ctx.redirect != nil {
 			w.WriteHeader(ctx.redirect.status)
