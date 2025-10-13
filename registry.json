@@ -29,7 +29,7 @@
       "description": "Displays a callout for user attention.",
       "files": [
         {
-          "path": "registry/alert/alert.go",
+          "path": "registry/ui/alert/alert.go",
           "type": "registry:ui",
           "target": "src/components/ui/alert/alert.go"
         }
@@ -42,7 +42,7 @@
       "description": "An image element with a fallback for representing the user.",
       "files": [
         {
-          "path": "registry/avatar/avatar.go",
+          "path": "registry/ui/avatar/avatar.go",
           "type": "registry:ui",
           "target": "src/components/ui/avatar/avatar.go"
         }
@@ -55,7 +55,7 @@
       "description": "Displays a badge or a component that looks like a badge.",
       "files": [
         {
-          "path": "registry/badge/badge.go",
+          "path": "registry/ui/badge/badge.go",
           "type": "registry:ui",
           "target": "src/components/ui/badge/badge.go"
         }
@@ -68,7 +68,7 @@
       "description": "Displays the path to the current resource using a hierarchy of links.",
       "files": [
         {
-          "path": "registry/breadcrumb/breadcrumb.go",
+          "path": "registry/ui/breadcrumb/breadcrumb.go",
           "type": "registry:ui",
           "target": "src/components/ui/breadcrumb/breadcrumb.go"
         }
@@ -82,12 +82,12 @@
       "registryDependencies": ["@pacis/separator"],
       "files": [
         {
-          "path": "registry/button/button.go",
+          "path": "registry/ui/button/button.go",
           "type": "registry:ui",
           "target": "src/components/ui/button/button.go"
         },
         {
-          "path": "registry/button/group.go",
+          "path": "registry/ui/button/group.go",
           "type": "registry:ui",
           "target": "src/components/ui/button/group.go"
         }
@@ -100,7 +100,7 @@
       "description": "Displays a card with header, content, and footer.",
       "files": [
         {
-          "path": "registry/card/card.go",
+          "path": "registry/ui/card/card.go",
           "type": "registry:ui",
           "target": "src/components/ui/card/card.go"
         }
@@ -113,7 +113,7 @@
       "description": "A control that allows the user to toggle between checked and not checked.",
       "files": [
         {
-          "path": "registry/checkbox/checkbox.go",
+          "path": "registry/ui/checkbox/checkbox.go",
           "type": "registry:ui",
           "target": "src/components/ui/checkbox/checkbox.go"
         }
@@ -126,7 +126,7 @@
       "description": "Renders an accessible label associated with controls.",
       "files": [
         {
-          "path": "registry/label/label.go",
+          "path": "registry/ui/label/label.go",
           "type": "registry:ui",
           "target": "src/components/ui/label/label.go"
         }
@@ -139,7 +139,7 @@
       "description": "Visually or semantically separates content.",
       "files": [
         {
-          "path": "registry/separator/separator.go",
+          "path": "registry/ui/separator/separator.go",
           "type": "registry:ui",
           "target": "src/components/ui/separator/separator.go"
         }
@@ -152,7 +152,7 @@
       "description": "Use to show a placeholder while content is loading.",
       "files": [
         {
-          "path": "registry/skeleton/skeleton.go",
+          "path": "registry/ui/skeleton/skeleton.go",
           "type": "registry:ui",
           "target": "src/components/ui/skeleton/skeleton.go"
         }

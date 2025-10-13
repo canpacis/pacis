@@ -6,7 +6,7 @@
   "description": "Visually or semantically separates content.",
   "files": [
     {
-      "path": "registry/separator/separator.go",
+      "path": "registry/ui/separator/separator.go",
       "content": "package separator\n\nimport (\n\t\"log\"\n\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\ntype Orientation = components.Variant\n\nconst (\n\tHorizontal = Orientation(iota)\n\tVertical\n)\n\nvar orientation = components.NewVariantApplier(func(el *html.Element, v components.Variant) {\n\tswitch v {\n\tcase Horizontal:\n\t\tel.AddClass(\"h-[1px] w-full\")\n\t\tel.SetAttribute(\"data-orientation\", \"horizontal\")\n\tcase Vertical:\n\t\tel.AddClass(\"h-full w-[1px]\")\n\t\tel.SetAttribute(\"data-orientation\", \"vertical\")\n\tdefault:\n\t\tlog.Fatalf(\"invalid group orientation: %d\", v)\n\t}\n})\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Role(\"none\"),\n\t\t\thtml.Data(\"slot\", \"separator\"),\n\t\t\thtml.Class(\"shrink-0 bg-border\"),\n\t\t\tHorizontal,\n\t\t\torientation,\n\t\t)...,\n\t)\n}\n",
       "type": "registry:ui",
       "target": "src/components/ui/separator/separator.go"

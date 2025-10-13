@@ -7,9 +7,9 @@ tasks:
   build:
     cmds:
       - task generate_icons
-      - bun run registry:build --output cmd/registry/public/ui
-      - cp ./registry.json ./cmd/registry/public/ui/registry.json
+      - bun run registry:build --output registry/cmd/public/ui
+      - cp ./registry.json ./registry/cmd/public/ui/registry.json
   generate_icons:
     cmd: go run lucide/cmd/generator.go -package lucide -out lucide ./lucide/module/icons
   run:
-    cmd: go run ./cmd/registry
+    cmd: go run ./registry/cmd

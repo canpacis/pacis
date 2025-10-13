@@ -6,7 +6,7 @@
   "description": "An image element with a fallback for representing the user.",
   "files": [
     {
-      "path": "registry/avatar/avatar.go",
+      "path": "registry/ui/avatar/avatar.go",
       "content": "package avatar\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n\t\"github.com/canpacis/pacis/x\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\ttype Data struct {\n\t\tError *string `json:\"error\"`\n\t}\n\n\treturn html.Span(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\tx.Data(Data{}),\n\t\t\thtml.Data(\"slot\", \"avatar\"),\n\t\t\thtml.Class(\"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full\"),\n\t\t)...,\n\t)\n}\n\nfunc Image(items ...html.Item) html.Node {\n\treturn html.Img(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"avatar-image\"),\n\t\t\thtml.Class(\"aspect-square h-full w-full\"),\n\t\t\thtml.Attr(\"x-show\", \"error === null\"),\n\t\t\thtml.Attr(\"x-on:error\", \"error = 'failed to load image'\"),\n\t\t)...,\n\t)\n}\nfunc Fallback(items ...html.Item) html.Node {\n\treturn html.Span(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"avatar-fallback\"),\n\t\t\thtml.Class(\"flex h-full w-full items-center justify-center rounded-full bg-muted\"),\n\t\t\thtml.Attr(\"x-show\", \"error !== null\"),\n\t\t)...,\n\t)\n}\n",
       "type": "registry:ui",
       "target": "src/components/ui/avatar/avatar.go"

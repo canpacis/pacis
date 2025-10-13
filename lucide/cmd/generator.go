@@ -76,12 +76,10 @@ package {{.PackageName}}
 import html "{{.HTMLPackage}}"
 
 type r = html.RawUnsafe
-
 {{ range .Icons }}
 func {{.Name}}(items ...html.Item) html.Node {
 	return Icon(join(items, r([]byte{ {{.Content}} }))...)
-}
-{{ end }}
+} {{ end }}
 `
 
 func main() {

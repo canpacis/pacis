@@ -6,7 +6,7 @@
   "description": "Displays a badge or a component that looks like a badge.",
   "files": [
     {
-      "path": "registry/badge/badge.go",
+      "path": "registry/ui/badge/badge.go",
       "content": "package badge\n\nimport (\n\t\"fmt\"\n\t\"log\"\n\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\ntype Variant = components.Variant\n\nconst (\n\tDefault = Variant(iota)\n\tDestructive\n\tOutline\n\tSecondary\n)\n\nvar variant = components.NewVariantApplier(func(el *html.Element, v components.Variant) {\n\tswitch v {\n\tcase Default:\n\t\tel.AddClass(\"border-transparent bg-primary text-primary-foreground hover:bg-primary/80\")\n\tcase Destructive:\n\t\tel.AddClass(\"border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80\")\n\t\tfmt.Println(el)\n\tcase Outline:\n\t\tel.AddClass(\"text-foreground\")\n\tcase Secondary:\n\t\tel.AddClass(\"border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80\")\n\tdefault:\n\t\tlog.Fatalf(\"invalid badge variant: %d\", v)\n\t}\n})\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Span(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"badge\"),\n\t\t\thtml.Class(\"inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2\"),\n\t\t\tDefault,\n\t\t\tvariant,\n\t\t)...,\n\t)\n}\n",
       "type": "registry:ui",
       "target": "src/components/ui/badge/badge.go"
