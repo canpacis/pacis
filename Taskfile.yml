@@ -6,7 +6,10 @@ vars:
 tasks:
   build:
     cmds:
+      - task generate_icons
       - bun run registry:build --output cmd/registry/public/ui
       - cp ./registry.json ./cmd/registry/public/ui/registry.json
+  generate_icons:
+    cmd: go run ./lucide/cmd
   run:
     cmd: go run ./cmd/registry

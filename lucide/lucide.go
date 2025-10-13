@@ -1,0 +1,37 @@
+package lucide
+
+import (
+	"strconv"
+
+	"github.com/canpacis/pacis/html"
+)
+
+func join(props []html.Item, rest ...html.Item) []html.Item {
+	return append(rest, props...)
+}
+
+func Fill(fill string) *html.Attribute {
+	return html.Attr("fill", fill)
+}
+
+func Stroke(fill string) *html.Attribute {
+	return html.Attr("stroke", fill)
+}
+
+func StrokeWidth(n float64) *html.Attribute {
+	return html.Attr("stroke-width", strconv.FormatFloat(float64(n), 'f', -1, 64))
+}
+
+func Icon(items ...html.Item) *html.Element {
+	items = join(items,
+		Fill("none"),
+		Stroke("currentColor"),
+		StrokeWidth(2),
+		html.Width("24"),
+		html.Height("24"),
+		html.Attr("viewBox", "0 0 24 24"),
+		html.Attr("stroke-linecap", "round"),
+		html.Attr("stroke-linejoin", "round"),
+	)
+	return html.El("svg", items...)
+}
