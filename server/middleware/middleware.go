@@ -15,6 +15,7 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -58,22 +59,38 @@ func (*ColorScheme) Apply(h http.Handler) http.Handler {
 		}
 
 		cookie, err := r.Cookie("pacis_color_scheme")
-		var theme string
-		if err == nil {
-			switch cookie.Value {
-			case "light", "dark":
-				theme = cookie.Value
-			default:
-				theme = "light"
-				set(theme)
+		var scheme string
+
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				header := r.Header.Get("Sec-CH-Prefers-Color-Scheme")
+				if len(header) > 0 {
+					switch header {
+					case "light", "dark":
+						scheme = header
+					default:
+						scheme = "light"
+					}
+				} else {
+					w.Header().Set("Accept-CH", "Sec-CH-Prefers-Color-Scheme")
+					w.Header().Set("Critical-CH", "Sec-CH-Prefers-Color-Scheme")
+					w.Header().Set("Vary", "Sec-CH-Prefers-Color-Scheme")
+				}
+			} else {
+				scheme = "light"
+				set(scheme)
 			}
 		} else {
-			theme = "light"
-			set(theme)
+			switch cookie.Value {
+			case "light", "dark":
+				scheme = cookie.Value
+			default:
+				scheme = "light"
+				set(scheme)
+			}
 		}
 
-		ctx := context.WithValue(r.Context(), KeyType("theme"), theme)
-
+		ctx := context.WithValue(r.Context(), KeyType("color-scheme"), scheme)
 		h.ServeHTTP(w, r.Clone(ctx))
 	})
 }
@@ -84,7 +101,7 @@ var DefaultColorScheme = &ColorScheme{}
 // It expects the context to have a value associated with the key "theme" of type string.
 // If the value is not present or not a string, this function will panic.
 func GetColorScheme(ctx context.Context) string {
-	return ctx.Value(KeyType("theme")).(string)
+	return ctx.Value(KeyType("color-scheme")).(string)
 }
 
 // Locale is a middleware that determines the user's preferred language from a cookie ("pacis_locale"),
