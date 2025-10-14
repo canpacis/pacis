@@ -32,6 +32,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -79,9 +80,30 @@ type Route interface {
 	Handler(*App) http.Handler
 }
 
+type redirectroute struct {
+	path string
+	to   string
+}
+
+func (p *redirectroute) Path() string {
+	return p.path
+}
+
+func (p *redirectroute) Handler(app *App) http.Handler {
+	return http.RedirectHandler(p.to, http.StatusFound)
+}
+
+func RedirectRoute(from, to string) Route {
+	if strings.TrimSuffix(from, "/") == strings.TrimSuffix(to, "/") {
+		log.Fatalf("You are creating a redirect route from %s to %s, which will cause issues", from, to)
+	}
+	return &redirectroute{path: from, to: to}
+}
+
 // Registers a Route with a given ServeMux using the GET method.
 func (a *App) Register(mux *http.ServeMux, route Route) {
-	mux.Handle("GET "+route.Path(), route.Handler(a))
+	clean := strings.TrimSuffix(route.Path(), "/")
+	mux.Handle("GET "+clean+"/", route.Handler(a))
 }
 
 // Adds middleware(s) to the application's middleware stack.

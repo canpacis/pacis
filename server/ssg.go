@@ -6,25 +6,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"sync"
 
 	"github.com/canpacis/pacis/html"
 )
 
-var chunkpool = sync.Pool{
-	New: func() any {
-		return &[]any{}
-	},
-}
-
 type StaticRenderer struct {
-	chunks *[]any
-}
-
-var bufpool = sync.Pool{
-	New: func() any {
-		return new(bytes.Buffer)
-	},
+	chunks []any
 }
 
 func (r *StaticRenderer) Build(node html.Node) error {
@@ -38,22 +25,22 @@ func (r *StaticRenderer) Build(node html.Node) error {
 				return err
 			}
 		case html.DynamicChunk:
-			*r.chunks = append(*r.chunks, buf.Bytes())
+			r.chunks = append(r.chunks, buf.Bytes())
 			bufpool.Put(buf)
 			buf = bufpool.New().(*bytes.Buffer)
-			*r.chunks = append(*r.chunks, chunk)
+			r.chunks = append(r.chunks, chunk)
 		default:
 			return fmt.Errorf("invalid chunk type %T", chunk)
 		}
 	}
-	*r.chunks = append(*r.chunks, buf.Bytes())
+	r.chunks = append(r.chunks, buf.Bytes())
 	return nil
 }
 
 func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
 	bw := bufio.NewWriter(w)
 
-	for _, chunk := range *r.chunks {
+	for _, chunk := range r.chunks {
 		switch chunk := chunk.(type) {
 		case []byte:
 			if _, err := bw.Write(chunk); err != nil {
@@ -70,17 +57,12 @@ func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
 	return bw.Flush()
 }
 
-func (r *StaticRenderer) Release() {
-	chunkpool.Put(r.chunks)
-}
-
 func (r *StaticRenderer) Clear() {
-	r.Release()
-	r.chunks = chunkpool.New().(*[]any)
+	r.chunks = []any{}
 }
 
 func NewStaticRenderer() *StaticRenderer {
 	return &StaticRenderer{
-		chunks: chunkpool.New().(*[]any),
+		chunks: []any{},
 	}
 }

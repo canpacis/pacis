@@ -1,8 +1,9 @@
 package server
 
 import (
-	"bufio"
+	"bytes"
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -15,6 +16,8 @@ import (
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
 type LayoutFn func(*App, html.Node) html.Node
+
+type PageFn func(*App) html.Node
 
 type async struct {
 	id   string
@@ -33,6 +36,12 @@ type serverctx struct {
 	redirect *redirect
 	notfound bool
 	req      *http.Request
+}
+
+var bufpool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
 }
 
 /*
@@ -57,12 +66,12 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
+func HandlerOf(app *App, fn PageFn, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var wrapper LayoutFn = layout
 	if wrapper == nil {
 		wrapper = func(app *App, n html.Node) html.Node { return n }
 	}
-	node := wrapper(app, fn())
+	node := wrapper(app, fn(app))
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -77,25 +86,25 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 
 		ctx := &serverctx{Context: r.Context(), req: r}
 
+		buf := bufpool.New().(*bytes.Buffer)
+		defer bufpool.Put(buf)
+
+		if err := renderer.Render(ctx, buf); err != nil {
+			return
+		}
+
 		if ctx.notfound {
 			w.WriteHeader(http.StatusNotFound)
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
 		if ctx.redirect != nil {
-			w.WriteHeader(ctx.redirect.status)
 			http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		bw := bufio.NewWriter(w)
-
-		if err := renderer.Render(ctx, bw); err != nil {
-			return
-		}
-
-		bw.Flush()
+		io.Copy(w, buf)
 
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -142,7 +151,6 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 		for renderer := range renderers {
 			renderer.Render(ctx, w)
 			flusher.Flush()
-			renderer.Release()
 		}
 	})
 
@@ -154,4 +162,28 @@ func HandlerOf(app *App, fn func() html.Node, layout LayoutFn, middlewares ...mi
 	}
 
 	return handler
+}
+
+type route struct {
+	pattern     string
+	page        PageFn
+	layout      LayoutFn
+	middlewares []middleware.Middleware
+}
+
+func (r *route) Path() string {
+	return r.pattern
+}
+
+func (r *route) Handler(app *App) http.Handler {
+	return HandlerOf(app, r.page, r.layout, r.middlewares...)
+}
+
+func RouteOf(pattern string, page PageFn, layout LayoutFn, middlewares ...middleware.Middleware) Route {
+	return &route{
+		pattern:     pattern,
+		page:        page,
+		layout:      layout,
+		middlewares: middlewares,
+	}
 }

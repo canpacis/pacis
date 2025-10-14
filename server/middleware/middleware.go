@@ -19,7 +19,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -184,12 +183,6 @@ func (lw *logwriter) WriteHeader(code int) {
 	lw.ResponseWriter.WriteHeader(code)
 }
 
-var logwriterpool = sync.Pool{
-	New: func() any {
-		return &logwriter{}
-	},
-}
-
 // Logger returns a middleware that logs HTTP requests using the provided slog.Logger.
 // It records the request method, status code, path, remote address, user agent, and duration.
 // The middleware wraps the next http.Handler and logs the request details after it is served.
@@ -217,11 +210,7 @@ func (l *Logger) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		lw := logwriterpool.New().(*logwriter)
-		lw.ResponseWriter = w
-		lw.Flusher = w.(http.Flusher)
-
-		defer logwriterpool.Put(lw)
+		lw := &logwriter{ResponseWriter: w, Flusher: w.(http.Flusher), status: http.StatusOK}
 		h.ServeHTTP(lw, r)
 
 		agent := strings.Split(r.UserAgent(), " ")[0]
