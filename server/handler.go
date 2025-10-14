@@ -1,8 +1,10 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -15,9 +17,9 @@ import (
 // LayoutFn defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
-type LayoutFn func(*App, html.Node) html.Node
+type LayoutFn func(*Server, html.Node) html.Node
 
-type PageFn func(*App) html.Node
+type PageFn func(*Server) html.Node
 
 type async struct {
 	id   string
@@ -66,12 +68,12 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf(app *App, fn PageFn, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
+func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var wrapper LayoutFn = layout
 	if wrapper == nil {
-		wrapper = func(app *App, n html.Node) html.Node { return n }
+		wrapper = func(app *Server, n html.Node) html.Node { return n }
 	}
-	node := wrapper(app, fn(app))
+	node := wrapper(server, page(server))
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -154,8 +156,8 @@ func HandlerOf(app *App, fn PageFn, layout LayoutFn, middlewares ...middleware.M
 		}
 	})
 
-	for i := len(app.middlewares) - 1; i >= 0; i-- {
-		handler = app.middlewares[i].Apply(handler)
+	for i := len(server.middlewares) - 1; i >= 0; i-- {
+		handler = server.middlewares[i].Apply(handler)
 	}
 	for i := len(middlewares) - 1; i >= 0; i-- {
 		handler = middlewares[i].Apply(handler)
@@ -164,26 +166,59 @@ func HandlerOf(app *App, fn PageFn, layout LayoutFn, middlewares ...middleware.M
 	return handler
 }
 
-type route struct {
-	pattern     string
-	page        PageFn
-	layout      LayoutFn
-	middlewares []middleware.Middleware
+type StaticRenderer struct {
+	chunks []any
 }
 
-func (r *route) Path() string {
-	return r.pattern
+func (r *StaticRenderer) Build(node html.Node) error {
+	buf := bufpool.New().(*bytes.Buffer)
+	defer bufpool.Put(buf)
+
+	for chunk := range node.Chunks() {
+		switch chunk := chunk.(type) {
+		case html.StaticChunk:
+			if _, err := buf.Write(chunk); err != nil {
+				return err
+			}
+		case html.DynamicChunk:
+			r.chunks = append(r.chunks, buf.Bytes())
+			bufpool.Put(buf)
+			buf = bufpool.New().(*bytes.Buffer)
+			r.chunks = append(r.chunks, chunk)
+		default:
+			return fmt.Errorf("invalid chunk type %T", chunk)
+		}
+	}
+	r.chunks = append(r.chunks, buf.Bytes())
+	return nil
 }
 
-func (r *route) Handler(app *App) http.Handler {
-	return HandlerOf(app, r.page, r.layout, r.middlewares...)
+func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
+	bw := bufio.NewWriter(w)
+
+	for _, chunk := range r.chunks {
+		switch chunk := chunk.(type) {
+		case []byte:
+			if _, err := bw.Write(chunk); err != nil {
+				return err
+			}
+		case html.DynamicChunk:
+			if err := chunk(ctx, bw); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("invalid chunk type %t", chunk)
+		}
+	}
+	return bw.Flush()
 }
 
-func RouteOf(pattern string, page PageFn, layout LayoutFn, middlewares ...middleware.Middleware) Route {
-	return &route{
-		pattern:     pattern,
-		page:        page,
-		layout:      layout,
-		middlewares: middlewares,
+func (r *StaticRenderer) Clear() {
+	r.chunks = []any{}
+}
+
+func NewStaticRenderer() *StaticRenderer {
+	return &StaticRenderer{
+		chunks: []any{},
 	}
 }

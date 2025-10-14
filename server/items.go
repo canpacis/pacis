@@ -11,37 +11,6 @@ import (
 	"github.com/canpacis/pacis/internal/util"
 )
 
-// Asset returns the URL or path for a given asset name based on the current application context.
-// In development mode, it constructs the asset URL using the development server and webfiles path.
-// In production mode, it retrieves the asset entry from the application's entries map.
-// If called outside of a server rendering context or if the asset is not found, the function logs a fatal error.
-//
-// Parameters:
-//
-//	ctx  - The context, expected to be of type *Context.
-//	name - The name of the asset to retrieve.
-//
-// Returns:
-//
-//	The URL or path to the requested asset as a string.
-func Asset(app *App, name string) string {
-	if app.options.env == Dev {
-		return app.options.devserver + "/" + app.options.webfiles + "/" + name
-	}
-	entry, ok := app.entries[name]
-	if !ok {
-		log.Fatalf("failed to retrieve asset %s", name)
-	}
-	return entry
-}
-
-func HMR(app *App) html.Node {
-	if app.options.env == Prod {
-		return html.Fragment()
-	}
-	return html.Script(html.Type("module"), html.Src(app.options.devserver+"/@vite/client"))
-}
-
 func Async(comp html.Component, fallback html.Node) html.Node {
 	id := util.PrefixedID("pacis")
 	if fallback == nil {
@@ -114,6 +83,12 @@ func Redirect(ctx context.Context, to string) html.Node {
 	return html.Fragment()
 }
 
+func RedirectComponent(to string) html.Component {
+	return func(ctx context.Context) html.Node {
+		return Redirect(ctx, to)
+	}
+}
+
 func RedirectWith(ctx context.Context, to string, status int) html.Node {
 	context, ok := ctx.(*serverctx)
 	if !ok {
@@ -121,4 +96,10 @@ func RedirectWith(ctx context.Context, to string, status int) html.Node {
 	}
 	context.redirect = &redirect{status: status, to: to}
 	return html.Fragment()
+}
+
+func RedirectWithComponent(to string, status int) html.Component {
+	return func(ctx context.Context) html.Node {
+		return RedirectWith(ctx, to, status)
+	}
 }
