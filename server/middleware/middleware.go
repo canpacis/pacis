@@ -39,17 +39,19 @@ type Middleware interface {
 // and its value is "light" or "dark", it uses that value as the theme. Otherwise, it defaults
 // to "light" and sets the cookie accordingly. The selected theme is stored in the request's
 // context under the key "theme" for downstream handlers to access.
-type ColorScheme struct{}
+type ColorScheme struct {
+	key string
+}
 
 func (*ColorScheme) Name() string {
 	return "ColorScheme"
 }
 
-func (*ColorScheme) Apply(h http.Handler) http.Handler {
+func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		set := func(theme string) {
 			http.SetCookie(w, &http.Cookie{
-				Name:     "pacis_color_scheme",
+				Name:     m.key,
 				Value:    theme,
 				Path:     "/",
 				HttpOnly: false,
@@ -58,7 +60,7 @@ func (*ColorScheme) Apply(h http.Handler) http.Handler {
 			})
 		}
 
-		cookie, err := r.Cookie("pacis_color_scheme")
+		cookie, err := r.Cookie(m.key)
 		var scheme string
 
 		if err != nil {
@@ -95,7 +97,11 @@ func (*ColorScheme) Apply(h http.Handler) http.Handler {
 	})
 }
 
-var DefaultColorScheme = &ColorScheme{}
+var DefaultColorScheme = &ColorScheme{key: "pacis_color_scheme"}
+
+func NewColorScheme(key string) *ColorScheme {
+	return &ColorScheme{key: key}
+}
 
 // GetColorScheme retrieves the color scheme (theme) from the provided context.
 // It expects the context to have a value associated with the key "theme" of type string.
@@ -109,6 +115,7 @@ func GetColorScheme(ctx context.Context) string {
 // if none are set or valid. It parses the locale, creates an i18n.Localizer, and injects both the localizer
 // and the language tag into the request context for downstream handlers to use.
 type Locale struct {
+	key         string
 	bundle      *i18n.Bundle
 	defaultlang language.Tag
 }
@@ -120,7 +127,7 @@ func (*Locale) Name() string {
 func (l *Locale) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var locale string
-		cookie, err := r.Cookie("pacis_locale")
+		cookie, err := r.Cookie(l.key)
 		if err == nil {
 			locale = cookie.Value
 		} else {
@@ -147,8 +154,8 @@ func (l *Locale) Apply(h http.Handler) http.Handler {
 	})
 }
 
-func NewLocale(bundle *i18n.Bundle, defaultlang language.Tag) *Locale {
-	return &Locale{bundle: bundle, defaultlang: defaultlang}
+func NewLocale(key string, bundle *i18n.Bundle, defaultlang language.Tag) *Locale {
+	return &Locale{key: key, bundle: bundle, defaultlang: defaultlang}
 }
 
 // GetLocalizer retrieves the localizer struct from the provided context.

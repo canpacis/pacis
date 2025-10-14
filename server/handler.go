@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/canpacis/pacis/html"
+	intserver "github.com/canpacis/pacis/internal/server"
 	"github.com/canpacis/pacis/server/middleware"
 )
 
@@ -20,25 +21,6 @@ import (
 type LayoutFn func(*Server, html.Node) html.Node
 
 type PageFn func(*Server) html.Node
-
-type async struct {
-	id   string
-	comp html.Component
-}
-
-type redirect struct {
-	status int
-	to     string
-}
-
-type serverctx struct {
-	context.Context
-
-	async    []async
-	redirect *redirect
-	notfound bool
-	req      *http.Request
-}
 
 var bufpool = sync.Pool{
 	New: func() any {
@@ -86,7 +68,7 @@ func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...midd
 			return
 		}
 
-		ctx := &serverctx{Context: r.Context(), req: r}
+		ctx := intserver.NewContext(w, r)
 
 		buf := bufpool.New().(*bytes.Buffer)
 		defer bufpool.Put(buf)
@@ -95,13 +77,13 @@ func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...midd
 			return
 		}
 
-		if ctx.notfound {
+		if ctx.NotFoundMark {
 			w.WriteHeader(http.StatusNotFound)
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
-		if ctx.redirect != nil {
-			http.Redirect(w, r, ctx.redirect.to, ctx.redirect.status)
+		if ctx.RedirectMark != nil {
+			http.Redirect(w, r, ctx.RedirectMark.To, ctx.RedirectMark.Status)
 			return
 		}
 
@@ -113,7 +95,7 @@ func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...midd
 			log.Fatal("http writer does not support chunked encoding")
 			return
 		}
-		if len(ctx.async) == 0 {
+		if len(ctx.AsyncChunks) == 0 {
 			return
 		}
 		flusher.Flush()
@@ -121,19 +103,19 @@ func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...midd
 		renderers := make(chan *StaticRenderer)
 		wg := sync.WaitGroup{}
 
-		for _, chunk := range ctx.async {
+		for _, chunk := range ctx.AsyncChunks {
 			wg.Add(1)
-			go func(chunk async) {
+			go func(chunk intserver.AsyncChunk) {
 				defer wg.Done()
 
 				renderer := NewStaticRenderer()
 				var node html.Node
-				node = chunk.comp(ctx)
+				node = chunk.Component(ctx)
 				elem, ok := node.(*html.Element)
 				if !ok {
-					node = html.Template(html.SlotAttr(chunk.id), node)
+					node = html.Template(html.SlotAttr(chunk.ID), node)
 				} else {
-					elem.SetAttribute("slot", chunk.id)
+					elem.SetAttribute("slot", chunk.ID)
 				}
 
 				if err := renderer.Build(node); err != nil {
