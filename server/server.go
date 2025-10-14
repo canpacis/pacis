@@ -173,8 +173,12 @@ func New(options *Options) *Server {
 	if options.Logger == nil {
 		options.Logger = slog.Default()
 	}
-	return &Server{
+
+	s := &Server{
 		ServeMux: options.Mux,
 		options:  options,
 	}
+
+	s.Use(middleware.NewLogger(s.options.Logger))
+	return s
 }
