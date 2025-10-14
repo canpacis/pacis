@@ -65,6 +65,7 @@ func (s *Server) Use(middlewares ...middleware.Middleware) {
 }
 
 func (s *Server) HandlePage(pattern string, page PageFn, layout LayoutFn, middlewares ...middleware.Middleware) {
+	pattern = strings.TrimSuffix(pattern, "/") + "/"
 	s.Handle(pattern, HandlerOf(s, page, layout, middlewares...))
 }
 
@@ -74,7 +75,7 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 		return err
 	}
 
-	s.Handle("GET /{path}", http.FileServerFS(static))
+	s.Handle("GET /{path}", middleware.NewCache(time.Hour*24*365).Apply(http.FileServerFS(static)))
 
 	file, err := vite.Open(path.Join(name, ".vite/manifest.json"))
 	if err != nil {
