@@ -18,7 +18,7 @@ import (
 // LayoutFn defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
-type LayoutFn func(*Server, html.Node) html.Node
+type LayoutFn func(*Server, html.Node, html.Node) html.Node
 
 type page struct {
 	staticmeta bool
@@ -141,10 +141,18 @@ Returns:
 func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var wrapper LayoutFn = layout
 	if wrapper == nil {
-		wrapper = func(app *Server, n html.Node) html.Node { return n }
+		wrapper = func(app *Server, h html.Node, n html.Node) html.Node { return n }
 	}
 	p := pageof(page)
-	node := wrapper(server, p.Page(server))
+	var metanode html.Node
+	if p.staticmeta {
+		metanode = p.Metadata(context.Background()).Node()
+	} else {
+		metanode = html.Component(func(ctx context.Context) html.Node {
+			return p.Metadata(ctx).Node()
+		})
+	}
+	node := wrapper(server, metanode, p.Page(server))
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -245,6 +253,7 @@ func (r *StaticRenderer) Build(node html.Node) error {
 	buf := new(bytes.Buffer)
 	cw := html.NewChunkWriter()
 	node.Render(cw)
+	defer node.Release()
 
 	for _, chunk := range cw.Chunks() {
 		switch chunk := chunk.(type) {

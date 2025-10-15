@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"sync"
 )
 
 type Chunk interface {
@@ -34,24 +35,36 @@ type ChunkWriter interface {
 	Chunks() []Chunk
 }
 
+var chunkpool = sync.Pool{
+	New: func() any {
+		return &[]Chunk{}
+	},
+}
+
 type cw struct {
-	buf []Chunk
+	buf *[]Chunk
 }
 
 func (cw *cw) Write(chunks ...Chunk) {
-	cw.buf = append(cw.buf, chunks...)
+	*cw.buf = append(*cw.buf, chunks...)
 }
 
 func (cw cw) Chunks() []Chunk {
-	return cw.buf
+	buf := *cw.buf
+	cw.Release()
+	return buf
+}
+
+func (cw cw) Release() {
+	chunkpool.Put(cw.buf)
 }
 
 func NewChunkWriter() ChunkWriter {
-	return &cw{buf: []Chunk{}}
+	return &cw{buf: chunkpool.New().(*[]Chunk)}
 }
 
 type teecw struct {
-	cw ChunkWriter
+	ChunkWriter
 	fn func(Chunk) error
 }
 
@@ -59,9 +72,5 @@ func (cw *teecw) Write(chunks ...Chunk) {
 	for _, chunk := range chunks {
 		cw.fn(chunk)
 	}
-	cw.cw.Write(chunks...)
-}
-
-func (cw *teecw) Chunks() []Chunk {
-	return cw.cw.Chunks()
+	cw.ChunkWriter.Write(chunks...)
 }

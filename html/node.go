@@ -52,6 +52,7 @@ type Item interface {
 type Node interface {
 	Item
 	Render(ChunkWriter)
+	Release()
 }
 
 // Text represents a node containing plain text content within the HTML renderer.
@@ -65,6 +66,11 @@ func (t Text) Render(w ChunkWriter) {
 	w.Write(StaticChunk(html.EscapeString(string(t))))
 }
 
+// Implements the Node interface.
+func (Text) Release() {
+	// no-op
+}
+
 // Textf formats according to a format specifier and returns the resulting Text.
 func Textf(format string, a ...any) Text {
 	return Text(fmt.Sprintf(format, a...))
@@ -75,6 +81,13 @@ type Frag []Node
 
 // Implements the Item interface.
 func (Frag) Item() {}
+
+// Implements the Node interface.
+func (f Frag) Release() {
+	for _, node := range f {
+		node.Release()
+	}
+}
 
 // Implements the Node interface.
 func (f Frag) Render(w ChunkWriter) {
@@ -164,9 +177,14 @@ type Component func(context.Context) Node
 func (Component) Item() {}
 
 // Implements the Node interface.
+func (Component) Release() {
+	// no-op
+}
+
+// Implements the Node interface.
 func (c Component) Render(cw ChunkWriter) {
 	cw.Write(DynamicChunk(func(ctx context.Context, w io.Writer) error {
-		writer := &teecw{cw: cw, fn: func(c Chunk) error {
+		writer := &teecw{ChunkWriter: cw, fn: func(c Chunk) error {
 			if err := Render(c, ctx, w); err != nil {
 				return err
 			}
@@ -258,6 +276,11 @@ func (e *Element) AppendNode(node Node) {
 // Implements the Item interface.
 func (*Element) Item() {}
 
+// Implements the Node interface.
+func (e *Element) Release() {
+	elpool.Put(e)
+}
+
 var voidelements = []string{"!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 // Implements the Node interface.
@@ -316,18 +339,24 @@ var propspool = sync.Pool{
 	},
 }
 
+var elpool = sync.Pool{
+	New: func() any {
+		return &Element{
+			nodes:         []Node{},
+			properties:    []Property{},
+			attributelist: []*Attribute{},
+			meta:          make(map[string]any),
+		}
+	},
+}
+
 // El creates a new Element with the specified tag name and a variadic list of items,
 // which can be either Node or Property types. Nodes are added as children of the element,
 // while Properties are collected and applied to the element after all children are processed.
 // Panics if an item of unknown type is provided.
 // Returns a pointer to the constructed Element.
 func El(name string, items ...Item) *Element {
-	el := &Element{
-		nodes:         []Node{},
-		properties:    []Property{},
-		attributelist: []*Attribute{},
-		meta:          make(map[string]any),
-	}
+	el := elpool.New().(*Element)
 	el.name = name
 
 	immediate := propspool.New().(*[]Property)
@@ -568,6 +597,11 @@ type JSONNode struct {
 // Implements the Item interface.
 func (*JSONNode) Item() {}
 
+// Implements the Node interface.
+func (*JSONNode) Release() {
+	// no-op
+}
+
 // Applies indentation to the JSONNode and returns it back.
 func (n *JSONNode) WithIndent(indent string) *JSONNode {
 	n.Indent = indent
@@ -594,6 +628,11 @@ type RawUnsafe string
 
 // Implements the Item interface.
 func (RawUnsafe) Item() {}
+
+// Implements the Node interface.
+func (RawUnsafe) Release() {
+	// no-op
+}
 
 // Implements the Node interface.
 func (t RawUnsafe) Render(w ChunkWriter) {
