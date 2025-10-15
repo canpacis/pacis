@@ -12,6 +12,7 @@ import (
 
 	"github.com/canpacis/pacis/html"
 	intserver "github.com/canpacis/pacis/internal/server"
+	"github.com/canpacis/pacis/server/metadata"
 	"github.com/canpacis/pacis/server/middleware"
 )
 
@@ -20,7 +21,95 @@ import (
 // or wrappers to HTML nodes within a given context.
 type LayoutFn func(*Server, html.Node) html.Node
 
-type PageFn func(*Server) html.Node
+type page struct {
+	staticmeta bool
+	metadata   func(context.Context) *metadata.Metadata
+	page       func(*Server) html.Node
+}
+
+func (p *page) Metadata(ctx context.Context) *metadata.Metadata {
+	return p.metadata(ctx)
+}
+
+func (p *page) Page(s *Server) html.Node {
+	return p.page(s)
+}
+
+func pageof(p any) *page {
+	fn, ok := p.(func() html.Node)
+	if ok {
+		return &page{
+			metadata: func(ctx context.Context) *metadata.Metadata {
+				return nil
+			},
+			page: func(s *Server) html.Node {
+				return fn()
+			},
+		}
+	}
+
+	serverfn, ok := p.(func(*Server) html.Node)
+	if ok {
+		return &page{
+			metadata: func(ctx context.Context) *metadata.Metadata {
+				return nil
+			},
+			page: func(s *Server) html.Node {
+				return serverfn(s)
+			},
+		}
+	}
+
+	var staticmeta bool
+	var metadatafn func(context.Context) *metadata.Metadata
+	var pagefn func(*Server) html.Node
+
+	metadataiface, ok := p.(interface{ Metadata() *metadata.Metadata })
+	if ok {
+		staticmeta = true
+		metadatafn = func(ctx context.Context) *metadata.Metadata {
+			return metadataiface.Metadata()
+		}
+	} else {
+		ctxmetadataiface, ok := p.(interface {
+			Metadata(context.Context) *metadata.Metadata
+		})
+		if ok {
+			metadatafn = func(ctx context.Context) *metadata.Metadata {
+				return ctxmetadataiface.Metadata(ctx)
+			}
+		} else {
+			staticmeta = true
+			metadatafn = func(ctx context.Context) *metadata.Metadata {
+				return nil
+			}
+		}
+	}
+
+	pageiface, ok := p.(interface{ Page() html.Node })
+	if ok {
+		pagefn = func(s *Server) html.Node {
+			return pageiface.Page()
+		}
+	} else {
+		serverpageiface, ok := p.(interface{ Page(*Server) html.Node })
+		if ok {
+			pagefn = func(s *Server) html.Node {
+				return serverpageiface.Page(s)
+			}
+		} else {
+			log.Fatal("Invalid page type, you must either pass a function or an interface with a Page() method on it.")
+		}
+	}
+
+	return &page{
+		staticmeta: staticmeta,
+		metadata:   metadatafn,
+		page:       pagefn,
+	}
+}
+
+type Page any
 
 var bufpool = sync.Pool{
 	New: func() any {
@@ -50,12 +139,13 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
+func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var wrapper LayoutFn = layout
 	if wrapper == nil {
 		wrapper = func(app *Server, n html.Node) html.Node { return n }
 	}
-	node := wrapper(server, page(server))
+	p := pageof(page)
+	node := wrapper(server, p.Page(server))
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -69,6 +159,7 @@ func HandlerOf(server *Server, page PageFn, layout LayoutFn, middlewares ...midd
 		}
 
 		ctx := intserver.NewContext(w, r)
+		ctx.Metadata = p.Metadata(ctx)
 
 		buf := bufpool.New().(*bytes.Buffer)
 		defer bufpool.Put(buf)

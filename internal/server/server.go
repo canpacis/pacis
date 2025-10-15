@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/canpacis/pacis/html"
+	"github.com/canpacis/pacis/server/metadata"
 )
 
 type AsyncChunk struct {
@@ -26,6 +27,8 @@ type Context struct {
 	AsyncChunks  []AsyncChunk
 	RedirectMark *RedirectMark
 	NotFoundMark bool
+
+	Metadata *metadata.Metadata
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *Context {
