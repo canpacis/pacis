@@ -179,6 +179,6 @@ func New(options *Options) *Server {
 		options:  options,
 	}
 
-	// s.Use(middleware.NewLogger(s.options.Logger))
+	s.Use(middleware.NewLogger(s.options.Logger))
 	return s
 }

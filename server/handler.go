@@ -160,25 +160,24 @@ func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middle
 		ctx := intserver.NewContext(w, r)
 		ctx.Metadata = p.Metadata(ctx)
 
-		// buf := bufpool.New().(*bytes.Buffer)
-		// defer bufpool.Put(buf)
+		buf := bufpool.New().(*bytes.Buffer)
+		defer bufpool.Put(buf)
 
-		if err := renderer.Render(ctx, w); err != nil {
+		if err := renderer.Render(ctx, buf); err != nil {
 			return
 		}
 
-		// if ctx.NotFoundMark {
-		// 	w.WriteHeader(http.StatusNotFound)
-		// 	http.NotFoundHandler().ServeHTTP(w, r)
-		// 	return
-		// }
-		// if ctx.RedirectMark != nil {
-		// 	http.Redirect(w, r, ctx.RedirectMark.To, ctx.RedirectMark.Status)
-		// 	return
-		// }
+		if ctx.NotFoundMark {
+			http.NotFoundHandler().ServeHTTP(w, r)
+			return
+		}
+		if ctx.RedirectMark != nil {
+			http.Redirect(w, r, ctx.RedirectMark.To, ctx.RedirectMark.Status)
+			return
+		}
 
-		// w.WriteHeader(http.StatusOK)
-		// io.Copy(w, buf)
+		w.WriteHeader(http.StatusOK)
+		io.Copy(w, buf)
 
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -268,8 +267,6 @@ func (r *StaticRenderer) Build(node html.Node) error {
 }
 
 func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
-	// bw := bufio.NewWriter(w)
-
 	for _, chunk := range r.chunks {
 		switch chunk := chunk.(type) {
 		case []byte:
@@ -284,7 +281,6 @@ func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
 			return fmt.Errorf("invalid chunk type %t", chunk)
 		}
 	}
-	// return bw.Flush()
 	return nil
 }
 
