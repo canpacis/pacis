@@ -464,6 +464,22 @@ func MapIdx[E any](s []E, fn func(E, int) Node) Node {
 	return Fragment(children...)
 }
 
+func Iter[T any](s iter.Seq[T], fn func(T) Node) Node {
+	children := []Node{}
+	for value := range s {
+		children = append(children, fn(value))
+	}
+	return Fragment(children...)
+}
+
+func Iter2[K any, V any](s iter.Seq2[K, V], fn func(K, V) Node) Node {
+	children := []Node{}
+	for key, value := range s {
+		children = append(children, fn(key, value))
+	}
+	return Fragment(children...)
+}
+
 // If returns the provided node if the condition is true; otherwise, it returns an empty Fragment node.
 // This is useful for conditional rendering of nodes.
 func If(cond bool, item Item) Item {
