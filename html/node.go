@@ -47,34 +47,11 @@ type Item interface {
 	Item()
 }
 
-type Chunk interface {
-	chunk()
-}
-
-type StaticChunk []byte
-
-type DynamicChunk func(context.Context, io.Writer) error
-
-func (StaticChunk) chunk()  {}
-func (DynamicChunk) chunk() {}
-
-func Render(chunk Chunk, ctx context.Context, w io.Writer) error {
-	switch chunk := chunk.(type) {
-	case DynamicChunk:
-		return chunk(ctx, w)
-	case StaticChunk:
-		_, err := w.Write(chunk)
-		return err
-	default:
-		return fmt.Errorf("invalid chunk type %t", chunk)
-	}
-}
-
 // Node represents an element that can be rendered to an io.Writer within a given context.
 // Implementations of Node should define the Render method to output their content.
 type Node interface {
 	Item
-	Chunks() iter.Seq[Chunk]
+	Render(ChunkWriter)
 }
 
 // Text represents a node containing plain text content within the HTML renderer.
@@ -84,10 +61,8 @@ type Text string
 func (Text) Item() {}
 
 // Implements the Node interface.
-func (t Text) Chunks() iter.Seq[Chunk] {
-	return func(yield func(Chunk) bool) {
-		yield(StaticChunk(html.EscapeString(string(t))))
-	}
+func (t Text) Render(w ChunkWriter) {
+	w.Write(StaticChunk(html.EscapeString(string(t))))
 }
 
 // Textf formats according to a format specifier and returns the resulting Text.
@@ -102,13 +77,10 @@ type Frag []Node
 func (Frag) Item() {}
 
 // Implements the Node interface.
-func (f Frag) Chunks() iter.Seq[Chunk] {
-	chunks := []Chunk{}
+func (f Frag) Render(w ChunkWriter) {
 	for _, node := range f {
-		chunks = slices.AppendSeq(chunks, node.Chunks())
+		node.Render(w)
 	}
-
-	return slices.Values(chunks)
 }
 
 // Fragment creates a Frag from the provided nodes, allowing multiple nodes to be grouped together.
@@ -192,17 +164,17 @@ type Component func(context.Context) Node
 func (Component) Item() {}
 
 // Implements the Node interface.
-func (c Component) Chunks() iter.Seq[Chunk] {
-	return func(yield func(Chunk) bool) {
-		yield(DynamicChunk(func(ctx context.Context, w io.Writer) error {
-			for chunk := range c(ctx).Chunks() {
-				if err := Render(chunk, ctx, w); err != nil {
-					return err
-				}
+func (c Component) Render(cw ChunkWriter) {
+	cw.Write(DynamicChunk(func(ctx context.Context, w io.Writer) error {
+		writer := &teecw{cw: cw, fn: func(c Chunk) error {
+			if err := Render(c, ctx, w); err != nil {
+				return err
 			}
 			return nil
-		}))
-	}
+		}}
+		c(ctx).Render(writer)
+		return nil
+	}))
 }
 
 // Element represents an HTML element node, containing the element's name,
@@ -289,54 +261,40 @@ func (*Element) Item() {}
 var voidelements = []string{"!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 // Implements the Node interface.
-func (e *Element) Chunks() iter.Seq[Chunk] {
-	return func(yield func(Chunk) bool) {
-		if !yield(StaticChunk(fmt.Appendf(nil, "<%s", e.Tag()))) {
-			return
-		}
+func (e *Element) Render(w ChunkWriter) {
+	w.Write(StaticChunk(fmt.Appendf(nil, "<%s", e.Tag())))
 
-		if len(e.properties) > 0 {
-			for _, prop := range e.properties {
-				applier, ok := prop.(interface {
-					Apply(context.Context, io.Writer) error
-				})
-				if !ok {
-					log.Fatalf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
-				}
-				if !yield(DynamicChunk(applier.Apply)) {
-					return
-				}
+	if len(e.properties) > 0 {
+		for _, prop := range e.properties {
+			applier, ok := prop.(interface {
+				Apply(context.Context, io.Writer) error
+			})
+			if !ok {
+				log.Fatalf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
 			}
+			w.Write(DynamicChunk(applier.Apply))
 		}
-
-		for _, attr := range e.attributelist {
-			var rhs string
-			if len(attr.Value) != 0 {
-				rhs = "=" + "\"" + attr.Value + "\""
-			}
-			if !yield(StaticChunk(fmt.Appendf(nil, " %s%s", attr.Key, rhs))) {
-				return
-			}
-		}
-
-		if !yield(StaticChunk(">")) {
-			return
-		}
-
-		if slices.Contains(voidelements, e.Tag()) {
-			return
-		}
-
-		for _, node := range e.nodes {
-			for chunk := range node.Chunks() {
-				if !yield(chunk) {
-					return
-				}
-			}
-		}
-
-		yield(StaticChunk(fmt.Appendf(nil, "</%s>", e.Tag())))
 	}
+
+	for _, attr := range e.attributelist {
+		var rhs string
+		if len(attr.Value) != 0 {
+			rhs = "=" + "\"" + attr.Value + "\""
+		}
+		w.Write(StaticChunk(fmt.Appendf(nil, " %s%s", attr.Key, rhs)))
+	}
+
+	w.Write(StaticChunk(">"))
+
+	if slices.Contains(voidelements, e.Tag()) {
+		return
+	}
+
+	for _, node := range e.nodes {
+		node.Render(w)
+	}
+
+	w.Write(StaticChunk(fmt.Appendf(nil, "</%s>", e.Tag())))
 }
 
 func (e *Element) Clone() *Element {
@@ -365,12 +323,13 @@ var propspool = sync.Pool{
 // Returns a pointer to the constructed Element.
 func El(name string, items ...Item) *Element {
 	el := &Element{
-		name:          name,
-		nodes:         make([]Node, 0, len(items)),
+		nodes:         []Node{},
 		properties:    []Property{},
 		attributelist: []*Attribute{},
 		meta:          make(map[string]any),
 	}
+	el.name = name
+
 	immediate := propspool.New().(*[]Property)
 	defer propspool.Put(immediate)
 	static := propspool.New().(*[]Property)
@@ -616,16 +575,14 @@ func (n *JSONNode) WithIndent(indent string) *JSONNode {
 }
 
 // Implements the Node interface.
-func (n *JSONNode) Chunks() iter.Seq[Chunk] {
-	return func(yield func(Chunk) bool) {
-		buf := new(bytes.Buffer)
-		enc := json.NewEncoder(buf)
-		enc.SetIndent("", n.Indent)
-		if err := enc.Encode(n.Data); err != nil {
-			panic(err)
-		}
-		yield(StaticChunk(buf.Bytes()))
+func (n *JSONNode) Render(w ChunkWriter) {
+	buf := new(bytes.Buffer)
+	enc := json.NewEncoder(buf)
+	enc.SetIndent("", n.Indent)
+	if err := enc.Encode(n.Data); err != nil {
+		panic(err)
 	}
+	w.Write(StaticChunk(buf.Bytes()))
 }
 
 // Creates a new JSONNode for serializing arbitrary json data.
@@ -639,8 +596,6 @@ type RawUnsafe string
 func (RawUnsafe) Item() {}
 
 // Implements the Node interface.
-func (t RawUnsafe) Chunks() iter.Seq[Chunk] {
-	return func(yield func(Chunk) bool) {
-		yield(StaticChunk(string(t)))
-	}
+func (t RawUnsafe) Render(w ChunkWriter) {
+	w.Write(StaticChunk(string(t)))
 }
