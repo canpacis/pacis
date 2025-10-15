@@ -3,7 +3,6 @@ package html_test
 import (
 	"bytes"
 	"context"
-	"slices"
 	"testing"
 
 	"github.com/canpacis/pacis/html"
@@ -18,7 +17,9 @@ type ChunkTest struct {
 }
 
 func (c ChunkTest) Assert(a *assert.Assertions) {
-	chunks := slices.Collect(c.Node.Chunks())
+	cw := html.NewChunkWriter()
+	c.Node.Render(cw)
+	chunks := cw.Chunks()
 
 	if c.N > 0 {
 		a.Equal(c.N, len(chunks))

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -19,7 +18,7 @@ import (
 // LayoutFn defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
-type LayoutFn func(*Server, html.Node) html.Node
+type LayoutFn func(*Server, html.Node, html.Node) html.Node
 
 type page struct {
 	staticmeta bool
@@ -142,10 +141,18 @@ Returns:
 func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
 	var wrapper LayoutFn = layout
 	if wrapper == nil {
-		wrapper = func(app *Server, n html.Node) html.Node { return n }
+		wrapper = func(app *Server, h html.Node, n html.Node) html.Node { return n }
 	}
 	p := pageof(page)
-	node := wrapper(server, p.Page(server))
+	var metanode html.Node
+	if p.staticmeta {
+		metanode = p.Metadata(context.Background()).Node()
+	} else {
+		metanode = html.Component(func(ctx context.Context) html.Node {
+			return p.Metadata(ctx).Node()
+		})
+	}
+	node := wrapper(server, metanode, p.Page(server))
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -169,7 +176,6 @@ func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middle
 		}
 
 		if ctx.NotFoundMark {
-			w.WriteHeader(http.StatusNotFound)
 			http.NotFoundHandler().ServeHTTP(w, r)
 			return
 		}
@@ -244,10 +250,12 @@ type StaticRenderer struct {
 }
 
 func (r *StaticRenderer) Build(node html.Node) error {
-	buf := bufpool.New().(*bytes.Buffer)
-	defer bufpool.Put(buf)
+	buf := new(bytes.Buffer)
+	cw := html.NewChunkWriter()
+	node.Render(cw)
+	defer node.Release()
 
-	for chunk := range node.Chunks() {
+	for _, chunk := range cw.Chunks() {
 		switch chunk := chunk.(type) {
 		case html.StaticChunk:
 			if _, err := buf.Write(chunk); err != nil {
@@ -262,28 +270,27 @@ func (r *StaticRenderer) Build(node html.Node) error {
 			return fmt.Errorf("invalid chunk type %T", chunk)
 		}
 	}
+
 	r.chunks = append(r.chunks, buf.Bytes())
 	return nil
 }
 
 func (r *StaticRenderer) Render(ctx context.Context, w io.Writer) error {
-	bw := bufio.NewWriter(w)
-
 	for _, chunk := range r.chunks {
 		switch chunk := chunk.(type) {
 		case []byte:
-			if _, err := bw.Write(chunk); err != nil {
+			if _, err := w.Write(chunk); err != nil {
 				return err
 			}
 		case html.DynamicChunk:
-			if err := chunk(ctx, bw); err != nil {
+			if err := chunk(ctx, w); err != nil {
 				return err
 			}
 		default:
 			return fmt.Errorf("invalid chunk type %t", chunk)
 		}
 	}
-	return bw.Flush()
+	return nil
 }
 
 func (r *StaticRenderer) Clear() {
