@@ -26,13 +26,50 @@ func (p PageFunc) Page() html.Node {
 }
 
 func (PageFunc) Metadata() *metadata.Metadata {
-	return nil
+	return &metadata.Metadata{}
 }
 
 // Layout defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
 type Layout func(*Server, html.Node, html.Node) html.Node
+
+func DefaultLayout(server *Server, head html.Node, children html.Node) html.Node {
+	return html.Fragment(
+		html.Doctype,
+		html.Head(
+			html.Meta(html.Charset("UTF-8")),
+			html.Meta(html.Name("viewport"), html.Content("width=device-width, initial-scale=1.0")),
+			head,
+		),
+		html.Body(
+			children,
+		),
+	)
+}
+
+func head(page Page) html.Node {
+	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
+	if ok {
+		return html.Fragment(
+			staticmeta.Metadata().Node(),
+			html.Script(html.Type("module"), html.Src("/@vite/client")),
+		)
+	} else {
+		dynamicmeta, ok := page.(interface {
+			Metadata(context.Context) *metadata.Metadata
+		})
+		if !ok {
+			log.Fatalf("Invalid page type %T, type must have a `Metadata() *metadata.Metadata` method to implement the Page interface.", page)
+		}
+		return html.Fragment(
+			html.Component(func(ctx context.Context) html.Node {
+				return dynamicmeta.Metadata(ctx).Node()
+			}),
+			html.Script(html.Type("module"), html.Src("/@vite/client")),
+		)
+	}
+}
 
 var bufpool = sync.Pool{
 	New: func() any {
@@ -63,6 +100,19 @@ Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
 func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middleware.Middleware) http.Handler {
+	var handler = handler(server, page, layout, false)
+
+	for i := len(server.middlewares) - 1; i >= 0; i-- {
+		handler = server.middlewares[i].Apply(handler)
+	}
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i].Apply(handler)
+	}
+
+	return handler
+}
+
+func handler(server *Server, page Page, layout Layout, internal bool) http.Handler {
 	defer func() {
 		if data := recover(); data != nil {
 			server.options.Logger.Error("HTTP handler paniced on partial pre-render", "error", data)
@@ -73,32 +123,16 @@ func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middlewa
 	if wrapper == nil {
 		wrapper = func(s *Server, h, c html.Node) html.Node { return c }
 	}
-
-	var head html.Node
-	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
-	if ok {
-		head = staticmeta.Metadata().Node()
-	} else {
-		dynamicmeta, ok := page.(interface {
-			Metadata(context.Context) *metadata.Metadata
-		})
-		if !ok {
-			log.Fatalf("Invalid page type %T, type must have a `Metadata() *metadata.Metadata` method to implement the Page interface.", page)
-		}
-		head = html.Component(func(ctx context.Context) html.Node {
-			return dynamicmeta.Metadata(ctx).Node()
-		})
-	}
-	node := wrapper(server, head, page.Page())
+	node := wrapper(server, head(page), page.Page())
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
 		log.Fatalf("Failed to statically render page: %s", err.Error())
 	}
 
-	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" {
-			http.NotFoundHandler().ServeHTTP(w, r)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" && !internal {
+			server.notfound.ServeHTTP(w, r)
 			return
 		}
 
@@ -112,7 +146,7 @@ func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middlewa
 		}
 
 		if ctx.NotFoundMark {
-			http.NotFoundHandler().ServeHTTP(w, r)
+			server.notfound.ServeHTTP(w, r)
 			return
 		}
 		if ctx.RedirectMark != nil {
@@ -120,7 +154,11 @@ func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middlewa
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		if internal {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 		io.Copy(w, buf)
 
 		flusher, ok := w.(http.Flusher)
@@ -170,15 +208,6 @@ func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middlewa
 			flusher.Flush()
 		}
 	})
-
-	for i := len(server.middlewares) - 1; i >= 0; i-- {
-		handler = server.middlewares[i].Apply(handler)
-	}
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		handler = middlewares[i].Apply(handler)
-	}
-
-	return handler
 }
 
 type StaticRenderer struct {

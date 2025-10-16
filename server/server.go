@@ -1,3 +1,23 @@
+// Package server provides the core HTTP server implementation for the application,
+// including environment configuration, middleware management, static asset handling,
+// development server proxying, and graceful shutdown capabilities.
+//
+// The Server type embeds http.ServeMux and extends it with middleware support,
+// asset manifest management, and environment-specific behaviors. It supports both
+// development and production environments, allowing for flexible asset resolution
+// and request handling.
+//
+// Usage:
+//   - Create a new server instance using New() with appropriate Options.
+//   - Register middleware and route handlers as needed.
+//   - Serve static assets and pages using provided methods.
+//   - Start the server with Serve(), which handles graceful shutdown.
+//
+// Example:
+//
+//	options := &server.Options{Env: server.Dev, Port: ":8080"}
+//	srv := server.New(options)
+//	srv.Serve()
 package server
 
 import (
@@ -6,7 +26,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"net/http"
 	"net/http/httputil"
@@ -18,7 +37,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/canpacis/pacis/html"
+	"github.com/canpacis/pacis/internal/server"
 	"github.com/canpacis/pacis/server/middleware"
 )
 
@@ -33,9 +52,10 @@ const (
 	Prod = Environment("PRODUCTION")
 )
 
+// Options holds the configuration settings for the server, including environment,
+// port, development server URL, logger, and HTTP request multiplexer.
 type Options struct {
 	Env       Environment
-	Host      string
 	Port      string
 	DevServer *url.URL
 	Logger    *slog.Logger
@@ -57,6 +77,7 @@ type Server struct {
 	middlewares []middleware.Middleware
 	manifest    manifest
 	options     *Options
+	notfound    http.Handler
 }
 
 // Adds middleware(s) to the application's middleware stack.
@@ -89,12 +110,32 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 	return nil
 }
 
+var ErrNotFound = errors.New("http not found")
+
 func (s *Server) RegisterDevHandlers() {
 	proxy := httputil.NewSingleHostReverseProxy(s.options.DevServer)
+	proxy.ModifyResponse = func(r *http.Response) error {
+		if r.StatusCode == http.StatusNotFound {
+			return ErrNotFound
+		}
+		return nil
+	}
+	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, ErrNotFound) {
+			s.notfound.ServeHTTP(w, r)
+		}
+	}
 	s.Handle("GET /{path}", proxy)
 	s.Handle("GET /src/", proxy)
 	s.Handle("GET /@vite/", proxy)
 	s.Handle("GET /node_modules/", proxy)
+}
+
+func (s *Server) SetNotFoundPage(page Page, layout Layout) {
+	s.notfound = handler(s, page, layout, true)
+	for i := len(s.middlewares) - 1; i >= 0; i-- {
+		s.notfound = s.middlewares[i].Apply(s.notfound)
+	}
 }
 
 // Asset returns the URL or path for a given asset name based on the current application context.
@@ -116,16 +157,10 @@ func (s *Server) Asset(name string) string {
 	}
 	entry, ok := s.manifest[strings.TrimPrefix(name, "/")]
 	if !ok {
-		log.Fatalf("Failed to find static entry: %s", name)
+		s.options.Logger.Error("Failed to find static entry", "name", name)
+		return "/"
 	}
 	return "/" + entry.File
-}
-
-func (s *Server) HMR() html.Node {
-	if s.options.Env == Prod {
-		return html.Fragment()
-	}
-	return html.Script(html.Type("module"), html.Src("/@vite/client"))
 }
 
 func (s *Server) Serve() {
@@ -160,6 +195,18 @@ func (s *Server) Serve() {
 	logger.Info("Server shutdowwn")
 }
 
+// New creates and returns a new Server instance using the provided Options.
+// It sets default values for any missing options, including the HTTP mux, development server URL,
+// environment, and logger. The function also attaches default middleware for logging and recovery,
+// and sets the default "not found" page handler.
+//
+// Parameters:
+//
+//	options - a pointer to an Options struct containing configuration for the server.
+//
+// Returns:
+//
+//	A pointer to the initialized Server.
 func New(options *Options) *Server {
 	if options.Mux == nil {
 		options.Mux = http.DefaultServeMux
@@ -180,5 +227,6 @@ func New(options *Options) *Server {
 	}
 
 	s.Use(middleware.NewLogger(s.options.Logger), middleware.NewRecover(s.options.Logger, nil))
+	s.SetNotFoundPage(server.NotFoundPage, DefaultLayout)
 	return s
 }
