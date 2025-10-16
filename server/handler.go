@@ -15,136 +15,24 @@ import (
 	"github.com/canpacis/pacis/server/middleware"
 )
 
-type layout struct {
-	layout func(*Server, html.Node, html.Node) html.Node
+type Page interface {
+	Page() html.Node
 }
 
-func layoutof(l any) *layout {
-	if l == nil {
-		return &layout{
-			layout: func(s *Server, h, c html.Node) html.Node {
-				return c
-			},
-		}
-	}
-	shc, ok := l.(func(*Server, html.Node, html.Node) html.Node)
-	if ok {
-		return &layout{layout: shc}
-	}
-	hc, ok := l.(func(html.Node, html.Node) html.Node)
-	if ok {
-		return &layout{
-			layout: func(s *Server, h, c html.Node) html.Node {
-				return hc(h, c)
-			},
-		}
-	}
-	c, ok := l.(func(html.Node) html.Node)
-	if ok {
-		return &layout{
-			layout: func(s *Server, h, ch html.Node) html.Node {
-				return c(ch)
-			},
-		}
-	}
-	log.Fatal("Invalid layout type, you must pass a function that returns an html.Node.")
+type PageFunc func() html.Node
+
+func (p PageFunc) Page() html.Node {
+	return p()
+}
+
+func (PageFunc) Metadata() *metadata.Metadata {
 	return nil
 }
 
-// LayoutFn defines a function type that takes a context and an html.Node as input,
+// Layout defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
-type LayoutFn any
-
-type page struct {
-	staticmeta bool
-	metadata   func(context.Context) *metadata.Metadata
-	page       func(*Server) html.Node
-}
-
-func (p *page) Metadata(ctx context.Context) *metadata.Metadata {
-	return p.metadata(ctx)
-}
-
-func (p *page) Page(s *Server) html.Node {
-	return p.page(s)
-}
-
-func pageof(p any) *page {
-	fn, ok := p.(func() html.Node)
-	if ok {
-		return &page{
-			metadata: func(ctx context.Context) *metadata.Metadata {
-				return nil
-			},
-			page: func(s *Server) html.Node {
-				return fn()
-			},
-		}
-	}
-
-	serverfn, ok := p.(func(*Server) html.Node)
-	if ok {
-		return &page{
-			metadata: func(ctx context.Context) *metadata.Metadata {
-				return nil
-			},
-			page: func(s *Server) html.Node {
-				return serverfn(s)
-			},
-		}
-	}
-
-	var staticmeta bool
-	var metadatafn func(context.Context) *metadata.Metadata
-	var pagefn func(*Server) html.Node
-
-	metadataiface, ok := p.(interface{ Metadata() *metadata.Metadata })
-	if ok {
-		staticmeta = true
-		metadatafn = func(ctx context.Context) *metadata.Metadata {
-			return metadataiface.Metadata()
-		}
-	} else {
-		ctxmetadataiface, ok := p.(interface {
-			Metadata(context.Context) *metadata.Metadata
-		})
-		if ok {
-			metadatafn = func(ctx context.Context) *metadata.Metadata {
-				return ctxmetadataiface.Metadata(ctx)
-			}
-		} else {
-			staticmeta = true
-			metadatafn = func(ctx context.Context) *metadata.Metadata {
-				return nil
-			}
-		}
-	}
-
-	pageiface, ok := p.(interface{ Page() html.Node })
-	if ok {
-		pagefn = func(s *Server) html.Node {
-			return pageiface.Page()
-		}
-	} else {
-		serverpageiface, ok := p.(interface{ Page(*Server) html.Node })
-		if ok {
-			pagefn = func(s *Server) html.Node {
-				return serverpageiface.Page(s)
-			}
-		} else {
-			log.Fatal("Invalid page type, you must either pass a function or an interface with a Page() method on it.")
-		}
-	}
-
-	return &page{
-		staticmeta: staticmeta,
-		metadata:   metadatafn,
-		page:       pagefn,
-	}
-}
-
-type Page any
+type Layout func(*Server, html.Node, html.Node) html.Node
 
 var bufpool = sync.Pool{
 	New: func() any {
@@ -174,24 +62,34 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
+func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middleware.Middleware) http.Handler {
 	defer func() {
 		if data := recover(); data != nil {
 			server.options.Logger.Error("HTTP handler paniced on partial pre-render", "error", data)
 		}
 	}()
 
-	wrapper := layoutof(layout)
-	p := pageof(page)
-	var metanode html.Node
-	if p.staticmeta {
-		metanode = p.Metadata(context.Background()).Node()
+	wrapper := layout
+	if wrapper == nil {
+		wrapper = func(s *Server, h, c html.Node) html.Node { return c }
+	}
+
+	var head html.Node
+	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
+	if ok {
+		head = staticmeta.Metadata().Node()
 	} else {
-		metanode = html.Component(func(ctx context.Context) html.Node {
-			return p.Metadata(ctx).Node()
+		dynamicmeta, ok := page.(interface {
+			Metadata(context.Context) *metadata.Metadata
+		})
+		if !ok {
+			log.Fatalf("Invalid page type %T, type must have a `Metadata() *metadata.Metadata` method to implement the Page interface.", page)
+		}
+		head = html.Component(func(ctx context.Context) html.Node {
+			return dynamicmeta.Metadata(ctx).Node()
 		})
 	}
-	node := wrapper.layout(server, metanode, p.Page(server))
+	node := wrapper(server, head, page.Page())
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -205,7 +103,6 @@ func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middle
 		}
 
 		ctx := intserver.NewContext(w, r)
-		ctx.Metadata = p.Metadata(ctx)
 
 		buf := bufpool.New().(*bytes.Buffer)
 		defer bufpool.Put(buf)

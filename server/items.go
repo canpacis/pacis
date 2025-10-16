@@ -75,17 +75,6 @@ func Detail(ctx context.Context) *RequestDetail {
 	}
 }
 
-func Head(ctx context.Context) html.Node {
-	context, ok := ctx.(*server.Context)
-	if !ok {
-		log.Fatal("server.Head node used outside of server rendering context")
-	}
-	if context.Metadata == nil {
-		return html.Fragment()
-	}
-	return context.Metadata.Node()
-}
-
 func Redirect(ctx context.Context, to string) html.Node {
 	context, ok := ctx.(*server.Context)
 	if !ok {

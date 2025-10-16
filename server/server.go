@@ -64,7 +64,7 @@ func (s *Server) Use(middlewares ...middleware.Middleware) {
 	s.middlewares = append(s.middlewares, middlewares...)
 }
 
-func (s *Server) HandlePage(pattern string, page Page, layout LayoutFn, middlewares ...middleware.Middleware) {
+func (s *Server) HandlePage(pattern string, page Page, layout Layout, middlewares ...middleware.Middleware) {
 	pattern = strings.TrimSuffix(pattern, "/") + "/"
 	s.Handle(pattern, HandlerOf(s, page, layout, middlewares...))
 }
