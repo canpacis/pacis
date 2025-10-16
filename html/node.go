@@ -293,9 +293,12 @@ func (e *Element) Render(w ChunkWriter) {
 				Apply(context.Context, io.Writer) error
 			})
 			if !ok {
-				log.Fatalf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
+				w.Write(DynamicChunk(func(ctx context.Context, w io.Writer) error {
+					return fmt.Errorf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
+				}))
+			} else {
+				w.Write(DynamicChunk(applier.Apply))
 			}
-			w.Write(DynamicChunk(applier.Apply))
 		}
 	}
 
@@ -353,7 +356,6 @@ var elpool = sync.Pool{
 // El creates a new Element with the specified tag name and a variadic list of items,
 // which can be either Node or Property types. Nodes are added as children of the element,
 // while Properties are collected and applied to the element after all children are processed.
-// Panics if an item of unknown type is provided.
 // Returns a pointer to the constructed Element.
 func El(name string, items ...Item) *Element {
 	el := elpool.New().(*Element)
@@ -379,17 +381,17 @@ func El(name string, items ...Item) *Element {
 				// TODO: Deferred properties have a serious bug
 				el.properties = append(el.properties, item)
 			default:
-				panic(fmt.Sprintf("illegal property lifecycle: %T", item))
+				log.Fatalf("Illegal property lifecycle: %T", item)
 			}
 		default:
-			panic(fmt.Sprintf("illegal item type: %T", item))
+			log.Fatalf("Illegal item type: %T", item)
 		}
 	}
 
 	for _, prop := range *immediate {
 		applier, ok := prop.(interface{ Apply(*Element) })
 		if !ok {
-			panic(fmt.Sprintf("property with immediate life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop))
+			log.Fatalf("Property with immediate life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop)
 		}
 		applier.Apply(el)
 	}
@@ -397,7 +399,7 @@ func El(name string, items ...Item) *Element {
 	for _, prop := range *static {
 		applier, ok := prop.(interface{ Apply(*Element) })
 		if !ok {
-			panic(fmt.Sprintf("property with static life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop))
+			log.Fatalf("Property with static life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop)
 		}
 		applier.Apply(el)
 	}
@@ -614,7 +616,7 @@ func (n *JSONNode) Render(w ChunkWriter) {
 	enc := json.NewEncoder(buf)
 	enc.SetIndent("", n.Indent)
 	if err := enc.Encode(n.Data); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	w.Write(StaticChunk(buf.Bytes()))
 }

@@ -15,10 +15,46 @@ import (
 	"github.com/canpacis/pacis/server/middleware"
 )
 
+type layout struct {
+	layout func(*Server, html.Node, html.Node) html.Node
+}
+
+func layoutof(l any) *layout {
+	if l == nil {
+		return &layout{
+			layout: func(s *Server, h, c html.Node) html.Node {
+				return c
+			},
+		}
+	}
+	shc, ok := l.(func(*Server, html.Node, html.Node) html.Node)
+	if ok {
+		return &layout{layout: shc}
+	}
+	hc, ok := l.(func(html.Node, html.Node) html.Node)
+	if ok {
+		return &layout{
+			layout: func(s *Server, h, c html.Node) html.Node {
+				return hc(h, c)
+			},
+		}
+	}
+	c, ok := l.(func(html.Node) html.Node)
+	if ok {
+		return &layout{
+			layout: func(s *Server, h, ch html.Node) html.Node {
+				return c(ch)
+			},
+		}
+	}
+	log.Fatal("Invalid layout type, you must pass a function that returns an html.Node.")
+	return nil
+}
+
 // LayoutFn defines a function type that takes a context and an html.Node as input,
 // and returns a modified html.Node. It is typically used to apply layout transformations
 // or wrappers to HTML nodes within a given context.
-type LayoutFn func(*Server, html.Node, html.Node) html.Node
+type LayoutFn any
 
 type page struct {
 	staticmeta bool
@@ -139,10 +175,13 @@ Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
 func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middleware.Middleware) http.Handler {
-	var wrapper LayoutFn = layout
-	if wrapper == nil {
-		wrapper = func(app *Server, h html.Node, n html.Node) html.Node { return n }
-	}
+	defer func() {
+		if data := recover(); data != nil {
+			server.options.Logger.Error("HTTP handler paniced on partial pre-render", "error", data)
+		}
+	}()
+
+	wrapper := layoutof(layout)
 	p := pageof(page)
 	var metanode html.Node
 	if p.staticmeta {
@@ -152,7 +191,7 @@ func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middle
 			return p.Metadata(ctx).Node()
 		})
 	}
-	node := wrapper(server, metanode, p.Page(server))
+	node := wrapper.layout(server, metanode, p.Page(server))
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -189,7 +228,7 @@ func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middle
 
 		flusher, ok := w.(http.Flusher)
 		if !ok {
-			log.Fatal("http writer does not support chunked encoding")
+			server.options.Logger.Warn("Http writer does not support chunked encoding")
 			return
 		}
 		if len(ctx.AsyncChunks) == 0 {
@@ -216,7 +255,7 @@ func HandlerOf(server *Server, page Page, layout LayoutFn, middlewares ...middle
 				}
 
 				if err := renderer.Build(node); err != nil {
-					log.Fatalf("Failed to statically render page: %s", err.Error())
+					server.options.Logger.Error("Failed to statically render page", "error", err)
 					return
 				}
 

@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -28,6 +29,18 @@ import (
 )
 
 type KeyType string
+
+func getvalue[T any](ctx context.Context, name, key string) T {
+	value := ctx.Value(KeyType(key))
+	if value == nil {
+		log.Fatalf("Context value for %s has not been set. Have you registered the middleware correctly?", name)
+	}
+	scheme, ok := value.(T)
+	if !ok {
+		log.Fatalf("Was expecting %s to be string but got %T. Have you registered the middleware correctly?", name, value)
+	}
+	return scheme
+}
 
 type Middleware interface {
 	Name() string
@@ -105,9 +118,8 @@ func NewColorScheme(key string) *ColorScheme {
 
 // GetColorScheme retrieves the color scheme (theme) from the provided context.
 // It expects the context to have a value associated with the key "theme" of type string.
-// If the value is not present or not a string, this function will panic.
 func GetColorScheme(ctx context.Context) string {
-	return ctx.Value(KeyType("color-scheme")).(string)
+	return getvalue[string](ctx, "color scheme", "color-scheme")
 }
 
 // Locale is a middleware that determines the user's preferred language from a cookie ("pacis_locale"),
@@ -160,16 +172,14 @@ func NewLocale(key string, bundle *i18n.Bundle, defaultlang language.Tag) *Local
 
 // GetLocalizer retrieves the localizer struct from the provided context.
 // It expects the context to have a value associated with the key "localizer" of type *i18n.Localizer
-// If the value is not present or not *i18n.Localizer, this function will panic.
 func GetLocalizer(ctx context.Context) *i18n.Localizer {
-	return ctx.Value(KeyType("localizer")).(*i18n.Localizer)
+	return getvalue[*i18n.Localizer](ctx, "localizer", "localizer")
 }
 
 // GetLocale retrieves the locale value from the provided context.
 // It expects the context to have a value associated with the key "locale" of type *language.Tag
-// If the value is not present or not *language.Tag, this function will panic.
 func GetLocale(ctx context.Context) *language.Tag {
-	return ctx.Value(KeyType("locale")).(*language.Tag)
+	return getvalue[*language.Tag](ctx, "locale", "locale")
 }
 
 // Cache returns a middleware that sets the "Cache-Control" header on HTTP responses,
@@ -267,3 +277,30 @@ func (*Gzip) Apply(h http.Handler) http.Handler {
 }
 
 var DefaultGzip = &Gzip{}
+
+type Recover struct {
+	logger *slog.Logger
+	fn     func(any)
+}
+
+func (*Recover) Name() string {
+	return "Recover"
+}
+
+func (m *Recover) Apply(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if data := recover(); data != nil {
+				m.logger.Error("HTTP handler paniced", "error", data)
+				if m.fn != nil {
+					m.fn(data)
+				}
+			}
+		}()
+		h.ServeHTTP(w, r)
+	})
+}
+
+func NewRecover(logger *slog.Logger, callback func(any)) *Recover {
+	return &Recover{logger: logger, fn: callback}
+}
