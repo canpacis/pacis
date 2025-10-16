@@ -48,13 +48,16 @@ func DefaultLayout(server *Server, head html.Node, children html.Node) html.Node
 	)
 }
 
-func head(page Page) html.Node {
+func head(page Page, dev bool) html.Node {
 	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
 	if ok {
-		return html.Fragment(
-			staticmeta.Metadata().Node(),
-			html.Script(html.Type("module"), html.Src("/@vite/client")),
-		)
+		if dev {
+			html.Fragment(
+				staticmeta.Metadata().Node(),
+				html.Script(html.Type("module"), html.Src("/@vite/client")),
+			)
+		}
+		return staticmeta.Metadata().Node()
 	} else {
 		dynamicmeta, ok := page.(interface {
 			Metadata(context.Context) *metadata.Metadata
@@ -62,12 +65,17 @@ func head(page Page) html.Node {
 		if !ok {
 			log.Fatalf("Invalid page type %T, type must have a `Metadata() *metadata.Metadata` method to implement the Page interface.", page)
 		}
-		return html.Fragment(
-			html.Component(func(ctx context.Context) html.Node {
-				return dynamicmeta.Metadata(ctx).Node()
-			}),
-			html.Script(html.Type("module"), html.Src("/@vite/client")),
-		)
+		if dev {
+			return html.Fragment(
+				html.Component(func(ctx context.Context) html.Node {
+					return dynamicmeta.Metadata(ctx).Node()
+				}),
+				html.Script(html.Type("module"), html.Src("/@vite/client")),
+			)
+		}
+		return html.Component(func(ctx context.Context) html.Node {
+			return dynamicmeta.Metadata(ctx).Node()
+		})
 	}
 }
 
@@ -123,7 +131,7 @@ func handler(server *Server, page Page, layout Layout, internal bool) http.Handl
 	if wrapper == nil {
 		wrapper = func(s *Server, h, c html.Node) html.Node { return c }
 	}
-	node := wrapper(server, head(page), page.Page())
+	node := wrapper(server, head(page, server.options.Env == Dev), page.Page())
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {

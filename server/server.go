@@ -96,7 +96,11 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 		return err
 	}
 
-	s.Handle("GET /{path}", middleware.NewCache(time.Hour*24*365).Apply(http.FileServerFS(static)))
+	var handler http.Handler = server.NewFileServer(static, s.notfound)
+	for _, middleware := range s.middlewares {
+		handler = middleware.Apply(handler)
+	}
+	s.Handle("GET /{path}", middleware.NewCache(time.Hour*24*365).Apply(handler))
 
 	file, err := vite.Open(path.Join(name, ".vite/manifest.json"))
 	if err != nil {
@@ -110,25 +114,28 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 	return nil
 }
 
-var ErrNotFound = errors.New("http not found")
-
 func (s *Server) RegisterDevHandlers() {
 	proxy := httputil.NewSingleHostReverseProxy(s.options.DevServer)
 	proxy.ModifyResponse = func(r *http.Response) error {
 		if r.StatusCode == http.StatusNotFound {
-			return ErrNotFound
+			return server.ErrNotFound
 		}
 		return nil
 	}
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, server.ErrNotFound) {
 			s.notfound.ServeHTTP(w, r)
 		}
 	}
-	s.Handle("GET /{path}", proxy)
-	s.Handle("GET /src/", proxy)
-	s.Handle("GET /@vite/", proxy)
-	s.Handle("GET /node_modules/", proxy)
+	var handler http.Handler = proxy
+	for _, middleware := range s.middlewares {
+		handler = middleware.Apply(handler)
+	}
+
+	s.Handle("GET /{path}", handler)
+	s.Handle("GET /src/", handler)
+	s.Handle("GET /@vite/", handler)
+	s.Handle("GET /node_modules/", handler)
 }
 
 func (s *Server) SetNotFoundPage(page Page, layout Layout) {

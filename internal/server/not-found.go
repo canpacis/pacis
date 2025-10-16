@@ -1,6 +1,12 @@
 package server
 
 import (
+	"errors"
+	"io/fs"
+	"net/http"
+	"path"
+	"strings"
+
 	"github.com/canpacis/pacis/html"
 	"github.com/canpacis/pacis/server/metadata"
 )
@@ -31,3 +37,27 @@ func (*NotFound) Page() html.Node {
 }
 
 var NotFoundPage = &NotFound{}
+
+var ErrNotFound = errors.New("http not found")
+
+type FileServer struct {
+	fs       fs.FS
+	handler  http.Handler
+	notfound http.Handler
+}
+
+func (h *FileServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	clean := path.Clean("/" + r.URL.Path) // ensure at least "/"
+	trimmed := strings.TrimPrefix(clean, "/")
+
+	_, err := h.fs.Open(trimmed)
+	if errors.Is(err, fs.ErrNotExist) {
+		h.notfound.ServeHTTP(w, r)
+	} else {
+		h.handler.ServeHTTP(w, r)
+	}
+}
+
+func NewFileServer(fs fs.FS, notfound http.Handler) *FileServer {
+	return &FileServer{fs: fs, handler: http.FileServerFS(fs), notfound: notfound}
+}
