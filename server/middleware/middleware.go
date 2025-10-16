@@ -304,3 +304,36 @@ func (m *Recover) Apply(h http.Handler) http.Handler {
 func NewRecover(logger *slog.Logger, callback func(any)) *Recover {
 	return &Recover{logger: logger, fn: callback}
 }
+
+type Authenticator interface {
+	Authenticate(*http.Request) (any, error)
+	OnError(http.ResponseWriter, *http.Request, error)
+}
+
+type Authentication struct {
+	Authenticator Authenticator
+}
+
+func (*Authentication) Name() string {
+	return "Auth"
+}
+
+func (m *Authentication) Apply(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, err := m.Authenticator.Authenticate(r)
+		if err != nil {
+			m.Authenticator.OnError(w, r, err)
+			return
+		}
+		ctx := context.WithValue(r.Context(), KeyType("user"), user)
+		h.ServeHTTP(w, r.Clone(ctx))
+	})
+}
+
+func NewAuthentication(authr Authenticator) *Authentication {
+	return &Authentication{Authenticator: authr}
+}
+
+func GetUser[T any](ctx context.Context) *T {
+	return getvalue[*T](ctx, "user", "user")
+}
