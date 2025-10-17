@@ -2,7 +2,8 @@ package server
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -33,7 +34,7 @@ func Async(comp html.Component, fallback html.Node) html.Component {
 func Data[T any](ctx context.Context) (*T, error) {
 	context, ok := ctx.(*server.Context)
 	if !ok {
-		log.Fatal("Data helper used outside of server rendering context")
+		return nil, fmt.Errorf("Data helper used outside of server rendering context")
 	}
 	req := context.Request.Clone(ctx)
 	data := new(T)
@@ -59,10 +60,10 @@ type RequestDetail struct {
 	Cookies []*http.Cookie
 }
 
-func Detail(ctx context.Context) *RequestDetail {
+func Detail(ctx context.Context) (*RequestDetail, error) {
 	context, ok := ctx.(*server.Context)
 	if !ok {
-		log.Fatal("Detail helper used outside of server rendering context")
+		return nil, fmt.Errorf("Detail helper used outside of server rendering context")
 	}
 	return &RequestDetail{
 		URL:        context.Request.URL,
@@ -72,15 +73,16 @@ func Detail(ctx context.Context) *RequestDetail {
 		RemoteAddr: context.Request.RemoteAddr,
 		RequestURI: context.Request.RequestURI,
 		Cookies:    context.Request.Cookies(),
-	}
+	}, nil
 }
 
 func Redirect(ctx context.Context, to string) html.Node {
 	context, ok := ctx.(*server.Context)
-	if !ok {
-		log.Fatal("Redirect node used outside of server rendering context")
+	if ok {
+		context.RedirectMark = &server.RedirectMark{Status: http.StatusFound, To: to}
+	} else {
+		slog.Error("Redirect node used outside of server rendering context")
 	}
-	context.RedirectMark = &server.RedirectMark{Status: http.StatusFound, To: to}
 	return html.Fragment()
 }
 
@@ -92,10 +94,11 @@ func RedirectComponent(to string) html.Component {
 
 func RedirectWith(ctx context.Context, to string, status int) html.Node {
 	context, ok := ctx.(*server.Context)
-	if !ok {
-		log.Fatal("RedirectWith node used outside of server rendering context")
+	if ok {
+		context.RedirectMark = &server.RedirectMark{Status: status, To: to}
+	} else {
+		slog.Error("RedirectWith node used outside of server rendering context")
 	}
-	context.RedirectMark = &server.RedirectMark{Status: status, To: to}
 	return html.Fragment()
 }
 
@@ -107,19 +110,21 @@ func RedirectWithComponent(to string, status int) html.Component {
 
 func NotFound(ctx context.Context) html.Node {
 	context, ok := ctx.(*server.Context)
-	if !ok {
-		log.Fatal("NotFound node used outside of server rendering context")
+	if ok {
+		context.NotFoundMark = true
+	} else {
+		slog.Error("NotFound node used outside of server rendering context")
 	}
-	context.NotFoundMark = true
 	return html.Fragment()
 }
 
 func SetCookie(ctx context.Context, cookie *http.Cookie) html.Node {
 	context, ok := ctx.(*server.Context)
-	if !ok {
-		log.Fatal("SetCookie node used outside of server rendering context")
+	if ok {
+		http.SetCookie(context.ResponseWriter, cookie)
+	} else {
+		slog.Error("SetCookie node used outside of server rendering context")
 	}
-	http.SetCookie(context.ResponseWriter, cookie)
 	return html.Fragment()
 }
 

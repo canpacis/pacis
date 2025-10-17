@@ -86,8 +86,11 @@ func (s *Server) Use(middlewares ...middleware.Middleware) {
 }
 
 func (s *Server) HandlePage(pattern string, page Page, layout Layout, middlewares ...middleware.Middleware) {
-	pattern = strings.TrimSuffix(pattern, "/") + "/"
-	s.Handle(pattern, HandlerOf(s, page, layout, middlewares...))
+	pattern = strings.TrimSuffix(pattern, "/")
+	if pattern != "" && pattern != "GET " {
+		s.Handle(pattern, HandlerOf(s, page, layout, middlewares...))
+	}
+	s.Handle(pattern+"/", HandlerOf(s, page, layout, middlewares...))
 }
 
 func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
@@ -128,9 +131,9 @@ func (s *Server) RegisterDevHandlers() {
 		}
 	}
 	var handler http.Handler = proxy
-	for _, middleware := range s.middlewares {
-		handler = middleware.Apply(handler)
-	}
+	// for _, middleware := range s.middlewares {
+	// 	handler = middleware.Apply(handler)
+	// }
 
 	s.Handle("GET /{path}", handler)
 	s.Handle("GET /src/", handler)

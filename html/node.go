@@ -36,7 +36,6 @@ import (
 	"html"
 	"io"
 	"iter"
-	"log"
 	"slices"
 	"strings"
 	"sync"
@@ -51,7 +50,7 @@ type Item interface {
 // Implementations of Node should define the Render method to output their content.
 type Node interface {
 	Item
-	Render(ChunkWriter)
+	Render(ChunkWriter) error
 	Release()
 }
 
@@ -62,8 +61,9 @@ type Text string
 func (Text) Item() {}
 
 // Implements the Node interface.
-func (t Text) Render(w ChunkWriter) {
+func (t Text) Render(w ChunkWriter) error {
 	w.Write(StaticChunk(html.EscapeString(string(t))))
+	return nil
 }
 
 // Implements the Node interface.
@@ -90,10 +90,13 @@ func (f Frag) Release() {
 }
 
 // Implements the Node interface.
-func (f Frag) Render(w ChunkWriter) {
+func (f Frag) Render(w ChunkWriter) error {
 	for _, node := range f {
-		node.Render(w)
+		if err := node.Render(w); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Fragment creates a Frag from the provided nodes, allowing multiple nodes to be grouped together.
@@ -182,7 +185,7 @@ func (Component) Release() {
 }
 
 // Implements the Node interface.
-func (c Component) Render(cw ChunkWriter) {
+func (c Component) Render(cw ChunkWriter) error {
 	cw.Write(DynamicChunk(func(ctx context.Context, w io.Writer) error {
 		writer := &teecw{ChunkWriter: cw, fn: func(c Chunk) error {
 			if err := Render(c, ctx, w); err != nil {
@@ -193,6 +196,7 @@ func (c Component) Render(cw ChunkWriter) {
 		c(ctx).Render(writer)
 		return nil
 	}))
+	return nil
 }
 
 // Element represents an HTML element node, containing the element's name,
@@ -284,7 +288,7 @@ func (e *Element) Release() {
 var voidelements = []string{"!DOCTYPE", "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 
 // Implements the Node interface.
-func (e *Element) Render(w ChunkWriter) {
+func (e *Element) Render(w ChunkWriter) error {
 	w.Write(StaticChunk(fmt.Appendf(nil, "<%s", e.Tag())))
 
 	if len(e.properties) > 0 {
@@ -293,9 +297,7 @@ func (e *Element) Render(w ChunkWriter) {
 				Apply(context.Context, io.Writer) error
 			})
 			if !ok {
-				w.Write(DynamicChunk(func(ctx context.Context, w io.Writer) error {
-					return fmt.Errorf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
-				}))
+				return fmt.Errorf("property with deferred life cycle (%T) is not implementing the applier interface correctly, add a Apply(context.Context, io.Writer) error method", prop)
 			} else {
 				w.Write(DynamicChunk(applier.Apply))
 			}
@@ -313,14 +315,17 @@ func (e *Element) Render(w ChunkWriter) {
 	w.Write(StaticChunk(">"))
 
 	if slices.Contains(voidelements, e.Tag()) {
-		return
+		return nil
 	}
 
 	for _, node := range e.nodes {
-		node.Render(w)
+		if err := node.Render(w); err != nil {
+			return err
+		}
 	}
 
 	w.Write(StaticChunk(fmt.Appendf(nil, "</%s>", e.Tag())))
+	return nil
 }
 
 func (e *Element) Clone() *Element {
@@ -378,20 +383,19 @@ func El(name string, items ...Item) *Element {
 			case LifeCycleStatic:
 				*static = append(*static, item)
 			case LifeCycleDeferred:
-				// TODO: Deferred properties have a serious bug
 				el.properties = append(el.properties, item)
 			default:
-				log.Fatalf("Illegal property lifecycle: %T", item)
+				panic(fmt.Sprintf("Illegal property lifecycle: %T", item))
 			}
 		default:
-			log.Fatalf("Illegal item type: %T", item)
+			panic(fmt.Sprintf("Illegal item type: %T", item))
 		}
 	}
 
 	for _, prop := range *immediate {
 		applier, ok := prop.(interface{ Apply(*Element) })
 		if !ok {
-			log.Fatalf("Property with immediate life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop)
+			panic(fmt.Sprintf("Property with immediate life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop))
 		}
 		applier.Apply(el)
 	}
@@ -399,7 +403,7 @@ func El(name string, items ...Item) *Element {
 	for _, prop := range *static {
 		applier, ok := prop.(interface{ Apply(*Element) })
 		if !ok {
-			log.Fatalf("Property with static life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop)
+			panic(fmt.Sprintf("Property with static life cycle (%T) is not implementing the applier interface correctly, add a Apply(*Element) method", prop))
 		}
 		applier.Apply(el)
 	}
@@ -611,14 +615,15 @@ func (n *JSONNode) WithIndent(indent string) *JSONNode {
 }
 
 // Implements the Node interface.
-func (n *JSONNode) Render(w ChunkWriter) {
+func (n *JSONNode) Render(w ChunkWriter) error {
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
 	enc.SetIndent("", n.Indent)
 	if err := enc.Encode(n.Data); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	w.Write(StaticChunk(buf.Bytes()))
+	return nil
 }
 
 // Creates a new JSONNode for serializing arbitrary json data.
@@ -637,6 +642,7 @@ func (RawUnsafe) Release() {
 }
 
 // Implements the Node interface.
-func (t RawUnsafe) Render(w ChunkWriter) {
+func (t RawUnsafe) Render(w ChunkWriter) error {
 	w.Write(StaticChunk(string(t)))
+	return nil
 }

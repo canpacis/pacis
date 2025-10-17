@@ -17,7 +17,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -33,11 +32,11 @@ type KeyType string
 func getvalue[T any](ctx context.Context, name, key string) T {
 	value := ctx.Value(KeyType(key))
 	if value == nil {
-		log.Fatalf("Context value for %s has not been set. Have you registered the middleware correctly?", name)
+		panic(fmt.Sprintf("Context value for %s has not been set. Have you registered the middleware correctly?", name))
 	}
 	scheme, ok := value.(T)
 	if !ok {
-		log.Fatalf("Was expecting %s to be string but got %T. Have you registered the middleware correctly?", name, value)
+		panic(fmt.Sprintf("Was expecting %s to be %T but got %T. Have you registered the middleware correctly?", name, scheme, value))
 	}
 	return scheme
 }
@@ -334,6 +333,6 @@ func NewAuthentication(authr Authenticator) *Authentication {
 	return &Authentication{Authenticator: authr}
 }
 
-func GetUser[T any](ctx context.Context) *T {
-	return getvalue[*T](ctx, "user", "user")
+func GetUser[T any](ctx context.Context) T {
+	return getvalue[T](ctx, "user", "user")
 }
