@@ -41,7 +41,11 @@ x-data defines a chunk of HTML as an Alpine component and provides the reactive 
 
 https://alpinejs.dev/directives/data
 */
-func Data(data any) *DataProperty {
+func Data(data any) html.Property {
+	str, ok := data.(string)
+	if ok {
+		return html.Attr("x-data", str)
+	}
 	return &DataProperty{data: data, id: util.PrefixedID("pacis")}
 }
 

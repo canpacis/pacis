@@ -52,7 +52,7 @@ func head(page Page, dev bool) html.Node {
 	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
 	if ok {
 		if dev {
-			html.Fragment(
+			return html.Fragment(
 				staticmeta.Metadata().Node(),
 				html.Script(html.Type("module"), html.Src("/@vite/client")),
 			)
