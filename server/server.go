@@ -85,12 +85,33 @@ func (s *Server) Use(middlewares ...middleware.Middleware) {
 	s.middlewares = append(s.middlewares, middlewares...)
 }
 
-func (s *Server) HandlePage(pattern string, page Page, layout Layout, middlewares ...middleware.Middleware) {
-	pattern = strings.TrimSuffix(pattern, "/")
-	if pattern != "" && pattern != "GET " {
-		s.Handle(pattern, HandlerOf(s, page, layout, middlewares...))
+func clean(pattern string, prefix string) string {
+	replacer := strings.NewReplacer("GET", "", "POST", "", "PATCH", "", "PUT", "", "DELETE", "", "OPTIONS", "")
+	pattern = replacer.Replace(pattern)
+	pattern = strings.TrimSpace(pattern)
+	pattern = strings.TrimSpace(pattern)
+
+	if len(pattern) == 0 {
+		if len(prefix) > 0 {
+			return prefix + " /"
+		}
+		return "/"
 	}
-	s.Handle(pattern+"/", HandlerOf(s, page, layout, middlewares...))
+	if len(prefix) > 0 {
+		return prefix + " " + pattern
+	}
+	return pattern
+}
+
+func (s *Server) HandlePage(pattern string, page Page, layout Layout, middlewares ...middleware.Middleware) {
+	s.Handle(clean(pattern, "GET"), PageHandler(s, page, layout, middlewares...))
+
+	actioner, ok := page.(interface{ Actions() map[string]ActionFunc })
+	if !ok {
+		return
+	}
+	actions := actioner.Actions()
+	s.Handle(clean(pattern, "POST"), ActionsHandler(s, actions, middlewares...))
 }
 
 func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {

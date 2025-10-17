@@ -50,6 +50,17 @@ func Data[T any](ctx context.Context) (*T, error) {
 	return data, nil
 }
 
+func FormData[T any](r *http.Request) (*T, error) {
+	if err := r.ParseForm(); err != nil {
+		return nil, err
+	}
+	data := new(T)
+	if err := payload.NewFormScanner(&r.PostForm).Scan(data); err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 type RequestDetail struct {
 	URL *url.URL
 	Host,
@@ -132,4 +143,8 @@ func SetCookieComponent(cookie *http.Cookie) html.Component {
 	return func(ctx context.Context) html.Node {
 		return SetCookie(ctx, cookie)
 	}
+}
+
+func Form(name string, items ...html.Item) html.Node {
+	return html.Form(append(items, html.Method("POST"), html.Action("?__action="+name))...)
 }
