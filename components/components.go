@@ -43,6 +43,36 @@ func NewVariantApplier(fn func(*html.Element, Variant)) *VariantApplier {
 	return &VariantApplier{fn: fn}
 }
 
+type Size int
+
+func (Size) Item() {}
+
+func (Size) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleImmediate
+}
+
+func (v Size) Apply(el *html.Element) {
+	el.Set("size", v)
+}
+
+type SizeApplier struct {
+	fn func(*html.Element, Size)
+}
+
+func (*SizeApplier) Item() {}
+
+func (*SizeApplier) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleStatic
+}
+
+func (va *SizeApplier) Apply(el *html.Element) {
+	va.fn(el, el.Get("size").(Size))
+}
+
+func NewSizeApplier(fn func(*html.Element, Size)) *SizeApplier {
+	return &SizeApplier{fn: fn}
+}
+
 /*
 The TailwindMergeProperty type applies Tailwind CSS class merging to an element's class list,
 ensuring that conflicting or duplicate classes are resolved according to Tailwind's rules.

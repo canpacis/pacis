@@ -1,7 +1,7 @@
 package button
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/canpacis/pacis/components"
 	"github.com/canpacis/pacis/html"
@@ -33,11 +33,11 @@ var variant = components.NewVariantApplier(func(el *html.Element, v components.V
 	case Link:
 		el.AddClass("text-primary underline-offset-4 hover:underline")
 	default:
-		log.Fatalf("invalid button variant: %d", v)
+		panic(fmt.Sprintf("invalid button variant: %d", v))
 	}
 })
 
-type Size = components.Variant
+type Size = components.Size
 
 const (
 	Md = Size(iota)
@@ -46,7 +46,7 @@ const (
 	Icon
 )
 
-var size = components.NewVariantApplier(func(el *html.Element, v components.Variant) {
+var size = components.NewSizeApplier(func(el *html.Element, v components.Size) {
 	switch v {
 	case Md:
 		el.AddClass("h-10 px-4 py-2")
@@ -57,7 +57,7 @@ var size = components.NewVariantApplier(func(el *html.Element, v components.Vari
 	case Icon:
 		el.AddClass("h-10 w-10")
 	default:
-		log.Fatalf("invalid button size: %d", v)
+		panic(fmt.Sprintf("invalid button size: %d", v))
 	}
 })
 

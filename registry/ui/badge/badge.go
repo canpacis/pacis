@@ -2,7 +2,6 @@ package badge
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/canpacis/pacis/components"
 	"github.com/canpacis/pacis/html"
@@ -29,7 +28,7 @@ var variant = components.NewVariantApplier(func(el *html.Element, v components.V
 	case Secondary:
 		el.AddClass("border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80")
 	default:
-		log.Fatalf("invalid badge variant: %d", v)
+		panic(fmt.Sprintf("invalid badge variant: %d", v))
 	}
 })
 
