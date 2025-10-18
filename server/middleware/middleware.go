@@ -52,7 +52,8 @@ type Middleware interface {
 // to "light" and sets the cookie accordingly. The selected theme is stored in the request's
 // context under the key "theme" for downstream handlers to access.
 type ColorScheme struct {
-	key string
+	UseHeaders bool
+	Key        string
 }
 
 func (*ColorScheme) Name() string {
@@ -63,7 +64,7 @@ func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		set := func(theme string) {
 			http.SetCookie(w, &http.Cookie{
-				Name:     m.key,
+				Name:     m.Key,
 				Value:    theme,
 				Path:     "/",
 				HttpOnly: false,
@@ -72,11 +73,11 @@ func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 			})
 		}
 
-		cookie, err := r.Cookie(m.key)
+		cookie, err := r.Cookie(m.Key)
 		var scheme string
 
 		if err != nil {
-			if errors.Is(err, http.ErrNoCookie) {
+			if errors.Is(err, http.ErrNoCookie) && m.UseHeaders {
 				header := r.Header.Get("Sec-CH-Prefers-Color-Scheme")
 				if len(header) > 0 {
 					switch header {
@@ -109,10 +110,10 @@ func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 	})
 }
 
-var DefaultColorScheme = &ColorScheme{key: "pacis_color_scheme"}
+var DefaultColorScheme = &ColorScheme{Key: "pacis_color_scheme", UseHeaders: false}
 
 func NewColorScheme(key string) *ColorScheme {
-	return &ColorScheme{key: key}
+	return &ColorScheme{Key: key}
 }
 
 // GetColorScheme retrieves the color scheme (theme) from the provided context.
