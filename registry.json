@@ -115,6 +115,45 @@
       ]
     },
     {
+      "name": "empty",
+      "type": "registry:ui",
+      "title": "Empty",
+      "description": "Use the Empty component to display a empty state.",
+      "files": [
+        {
+          "path": "registry/ui/empty/empty.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/empty/empty.go"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input & Input Group",
+      "description": "Display a form input field or a component that looks like an input field with input. Display additional information or actions to an input or textarea with input group.",
+      "files": [
+        {
+          "path": "registry/ui/input/input.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/input/input.go"
+        }
+      ]
+    },
+    {
+      "name": "item",
+      "type": "registry:ui",
+      "title": "Item",
+      "description": "A versatile component that you can use to display any content.",
+      "files": [
+        {
+          "path": "registry/ui/item/item.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/item/item.go"
+        }
+      ]
+    },
+    {
       "name": "label",
       "type": "registry:ui",
       "title": "Label",
@@ -124,6 +163,19 @@
           "path": "registry/ui/label/label.go",
           "type": "registry:ui",
           "target": "src/components/ui/label/label.go"
+        }
+      ]
+    },
+    {
+      "name": "pagination",
+      "type": "registry:ui",
+      "title": "Pagination",
+      "description": "Pagination with page navigation, next and previous links.",
+      "files": [
+        {
+          "path": "registry/ui/pagination/pagination.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/pagination/pagination.go"
         }
       ]
     },
@@ -150,6 +202,32 @@
           "path": "registry/ui/skeleton/skeleton.go",
           "type": "registry:ui",
           "target": "src/components/ui/skeleton/skeleton.go"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "An indicator that can be used to show a loading state.",
+      "files": [
+        {
+          "path": "registry/ui/spinner/spinner.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/spinner/spinner.go"
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "registry:ui",
+      "title": "Table",
+      "description": "A responsive table component.",
+      "files": [
+        {
+          "path": "registry/ui/table/table.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/table/table.go"
         }
       ]
     }

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "spinner",
+  "type": "registry:ui",
+  "title": "Spinner",
+  "description": "An indicator that can be used to show a loading state.",
+  "files": [
+    {
+      "path": "registry/ui/spinner/spinner.go",
+      "content": "package spinner\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n\t\"github.com/canpacis/pacis/lucide\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn lucide.LoaderCircle(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Role(\"status\"),\n\t\t\thtml.Aria(\"label\", \"loading\"),\n\t\t\thtml.Class(\"size-4 animate-spin\"),\n\t\t)...,\n\t)\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/spinner/spinner.go"
+    }
+  ]
+}
