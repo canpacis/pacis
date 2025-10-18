@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/canpacis/pacis/html"
-	"github.com/canpacis/pacis/internal/util"
+	"github.com/canpacis/pacis/internal"
 )
 
 /*
@@ -46,7 +46,7 @@ func Data(data any) html.Property {
 	if ok {
 		return html.Attr("x-data", str)
 	}
-	return &DataProperty{data: data, id: util.PrefixedID("pacis")}
+	return &DataProperty{data: data, id: internal.PrefixedID("pacis")}
 }
 
 /*

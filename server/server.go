@@ -37,7 +37,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/canpacis/pacis/internal/server"
+	"github.com/canpacis/pacis/internal"
 	"github.com/canpacis/pacis/server/middleware"
 )
 
@@ -120,7 +120,7 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 		return err
 	}
 
-	var handler http.Handler = server.NewFileServer(static, s.notfound)
+	var handler http.Handler = internal.NewFileServer(static, s.notfound)
 	for _, middleware := range s.middlewares {
 		handler = middleware.Apply(handler)
 	}
@@ -142,12 +142,12 @@ func (s *Server) RegisterDevHandlers() {
 	proxy := httputil.NewSingleHostReverseProxy(s.options.DevServer)
 	proxy.ModifyResponse = func(r *http.Response) error {
 		if r.StatusCode == http.StatusNotFound {
-			return server.ErrNotFound
+			return internal.ErrNotFound
 		}
 		return nil
 	}
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		if errors.Is(err, server.ErrNotFound) {
+		if errors.Is(err, internal.ErrNotFound) {
 			s.notfound.ServeHTTP(w, r)
 		}
 	}
@@ -258,6 +258,6 @@ func New(options *Options) *Server {
 	}
 
 	s.Use(middleware.NewLogger(s.options.Logger), middleware.NewRecover(s.options.Logger, nil))
-	s.SetNotFoundPage(server.NotFoundPage, DefaultLayout)
+	s.SetNotFoundPage(internal.NotFoundPage, DefaultLayout)
 	return s
 }

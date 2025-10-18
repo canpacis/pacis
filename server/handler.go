@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/canpacis/pacis/html"
-	intserver "github.com/canpacis/pacis/internal/server"
+	intserver "github.com/canpacis/pacis/internal"
 	"github.com/canpacis/pacis/server/metadata"
 	"github.com/canpacis/pacis/server/middleware"
 )
