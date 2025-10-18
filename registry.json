@@ -128,10 +128,24 @@
       ]
     },
     {
+      "name": "field",
+      "type": "registry:ui",
+      "title": "Field",
+      "description": "Combine labels, controls, and help text to compose accessible form fields and grouped inputs.",
+      "files": [
+        {
+          "path": "registry/ui/field/field.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/field/field.go"
+        }
+      ]
+    },
+    {
       "name": "input",
       "type": "registry:ui",
       "title": "Input & Input Group",
       "description": "Display a form input field or a component that looks like an input field with input. Display additional information or actions to an input or textarea with input group.",
+      "registryDependencies": ["@pacis/button"],
       "files": [
         {
           "path": "registry/ui/input/input.go",

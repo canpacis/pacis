@@ -11,5 +11,5 @@ var public embed.FS
 
 func main() {
 	fs, _ := fs.Sub(public, "public")
-	http.ListenAndServe(":8080", http.FileServerFS(fs))
+	http.ListenAndServe(":8082", http.FileServerFS(fs))
 }

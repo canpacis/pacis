@@ -64,6 +64,7 @@ func GroupAddon(items ...html.Item) html.Node {
 			items,
 			html.Data("slot", "input-group-addon"),
 			html.Role("group"),
+			AddonInlineStart,
 			addon,
 		)...,
 	)
@@ -98,7 +99,7 @@ var size = components.NewSizeApplier(func(el *html.Element, s components.Size) {
 })
 
 func GroupButton(items ...html.Item) html.Node {
-	return button.New(components.ItemsOf(items, size)...)
+	return button.New(components.ItemsOf(items, size, ButtonXs)...)
 }
 
 func GroupText(items ...html.Item) html.Node {

@@ -47,6 +47,7 @@ func Media(items ...html.Item) html.Node {
 			items,
 			html.Data("slot", "empty-icon"),
 			html.Class("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0"),
+			MediaDefault,
 			mediaVariant,
 		)...,
 	)

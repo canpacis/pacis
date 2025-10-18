@@ -12,4 +12,4 @@ tasks:
       - bun run registry:build --output registry/cmd/public/ui
       - cp ./registry.json ./registry/cmd/public/ui/registry.json
   run_registry:
-    cmd: go run ./registry/cmd
+    cmd: go run ./registry/cmd/main.go

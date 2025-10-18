@@ -59,6 +59,8 @@ func New(items ...html.Item) html.Node {
 			items,
 			html.Data("slot", "item"),
 			html.Class("group/item [a]:hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 [a]:transition-colors flex flex-wrap items-center rounded-md border border-transparent text-sm outline-none transition-colors duration-100 focus-visible:ring-[3px]"),
+			DefaultVariant,
+			DefaultSize,
 			variant,
 			size,
 		)...,
@@ -117,6 +119,7 @@ func Media(items ...html.Item) html.Node {
 			items,
 			html.Data("slot", "item-media"),
 			html.Class("flex shrink-0 items-center justify-center gap-2 group-has-[[data-slot=item-description]]/item:translate-y-0.5 group-has-[[data-slot=item-description]]/item:self-start [&_svg]:pointer-events-none"),
+			MediaDefault,
 			mediaVariant,
 		)...)
 }
@@ -130,6 +133,7 @@ func Content(items ...html.Item) html.Node {
 		)...,
 	)
 }
+
 func Title(items ...html.Item) html.Node {
 	return html.Div(
 		components.ItemsOf(
