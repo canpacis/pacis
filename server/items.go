@@ -70,6 +70,15 @@ type RequestDetail struct {
 	Cookies []*http.Cookie
 }
 
+func (d *RequestDetail) Cookie(name string) (*http.Cookie, error) {
+	for _, cookie := range d.Cookies {
+		if cookie.Name == name {
+			return cookie, nil
+		}
+	}
+	return nil, http.ErrNoCookie
+}
+
 func Detail(ctx context.Context) (*RequestDetail, error) {
 	context, ok := ctx.(*internal.Context)
 	if !ok {
