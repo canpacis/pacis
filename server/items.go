@@ -61,7 +61,8 @@ func FormData[T any](r *http.Request) (*T, error) {
 }
 
 type RequestDetail struct {
-	URL *url.URL
+	Header http.Header
+	URL    *url.URL
 	Host,
 	Method,
 	Pattern,
@@ -85,6 +86,7 @@ func Detail(ctx context.Context) (*RequestDetail, error) {
 		return nil, fmt.Errorf("Detail helper used outside of server rendering context")
 	}
 	return &RequestDetail{
+		Header:     context.Request.Header,
 		URL:        context.Request.URL,
 		Host:       context.Request.Host,
 		Method:     context.Request.Method,
