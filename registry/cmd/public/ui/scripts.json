@@ -6,12 +6,18 @@
   "description": "Script files for working with AlpineJS and async streams.",
   "dependencies": [
     "alpinejs",
-    "@types/alpinejs"
+    "@alpinejs/focus",
+    "@alpinejs/anchor"
+  ],
+  "devDependencies": [
+    "@types/alpinejs",
+    "@types/alpinejs__focus",
+    "@types/alpinejs__anchor"
   ],
   "files": [
     {
       "path": "registry/script/alpine.ts",
-      "content": "import Alpine from \"alpinejs\";\n\nAlpine.data(\"data\", (id: string) => {\n  const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n    ?.textContent ?? \"{}\";\n  return JSON.parse(raw);\n});\n\nAlpine.start();\n",
+      "content": "import anchor from \"@alpinejs/anchor\";\nimport focus from \"@alpinejs/focus\";\nimport Alpine from \"alpinejs\";\n\nAlpine.plugin(anchor);\nAlpine.plugin(focus);\n\nAlpine.data(\"data\", (id: string) => {\n  const raw = document.querySelector(`script[type=\"application/json\"]#${id}`)\n    ?.textContent ?? \"{}\";\n  return JSON.parse(raw);\n});\n\nAlpine.data(\"dialog\", () => ({\n  opened: false,\n  open(root: HTMLElement | null) {\n    this.opened = true;\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"open\"));\n    }\n  },\n  close(root: HTMLElement | null) {\n    this.opened = false;\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"closed\"));\n    }\n  },\n}));\n\nAlpine.data(\"dropdown\", () => ({\n  keyboard: false,\n  mouse: false,\n  get opened(): boolean {\n    return this.keyboard || this.mouse;\n  },\n  open(w: \"mouse\" | \"keyboard\" = \"mouse\", root: HTMLElement | null) {\n    if (w === \"mouse\") {\n      this.mouse = true;\n    } else {\n      this.keyboard = true;\n    }\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"open\"));\n    }\n  },\n  close(root: HTMLElement | null) {\n    this.mouse = false;\n    this.keyboard = false;\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"closed\"));\n    }\n  },\n}));\n\nAlpine.data(\"select\", (defaultValue: string) => ({\n  value: defaultValue,\n  keyboard: false,\n  mouse: false,\n  get opened(): boolean {\n    return this.keyboard || this.mouse;\n  },\n  label(root: HTMLElement, placeholder: string): string {\n    if (this.value.length === 0) {\n      return placeholder;\n    }\n    const element = Array.from(root.querySelectorAll(\"[role='option']\")).find(\n      (option) => option.getAttribute(\"data-value\") === this.value,\n    );\n    return element?.textContent ?? placeholder;\n  },\n  select(value: string, root: HTMLElement | null) {\n    this.value = value;\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"changed\", { detail: { value } }));\n    }\n  },\n  open(w: \"mouse\" | \"keyboard\" = \"mouse\", root: HTMLElement | null) {\n    if (w === \"mouse\") {\n      this.mouse = true;\n    } else {\n      this.keyboard = true;\n    }\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"open\"));\n    }\n  },\n  close(root: HTMLElement | null) {\n    this.mouse = false;\n    this.keyboard = false;\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"closed\"));\n    }\n  },\n}));\n\nAlpine.data(\"tabs\", (defaultValue: string) => ({\n  active: defaultValue,\n  select(value: string, root: HTMLElement | null = null) {\n    this.active = value;\n    if (root) {\n      root.dispatchEvent(new CustomEvent(\"changed\", { detail: { value } }));\n    }\n  },\n}));\n\nAlpine.start();\n",
       "type": "registry:lib",
       "target": "src/web/alpine.ts"
     }

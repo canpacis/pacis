@@ -391,3 +391,7 @@ x-id is meant to be used in conjunction with the $id(...) magic.
 func ID(value string) *html.Attribute {
 	return html.Attr("x-id", value)
 }
+
+func X(attr, value string) *html.Attribute {
+	return html.Attr("x-"+attr, value)
+}

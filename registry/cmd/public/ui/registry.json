@@ -8,7 +8,12 @@
       "type": "registry:lib",
       "title": "Scripts",
       "description": "Script files for working with AlpineJS and async streams.",
-      "dependencies": ["alpinejs", "@types/alpinejs"],
+      "dependencies": ["alpinejs", "@alpinejs/focus", "@alpinejs/anchor"],
+      "devDependencies": [
+        "@types/alpinejs",
+        "@types/alpinejs__focus",
+        "@types/alpinejs__anchor"
+      ],
       "files": [
         {
           "path": "registry/script/alpine.ts",
@@ -115,6 +120,32 @@
       ]
     },
     {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "A window overlaid on either the primary window or another dialog window, rendering the content underneath inert.",
+      "files": [
+        {
+          "path": "registry/ui/dialog/dialog.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/dialog/dialog.go"
+        }
+      ]
+    },
+    {
+      "name": "dropdown",
+      "type": "registry:ui",
+      "title": "Dropdown",
+      "description": "Displays a menu to the user — such as a set of actions or functions — triggered by a button.",
+      "files": [
+        {
+          "path": "registry/ui/dropdown/dropdown.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/dropdown/dropdown.go"
+        }
+      ]
+    },
+    {
       "name": "empty",
       "type": "registry:ui",
       "title": "Empty",
@@ -194,6 +225,19 @@
       ]
     },
     {
+      "name": "selector",
+      "type": "registry:ui",
+      "title": "Selector",
+      "description": "Displays a list of options for the user to pick from—triggered by a button.",
+      "files": [
+        {
+          "path": "registry/ui/selector/selector.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/selector/selector.go"
+        }
+      ]
+    },
+    {
       "name": "separator",
       "type": "registry:ui",
       "title": "Separator",
@@ -242,6 +286,19 @@
           "path": "registry/ui/table/table.go",
           "type": "registry:ui",
           "target": "src/components/ui/table/table.go"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
+      "files": [
+        {
+          "path": "registry/ui/tabs/tabs.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/tabs/tabs.go"
         }
       ]
     }

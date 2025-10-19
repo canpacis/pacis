@@ -6,7 +6,6 @@
 package components
 
 import (
-	"log"
 	"maps"
 
 	twmerge "github.com/Oudwins/tailwind-merge-go"
@@ -73,6 +72,18 @@ func NewSizeApplier(fn func(*html.Element, Size)) *SizeApplier {
 	return &SizeApplier{fn: fn}
 }
 
+type Value string
+
+func (Value) Item() {}
+
+func (Value) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleImmediate
+}
+
+func (v Value) Apply(el *html.Element) {
+	el.SetAttribute("data-value", string(v))
+}
+
 /*
 The TailwindMergeProperty type applies Tailwind CSS class merging to an element's class list,
 ensuring that conflicting or duplicate classes are resolved according to Tailwind's rules.
@@ -104,23 +115,27 @@ type AsChildProperty struct{}
 // Implements the html.Item interface
 func (*AsChildProperty) Item() {}
 
+func (*AsChildProperty) LifeCycle() html.PropertyLifeCycle {
+	return html.LifeCycleStatic
+}
+
 // Implements the html.Hook interface
 func (*AsChildProperty) Apply(el *html.Element) {
 	nodes := el.GetNodes()
 	if len(nodes) != 1 {
-		log.Fatal("Exactly 1 child should be present in an element with AsChild property")
+		panic("Exactly 1 child should be present in an element with AsChild property")
 	}
 	child, ok := nodes[0].(*html.Element)
 	if !ok {
-		log.Fatal("Non element node is passed to the element with AsChild propery")
+		panic("Non element node is passed to the element with AsChild propery")
 	}
 
-	// child.ClassList.Items = append(child.ClassList.Items, el.ClassList.Items...)
 	attrs := map[string]string{}
 	maps.Copy(attrs, child.GetAttributes())
 	maps.Copy(attrs, el.GetAttributes())
-	// TODO: Deferred properties are not copied this way
+	class := child.GetAttribute("class")
 	child.SetAttributes(attrs)
+	child.AddClass(class)
 	*el = *child
 }
 
