@@ -73,6 +73,9 @@ x-bind allows you to set HTML attributes on elements based on the result of Java
 https://alpinejs.dev/directives/bind
 */
 func Bind(attr, value string) *html.Attribute {
+	if len(attr) == 0 {
+		return html.Attr("x-bind", value)
+	}
 	return html.Attr(":"+attr, value)
 }
 

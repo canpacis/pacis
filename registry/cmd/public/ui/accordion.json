@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "accordion",
+  "type": "registry:ui",
+  "title": "Accordion",
+  "description": "A vertically stacked set of interactive headings that each reveal a section of content.",
+  "files": [
+    {
+      "path": "registry/ui/accordion/accordion.go",
+      "content": "package accordion\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n\t\"github.com/canpacis/pacis/lucide\"\n\t\"github.com/canpacis/pacis/x\"\n)\n\nfunc New(value string, items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\tx.Data(fmt.Sprintf(\"accordion('%s')\", value)),\n\t\t\tx.Ref(\"accordionroot\"),\n\t\t\thtml.Data(\"slot\", \"accordion\"),\n\t\t\thtml.Data(\"orientation\", \"vertical\"),\n\t\t\thtml.Class(\"h-fit w-full\"),\n\t\t)...,\n\t)\n}\n\nfunc Item(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\tx.Bind(\"data-state\", \"active === $el.getAttribute('data-value')\"),\n\t\t\thtml.Data(\"slot\", \"accordion-item\"),\n\t\t\thtml.Data(\"orientation\", \"vertical\"),\n\t\t\thtml.Class(\"border-b last:border-b-0\"),\n\t\t)...,\n\t)\n}\n\nfunc Trigger(items ...html.Item) html.Node {\n\titems = components.ItemsOf(\n\t\titems,\n\t\tSelect,\n\t\thtml.Type(\"button\"),\n\t\tx.Bind(\"data-state\", \"active === $el.parentElement.parentElement.getAttribute('data-value') ? 'open' : 'closed'\"),\n\t\tx.Bind(\"aria-expanded\", \"active === $el.parentElement.parentElement.getAttribute('data-value')\"),\n\t\thtml.Data(\"slot\", \"accordion-trigger\"),\n\t\thtml.Data(\"orientation\", \"vertical\"),\n\t\thtml.Class(\"flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180\"),\n\t)\n\titems = append(items, lucide.ChevronDown(html.Class(\"h-4 w-4 shrink-0 transition-transform duration-200\")))\n\n\treturn html.H3(\n\t\tx.Bind(\"data-state\", \"active === $el.parentElement.getAttribute('data-value') ? 'open': 'closed'\"),\n\t\thtml.Class(\"flex\"),\n\n\t\thtml.Button(items...),\n\t)\n}\n\nfunc Content(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\tx.Cloak,\n\t\t\tx.Show(\"active === $el.parentElement.getAttribute('data-value')\"),\n\t\t\tx.Bind(\"data-state\", \"active === $el.parentElement.getAttribute('data-value') ? 'open': 'closed'\"),\n\t\t\thtml.Role(\"region\"),\n\t\t\thtml.Data(\"slot\", \"accordion-content\"),\n\t\t\thtml.Data(\"orientation\", \"vertical\"),\n\t\t\thtml.Class(\"overflow-hidden text-sm pb-4 pt-0 transition-alls\"),\n\t\t)...,\n\t)\n}\n\nvar Select = SelectOn(\"click\")\n\nfunc SelectOn(event string) *html.Attribute {\n\treturn html.Attr(\"x-on:\"+event, \"select($el.parentElement.parentElement.getAttribute('data-value'), $refs.accordionroot)\")\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/accordion/accordion.go"
+    }
+  ]
+}

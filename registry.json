@@ -23,6 +23,19 @@
       ]
     },
     {
+      "name": "accordion",
+      "type": "registry:ui",
+      "title": "Accordion",
+      "description": "A vertically stacked set of interactive headings that each reveal a section of content.",
+      "files": [
+        {
+          "path": "registry/ui/accordion/accordion.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/accordion/accordion.go"
+        }
+      ]
+    },
+    {
       "name": "alert",
       "type": "registry:ui",
       "title": "Alert",
@@ -199,6 +212,19 @@
       ]
     },
     {
+      "name": "kbd",
+      "type": "registry:ui",
+      "title": "Kbd",
+      "description": "Used to display textual user input from keyboard.",
+      "files": [
+        {
+          "path": "registry/ui/kbd/kbd.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/kbd/kbd.go"
+        }
+      ]
+    },
+    {
       "name": "label",
       "type": "registry:ui",
       "title": "Label",
@@ -251,6 +277,19 @@
       ]
     },
     {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "Extends the Dialog component to display content that complements the main content of the screen.",
+      "files": [
+        {
+          "path": "registry/ui/sheet/sheet.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/sheet/sheet.go"
+        }
+      ]
+    },
+    {
       "name": "skeleton",
       "type": "registry:ui",
       "title": "Skeleton",
@@ -277,6 +316,19 @@
       ]
     },
     {
+      "name": "switcher",
+      "type": "registry:ui",
+      "title": "Switcher",
+      "description": "A control that allows the user to toggle between checked and not checked.",
+      "files": [
+        {
+          "path": "registry/ui/switcher/switcher.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/switcher/switcher.go"
+        }
+      ]
+    },
+    {
       "name": "table",
       "type": "registry:ui",
       "title": "Table",
@@ -299,6 +351,45 @@
           "path": "registry/ui/tabs/tabs.go",
           "type": "registry:ui",
           "target": "src/components/ui/tabs/tabs.go"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "Displays a form textarea or a component that looks like a textarea.",
+      "files": [
+        {
+          "path": "registry/ui/textarea/textarea.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/textarea/textarea.go"
+        }
+      ]
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "description": "A succinct message that is displayed temporarily.",
+      "files": [
+        {
+          "path": "registry/ui/toast/toast.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/toast/toast.go"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.",
+      "files": [
+        {
+          "path": "registry/ui/tooltip/tooltip.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/tooltip/tooltip.go"
         }
       ]
     }

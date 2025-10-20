@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "kbd",
+  "type": "registry:ui",
+  "title": "Kbd",
+  "description": "Used to display textual user input from keyboard.",
+  "files": [
+    {
+      "path": "registry/ui/kbd/kbd.go",
+      "content": "package kbd\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Kbd(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"kbd\"),\n\t\t\thtml.Class(\"bg-muted text-muted-foreground pointer-events-none inline-flex h-5 w-fit min-w-5 select-none items-center justify-center gap-1 rounded-sm px-1 font-sans text-xs font-medium [&_svg:not([class*='size-'])]:size-3 [[data-slot=tooltip-content]_&]:bg-background/20 [[data-slot=tooltip-content]_&]:text-background dark:[[data-slot=tooltip-content]_&]:bg-background/10\"),\n\t\t)...,\n\t)\n}\n\nfunc Group(items ...html.Item) html.Node {\n\treturn html.Kbd(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"kbd-group\"),\n\t\t\thtml.Class(\"inline-flex items-center gap-1\"),\n\t\t)...,\n\t)\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/kbd/kbd.go"
+    }
+  ]
+}
