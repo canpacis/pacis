@@ -3,6 +3,7 @@ package breadcrumb
 import (
 	"github.com/canpacis/pacis/components"
 	"github.com/canpacis/pacis/html"
+	"github.com/canpacis/pacis/lucide"
 )
 
 func New(items ...html.Item) html.Node {
@@ -79,7 +80,7 @@ func Ellipsis(items ...html.Item) html.Node {
 			html.Data("slot", "breadcrumb-ellipsis"),
 			html.Class("flex h-9 w-9 items-center justify-center"),
 
-			// TODO: Add Icon
+			lucide.Ellipsis(html.Class("h-4 w-4")),
 			html.Span(html.Class("sr-only"), html.Text("More")),
 		)...,
 	)

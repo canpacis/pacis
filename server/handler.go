@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/canpacis/pacis/html"
-	intserver "github.com/canpacis/pacis/internal/server"
+	intserver "github.com/canpacis/pacis/internal"
 	"github.com/canpacis/pacis/server/metadata"
 	"github.com/canpacis/pacis/server/middleware"
 )
@@ -52,7 +52,7 @@ func head(page Page, dev bool) html.Node {
 	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
 	if ok {
 		if dev {
-			html.Fragment(
+			return html.Fragment(
 				staticmeta.Metadata().Node(),
 				html.Script(html.Type("module"), html.Src("/@vite/client")),
 			)
@@ -86,7 +86,7 @@ var bufpool = sync.Pool{
 }
 
 /*
-HandlerOf creates an HTTP handler that processes requests using the provided function `fn`,
+PageHandler creates an HTTP handler that processes requests using the provided function `fn`,
 which takes a context and a pointer to a parameter struct of type P. The handler applies the
 specified layout function `layout` to the resulting HTML node, and supports an optional list
 of middleware functions. The handler automatically scans and populates the parameter struct
@@ -107,7 +107,7 @@ Parameters:
 Returns:
   - http.Handler: The composed HTTP handler ready to be registered with a router or server.
 */
-func HandlerOf(server *Server, page Page, layout Layout, middlewares ...middleware.Middleware) http.Handler {
+func PageHandler(server *Server, page Page, layout Layout, middlewares ...middleware.Middleware) http.Handler {
 	var handler = handler(server, page, layout, false)
 
 	for i := len(server.middlewares) - 1; i >= 0; i-- {
@@ -139,11 +139,6 @@ func handler(server *Server, page Page, layout Layout, internal bool) http.Handl
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if (r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/" && !internal {
-			server.notfound.ServeHTTP(w, r)
-			return
-		}
-
 		ctx := intserver.NewContext(w, r)
 
 		buf := bufpool.New().(*bytes.Buffer)
@@ -274,4 +269,29 @@ func NewStaticRenderer() *StaticRenderer {
 	return &StaticRenderer{
 		chunks: []any{},
 	}
+}
+
+type ActionFunc func(http.ResponseWriter, *http.Request) error
+
+func ActionsHandler(server *Server, actions map[string]ActionFunc, middlewares ...middleware.Middleware) http.Handler {
+	var handler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		name := r.URL.Query().Get("__action")
+		action, ok := actions[name]
+		if !ok {
+			w.Write([]byte("unknown action"))
+			return
+		}
+		err := action(w, r)
+		if err != nil {
+			w.Write([]byte(err.Error()))
+		}
+	})
+
+	for i := len(server.middlewares) - 1; i >= 0; i-- {
+		handler = server.middlewares[i].Apply(handler)
+	}
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i].Apply(handler)
+	}
+	return handler
 }

@@ -1592,7 +1592,7 @@ In the case of a same named group of checkbox input types, only the checkboxes w
 
 https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/required
 */
-var Required = Attr("rel", "")
+var Required = Attr("required", "")
 
 /*
 # SVG attribute: width

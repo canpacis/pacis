@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea",
+  "type": "registry:ui",
+  "title": "Textarea",
+  "description": "Displays a form textarea or a component that looks like a textarea.",
+  "files": [
+    {
+      "path": "registry/ui/textarea/textarea.go",
+      "content": "package textarea\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Textarea(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Class(\"flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm\"),\n\t\t)...,\n\t)\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/textarea/textarea.go"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switcher",
+  "type": "registry:ui",
+  "title": "Switcher",
+  "description": "A control that allows the user to toggle between checked and not checked.",
+  "files": [
+    {
+      "path": "registry/ui/switcher/switcher.go",
+      "content": "package switcher\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n\t\"github.com/canpacis/pacis/x\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Button(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\n\t\t\tx.Data(map[string]any{\"checked\": false}),\n\t\t\tx.Bind(\"aria-checked\", \"checked\"),\n\t\t\tx.Bind(\"data-state\", \"checked ? 'checked' : 'unchecked'\"),\n\n\t\t\tToggle,\n\n\t\t\thtml.Type(\"button\"),\n\t\t\thtml.Value(\"on\"),\n\t\t\thtml.Data(\"slot\", \"switch\"),\n\t\t\thtml.Role(\"switch\"),\n\t\t\thtml.Class(\"peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input\"),\n\n\t\t\thtml.Span(\n\t\t\t\tx.Bind(\"data-state\", \"checked ? 'checked' : 'unchecked'\"),\n\t\t\t\thtml.Data(\"slot\", \"switch-thumb\"),\n\t\t\t\thtml.Class(\"pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0\"),\n\t\t\t),\n\t\t)...,\n\t)\n}\n\nfunc ToggleOn(event string) *html.Attribute {\n\treturn x.On(event, \"checked = !checked\")\n}\n\nvar Toggle = ToggleOn(\"click\")\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/switcher/switcher.go"
+    }
+  ]
+}

@@ -37,7 +37,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/canpacis/pacis/internal/server"
+	"github.com/canpacis/pacis/internal"
 	"github.com/canpacis/pacis/server/middleware"
 )
 
@@ -85,9 +85,33 @@ func (s *Server) Use(middlewares ...middleware.Middleware) {
 	s.middlewares = append(s.middlewares, middlewares...)
 }
 
+func clean(pattern string, prefix string) string {
+	replacer := strings.NewReplacer("GET", "", "POST", "", "PATCH", "", "PUT", "", "DELETE", "", "OPTIONS", "")
+	pattern = replacer.Replace(pattern)
+	pattern = strings.TrimSpace(pattern)
+	pattern = strings.TrimSpace(pattern)
+
+	if len(pattern) == 0 {
+		if len(prefix) > 0 {
+			return prefix + " /"
+		}
+		return "/"
+	}
+	if len(prefix) > 0 {
+		return prefix + " " + pattern
+	}
+	return pattern
+}
+
 func (s *Server) HandlePage(pattern string, page Page, layout Layout, middlewares ...middleware.Middleware) {
-	pattern = strings.TrimSuffix(pattern, "/") + "/"
-	s.Handle(pattern, HandlerOf(s, page, layout, middlewares...))
+	s.Handle(clean(pattern, "GET"), PageHandler(s, page, layout, middlewares...))
+
+	actioner, ok := page.(interface{ Actions() map[string]ActionFunc })
+	if !ok {
+		return
+	}
+	actions := actioner.Actions()
+	s.Handle(clean(pattern, "POST"), ActionsHandler(s, actions, middlewares...))
 }
 
 func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
@@ -96,7 +120,7 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 		return err
 	}
 
-	var handler http.Handler = server.NewFileServer(static, s.notfound)
+	var handler http.Handler = internal.NewFileServer(static, s.notfound)
 	for _, middleware := range s.middlewares {
 		handler = middleware.Apply(handler)
 	}
@@ -118,19 +142,19 @@ func (s *Server) RegisterDevHandlers() {
 	proxy := httputil.NewSingleHostReverseProxy(s.options.DevServer)
 	proxy.ModifyResponse = func(r *http.Response) error {
 		if r.StatusCode == http.StatusNotFound {
-			return server.ErrNotFound
+			return internal.ErrNotFound
 		}
 		return nil
 	}
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		if errors.Is(err, server.ErrNotFound) {
+		if errors.Is(err, internal.ErrNotFound) {
 			s.notfound.ServeHTTP(w, r)
 		}
 	}
 	var handler http.Handler = proxy
-	for _, middleware := range s.middlewares {
-		handler = middleware.Apply(handler)
-	}
+	// for _, middleware := range s.middlewares {
+	// 	handler = middleware.Apply(handler)
+	// }
 
 	s.Handle("GET /{path}", handler)
 	s.Handle("GET /src/", handler)
@@ -234,6 +258,6 @@ func New(options *Options) *Server {
 	}
 
 	s.Use(middleware.NewLogger(s.options.Logger), middleware.NewRecover(s.options.Logger, nil))
-	s.SetNotFoundPage(server.NotFoundPage, DefaultLayout)
+	s.SetNotFoundPage(internal.NotFoundPage, DefaultLayout)
 	return s
 }

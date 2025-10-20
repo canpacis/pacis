@@ -1,7 +1,7 @@
 package alert
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/canpacis/pacis/components"
 	"github.com/canpacis/pacis/html"
@@ -21,7 +21,7 @@ var variant = components.NewVariantApplier(func(el *html.Element, v components.V
 	case Destructive:
 		el.AddClass("border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive")
 	default:
-		log.Fatalf("invalid alert variant: %d", v)
+		panic(fmt.Sprintf("invalid alert variant: %d", v))
 	}
 })
 

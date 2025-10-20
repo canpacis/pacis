@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/canpacis/pacis/html"
-	intserver "github.com/canpacis/pacis/internal/server"
+	"github.com/canpacis/pacis/internal"
 	"github.com/canpacis/pacis/server"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,7 +43,7 @@ func TestRedirect(t *testing.T) {
 	rw := NewResponseWriter()
 	r, err := http.NewRequest("GET", "/", nil)
 	assert.NoError(err)
-	ctx := intserver.NewContext(rw, r)
+	ctx := internal.NewContext(rw, r)
 	server.Redirect(ctx, "/redirect")
 
 	assert.NotNil(ctx.RedirectMark)
@@ -57,7 +57,7 @@ func TestNotFound(t *testing.T) {
 	rw := NewResponseWriter()
 	r, err := http.NewRequest("GET", "/", nil)
 	assert.NoError(err)
-	ctx := intserver.NewContext(rw, r)
+	ctx := internal.NewContext(rw, r)
 	server.NotFound(ctx)
 
 	assert.True(ctx.NotFoundMark)
@@ -69,7 +69,7 @@ func TestSetCookie(t *testing.T) {
 	rw := NewResponseWriter()
 	r, err := http.NewRequest("GET", "/", nil)
 	assert.NoError(err)
-	ctx := intserver.NewContext(rw, r)
+	ctx := internal.NewContext(rw, r)
 	server.SetCookie(ctx, &http.Cookie{Name: "cookie", Value: "value"})
 
 	assert.Equal("cookie=value", rw.header.Get("Set-Cookie"))
@@ -81,7 +81,7 @@ func TestAsync(t *testing.T) {
 	rw := NewResponseWriter()
 	r, err := http.NewRequest("GET", "/", nil)
 	assert.NoError(err)
-	ctx := intserver.NewContext(rw, r)
+	ctx := internal.NewContext(rw, r)
 
 	component := func(ctx context.Context) html.Node {
 		return html.Fragment()

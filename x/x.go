@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/canpacis/pacis/html"
-	"github.com/canpacis/pacis/internal/util"
+	"github.com/canpacis/pacis/internal"
 )
 
 /*
@@ -41,8 +41,12 @@ x-data defines a chunk of HTML as an Alpine component and provides the reactive 
 
 https://alpinejs.dev/directives/data
 */
-func Data(data any) *DataProperty {
-	return &DataProperty{data: data, id: util.PrefixedID("pacis")}
+func Data(data any) html.Property {
+	str, ok := data.(string)
+	if ok {
+		return html.Attr("x-data", str)
+	}
+	return &DataProperty{data: data, id: internal.PrefixedID("pacis")}
 }
 
 /*
@@ -69,6 +73,9 @@ x-bind allows you to set HTML attributes on elements based on the result of Java
 https://alpinejs.dev/directives/bind
 */
 func Bind(attr, value string) *html.Attribute {
+	if len(attr) == 0 {
+		return html.Attr("x-bind", value)
+	}
 	return html.Attr(":"+attr, value)
 }
 
@@ -386,4 +393,8 @@ x-id is meant to be used in conjunction with the $id(...) magic.
 */
 func ID(value string) *html.Attribute {
 	return html.Attr("x-id", value)
+}
+
+func X(attr, value string) *html.Attribute {
+	return html.Attr("x-"+attr, value)
 }

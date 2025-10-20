@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "empty",
+  "type": "registry:ui",
+  "title": "Empty",
+  "description": "Use the Empty component to display a empty state.",
+  "files": [
+    {
+      "path": "registry/ui/empty/empty.go",
+      "content": "package empty\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"empty\"),\n\t\t\thtml.Class(\"flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-lg border-dashed p-6 text-center md:p-12\"),\n\t\t)...,\n\t)\n}\n\nfunc Header(items ...html.Item) html.Node {\n\treturn html.Div(components.ItemsOf(items, html.Data(\"slot\", \"empty-header\"), html.Class(\"flex max-w-sm flex-col items-center gap-2 text-center\"))...)\n}\n\ntype MediaVariant = components.Variant\n\nconst (\n\tMediaDefault = MediaVariant(iota)\n\tMediaIcon\n)\n\nvar mediaVariant = components.NewVariantApplier(func(el *html.Element, v components.Variant) {\n\tswitch v {\n\tcase MediaDefault:\n\t\tel.AddClass(\"bg-transparent\")\n\t\tel.SetAttribute(\"data-variant\", \"default\")\n\tcase MediaIcon:\n\t\tel.AddClass(\"bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6\")\n\t\tel.SetAttribute(\"data-variant\", \"icon\")\n\tdefault:\n\t\tpanic(fmt.Sprintf(\"invalid empty media variant: %d\", v))\n\t}\n})\n\nfunc Media(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\tcomponents.ItemsOf(\n\t\t\titems,\n\t\t\thtml.Data(\"slot\", \"empty-icon\"),\n\t\t\thtml.Class(\"mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0\"),\n\t\t\tMediaDefault,\n\t\t\tmediaVariant,\n\t\t)...,\n\t)\n}\n\nfunc Title(items ...html.Item) html.Node {\n\treturn html.Div(components.ItemsOf(items, html.Data(\"slot\", \"empty-title\"), html.Class(\"text-lg font-medium tracking-tight\"))...)\n}\n\nfunc Description(items ...html.Item) html.Node {\n\treturn html.Div(components.ItemsOf(items, html.Data(\"slot\", \"empty-description\"), html.Class(\"text-muted-foreground [&>a:hover]:text-primary text-sm/relaxed [&>a]:underline [&>a]:underline-offset-4\"))...)\n}\n\nfunc Content(items ...html.Item) html.Node {\n\treturn html.Div(components.ItemsOf(items, html.Data(\"slot\", \"empty-content\"), html.Class(\"flex w-full min-w-0 max-w-sm flex-col items-center gap-4 text-balance text-sm\"))...)\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/empty/empty.go"
+    }
+  ]
+}

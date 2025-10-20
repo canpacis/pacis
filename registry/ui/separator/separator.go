@@ -1,7 +1,7 @@
 package separator
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/canpacis/pacis/components"
 	"github.com/canpacis/pacis/html"
@@ -23,7 +23,7 @@ var orientation = components.NewVariantApplier(func(el *html.Element, v componen
 		el.AddClass("h-full w-[1px]")
 		el.SetAttribute("data-orientation", "vertical")
 	default:
-		log.Fatalf("invalid group orientation: %d", v)
+		panic(fmt.Sprintf("invalid group orientation: %d", v))
 	}
 })
 

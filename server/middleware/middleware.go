@@ -17,7 +17,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -33,11 +32,11 @@ type KeyType string
 func getvalue[T any](ctx context.Context, name, key string) T {
 	value := ctx.Value(KeyType(key))
 	if value == nil {
-		log.Fatalf("Context value for %s has not been set. Have you registered the middleware correctly?", name)
+		panic(fmt.Sprintf("Context value for %s has not been set. Have you registered the middleware correctly?", name))
 	}
 	scheme, ok := value.(T)
 	if !ok {
-		log.Fatalf("Was expecting %s to be string but got %T. Have you registered the middleware correctly?", name, value)
+		panic(fmt.Sprintf("Was expecting %s to be %T but got %T. Have you registered the middleware correctly?", name, scheme, value))
 	}
 	return scheme
 }
@@ -53,7 +52,8 @@ type Middleware interface {
 // to "light" and sets the cookie accordingly. The selected theme is stored in the request's
 // context under the key "theme" for downstream handlers to access.
 type ColorScheme struct {
-	key string
+	UseHeaders bool
+	Key        string
 }
 
 func (*ColorScheme) Name() string {
@@ -64,7 +64,7 @@ func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		set := func(theme string) {
 			http.SetCookie(w, &http.Cookie{
-				Name:     m.key,
+				Name:     m.Key,
 				Value:    theme,
 				Path:     "/",
 				HttpOnly: false,
@@ -73,11 +73,11 @@ func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 			})
 		}
 
-		cookie, err := r.Cookie(m.key)
+		cookie, err := r.Cookie(m.Key)
 		var scheme string
 
 		if err != nil {
-			if errors.Is(err, http.ErrNoCookie) {
+			if errors.Is(err, http.ErrNoCookie) && m.UseHeaders {
 				header := r.Header.Get("Sec-CH-Prefers-Color-Scheme")
 				if len(header) > 0 {
 					switch header {
@@ -110,10 +110,10 @@ func (m *ColorScheme) Apply(h http.Handler) http.Handler {
 	})
 }
 
-var DefaultColorScheme = &ColorScheme{key: "pacis_color_scheme"}
+var DefaultColorScheme = &ColorScheme{Key: "pacis_color_scheme", UseHeaders: false}
 
 func NewColorScheme(key string) *ColorScheme {
-	return &ColorScheme{key: key}
+	return &ColorScheme{Key: key}
 }
 
 // GetColorScheme retrieves the color scheme (theme) from the provided context.
@@ -303,4 +303,37 @@ func (m *Recover) Apply(h http.Handler) http.Handler {
 
 func NewRecover(logger *slog.Logger, callback func(any)) *Recover {
 	return &Recover{logger: logger, fn: callback}
+}
+
+type Authenticator interface {
+	Authenticate(*http.Request) (any, error)
+	OnError(http.ResponseWriter, *http.Request, error)
+}
+
+type Authentication struct {
+	Authenticator Authenticator
+}
+
+func (*Authentication) Name() string {
+	return "Auth"
+}
+
+func (m *Authentication) Apply(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, err := m.Authenticator.Authenticate(r)
+		if err != nil {
+			m.Authenticator.OnError(w, r, err)
+			return
+		}
+		ctx := context.WithValue(r.Context(), KeyType("user"), user)
+		h.ServeHTTP(w, r.Clone(ctx))
+	})
+}
+
+func NewAuthentication(authr Authenticator) *Authentication {
+	return &Authentication{Authenticator: authr}
+}
+
+func GetUser[T any](ctx context.Context) T {
+	return getvalue[T](ctx, "user", "user")
 }

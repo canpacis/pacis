@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "table",
+  "type": "registry:ui",
+  "title": "Table",
+  "description": "A responsive table component.",
+  "files": [
+    {
+      "path": "registry/ui/table/table.go",
+      "content": "package table\n\nimport (\n\t\"github.com/canpacis/pacis/components\"\n\t\"github.com/canpacis/pacis/html\"\n)\n\nfunc New(items ...html.Item) html.Node {\n\treturn html.Div(\n\t\thtml.Class(\"relative w-full overflow-auto\"),\n\n\t\thtml.Table(\n\t\t\tcomponents.ItemsOf(\n\t\t\t\titems,\n\t\t\t\thtml.Class(\"w-full caption-bottom text-sm\"),\n\t\t\t)...,\n\t\t),\n\t)\n}\n\nfunc Header(items ...html.Item) html.Node {\n\treturn html.Thead(components.ItemsOf(items, html.Class(\"[&_tr]:border-b\"))...)\n}\n\nfunc Body(items ...html.Item) html.Node {\n\treturn html.Tbody(components.ItemsOf(items, html.Class(\"[&_tr:last-child]:border-0\"))...)\n}\n\nfunc Footer(items ...html.Item) html.Node {\n\treturn html.Tfoot(components.ItemsOf(items, html.Class(\"border-t bg-muted/50 font-medium [&>tr]:last:border-b-0\"))...)\n}\n\nfunc Row(items ...html.Item) html.Node {\n\treturn html.Tr(components.ItemsOf(items, html.Class(\"border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted\"))...)\n}\n\nfunc Head(items ...html.Item) html.Node {\n\treturn html.Th(components.ItemsOf(items, html.Class(\"h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0\"))...)\n}\n\nfunc Cell(items ...html.Item) html.Node {\n\treturn html.Td(components.ItemsOf(items, html.Class(\"p-4 align-middle [&:has([role=checkbox])]:pr-0\"))...)\n}\n\nfunc Caption(items ...html.Item) html.Node {\n\treturn html.Caption(components.ItemsOf(items, html.Class(\"mt-4 text-sm text-muted-foreground\"))...)\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/table/table.go"
+    }
+  ]
+}

@@ -93,6 +93,7 @@ func (Message) Item() {}
 func (m Message) String(ctx context.Context) string {
 	localizer := middleware.GetLocalizer(ctx)
 	if localizer == nil {
+		// TODO: No log.Fatal!
 		log.Fatal("no localizer in the context, have you registered the i18n middleware correctly?")
 	}
 

@@ -8,17 +8,30 @@
       "type": "registry:lib",
       "title": "Scripts",
       "description": "Script files for working with AlpineJS and async streams.",
-      "dependencies": ["alpinejs", "@types/alpinejs"],
+      "dependencies": ["alpinejs", "@alpinejs/focus", "@alpinejs/anchor"],
+      "devDependencies": [
+        "@types/alpinejs",
+        "@types/alpinejs__focus",
+        "@types/alpinejs__anchor"
+      ],
       "files": [
         {
           "path": "registry/script/alpine.ts",
           "type": "registry:lib",
           "target": "src/web/alpine.ts"
-        },
+        }
+      ]
+    },
+    {
+      "name": "accordion",
+      "type": "registry:ui",
+      "title": "Accordion",
+      "description": "A vertically stacked set of interactive headings that each reveal a section of content.",
+      "files": [
         {
-          "path": "registry/script/stream.ts",
-          "type": "registry:lib",
-          "target": "src/web/stream.ts"
+          "path": "registry/ui/accordion/accordion.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/accordion/accordion.go"
         }
       ]
     },
@@ -120,6 +133,98 @@
       ]
     },
     {
+      "name": "dialog",
+      "type": "registry:ui",
+      "title": "Dialog",
+      "description": "A window overlaid on either the primary window or another dialog window, rendering the content underneath inert.",
+      "files": [
+        {
+          "path": "registry/ui/dialog/dialog.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/dialog/dialog.go"
+        }
+      ]
+    },
+    {
+      "name": "dropdown",
+      "type": "registry:ui",
+      "title": "Dropdown",
+      "description": "Displays a menu to the user — such as a set of actions or functions — triggered by a button.",
+      "files": [
+        {
+          "path": "registry/ui/dropdown/dropdown.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/dropdown/dropdown.go"
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "type": "registry:ui",
+      "title": "Empty",
+      "description": "Use the Empty component to display a empty state.",
+      "files": [
+        {
+          "path": "registry/ui/empty/empty.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/empty/empty.go"
+        }
+      ]
+    },
+    {
+      "name": "field",
+      "type": "registry:ui",
+      "title": "Field",
+      "description": "Combine labels, controls, and help text to compose accessible form fields and grouped inputs.",
+      "files": [
+        {
+          "path": "registry/ui/field/field.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/field/field.go"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "type": "registry:ui",
+      "title": "Input & Input Group",
+      "description": "Display a form input field or a component that looks like an input field with input. Display additional information or actions to an input or textarea with input group.",
+      "registryDependencies": ["@pacis/button"],
+      "files": [
+        {
+          "path": "registry/ui/input/input.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/input/input.go"
+        }
+      ]
+    },
+    {
+      "name": "item",
+      "type": "registry:ui",
+      "title": "Item",
+      "description": "A versatile component that you can use to display any content.",
+      "files": [
+        {
+          "path": "registry/ui/item/item.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/item/item.go"
+        }
+      ]
+    },
+    {
+      "name": "kbd",
+      "type": "registry:ui",
+      "title": "Kbd",
+      "description": "Used to display textual user input from keyboard.",
+      "files": [
+        {
+          "path": "registry/ui/kbd/kbd.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/kbd/kbd.go"
+        }
+      ]
+    },
+    {
       "name": "label",
       "type": "registry:ui",
       "title": "Label",
@@ -129,6 +234,32 @@
           "path": "registry/ui/label/label.go",
           "type": "registry:ui",
           "target": "src/components/ui/label/label.go"
+        }
+      ]
+    },
+    {
+      "name": "pagination",
+      "type": "registry:ui",
+      "title": "Pagination",
+      "description": "Pagination with page navigation, next and previous links.",
+      "files": [
+        {
+          "path": "registry/ui/pagination/pagination.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/pagination/pagination.go"
+        }
+      ]
+    },
+    {
+      "name": "selector",
+      "type": "registry:ui",
+      "title": "Selector",
+      "description": "Displays a list of options for the user to pick from—triggered by a button.",
+      "files": [
+        {
+          "path": "registry/ui/selector/selector.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/selector/selector.go"
         }
       ]
     },
@@ -146,6 +277,19 @@
       ]
     },
     {
+      "name": "sheet",
+      "type": "registry:ui",
+      "title": "Sheet",
+      "description": "Extends the Dialog component to display content that complements the main content of the screen.",
+      "files": [
+        {
+          "path": "registry/ui/sheet/sheet.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/sheet/sheet.go"
+        }
+      ]
+    },
+    {
       "name": "skeleton",
       "type": "registry:ui",
       "title": "Skeleton",
@@ -155,6 +299,97 @@
           "path": "registry/ui/skeleton/skeleton.go",
           "type": "registry:ui",
           "target": "src/components/ui/skeleton/skeleton.go"
+        }
+      ]
+    },
+    {
+      "name": "spinner",
+      "type": "registry:ui",
+      "title": "Spinner",
+      "description": "An indicator that can be used to show a loading state.",
+      "files": [
+        {
+          "path": "registry/ui/spinner/spinner.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/spinner/spinner.go"
+        }
+      ]
+    },
+    {
+      "name": "switcher",
+      "type": "registry:ui",
+      "title": "Switcher",
+      "description": "A control that allows the user to toggle between checked and not checked.",
+      "files": [
+        {
+          "path": "registry/ui/switcher/switcher.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/switcher/switcher.go"
+        }
+      ]
+    },
+    {
+      "name": "table",
+      "type": "registry:ui",
+      "title": "Table",
+      "description": "A responsive table component.",
+      "files": [
+        {
+          "path": "registry/ui/table/table.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/table/table.go"
+        }
+      ]
+    },
+    {
+      "name": "tabs",
+      "type": "registry:ui",
+      "title": "Tabs",
+      "description": "A set of layered sections of content—known as tab panels—that are displayed one at a time.",
+      "files": [
+        {
+          "path": "registry/ui/tabs/tabs.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/tabs/tabs.go"
+        }
+      ]
+    },
+    {
+      "name": "textarea",
+      "type": "registry:ui",
+      "title": "Textarea",
+      "description": "Displays a form textarea or a component that looks like a textarea.",
+      "files": [
+        {
+          "path": "registry/ui/textarea/textarea.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/textarea/textarea.go"
+        }
+      ]
+    },
+    {
+      "name": "toast",
+      "type": "registry:ui",
+      "title": "Toast",
+      "description": "A succinct message that is displayed temporarily.",
+      "files": [
+        {
+          "path": "registry/ui/toast/toast.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/toast/toast.go"
+        }
+      ]
+    },
+    {
+      "name": "tooltip",
+      "type": "registry:ui",
+      "title": "Tooltip",
+      "description": "A popup that displays information related to an element when the element receives keyboard focus or the mouse hovers over it.",
+      "files": [
+        {
+          "path": "registry/ui/tooltip/tooltip.go",
+          "type": "registry:ui",
+          "target": "src/components/ui/tooltip/tooltip.go"
         }
       ]
     }

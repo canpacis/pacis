@@ -4,12 +4,12 @@ vars:
   GREETING: Hello, World!
 
 tasks:
-  build:
+  generate_icons:
+    cmd: go run lucide/cmd/pcicon.go -package lucide -out lucide ./lucide/module/icons
+  build_registry:
     cmds:
       - task generate_icons
       - bun run registry:build --output registry/cmd/public/ui
       - cp ./registry.json ./registry/cmd/public/ui/registry.json
-  generate_icons:
-    cmd: go run lucide/cmd/pcicon.go -package lucide -out lucide ./lucide/module/icons
-  run:
-    cmd: go run ./registry/cmd
+  run_registry:
+    cmd: go run ./registry/cmd/main.go

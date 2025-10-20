@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "toast",
+  "type": "registry:ui",
+  "title": "Toast",
+  "description": "A succinct message that is displayed temporarily.",
+  "files": [
+    {
+      "path": "registry/ui/toast/toast.go",
+      "content": "package toast\n\nimport (\n\t\"fmt\"\n\t\"time\"\n\n\t\"github.com/canpacis/pacis/html\"\n\t\"github.com/canpacis/pacis/x\"\n)\n\nfunc New(message string, duration time.Duration) html.Property {\n\treturn x.Data(fmt.Sprintf(\"toast('%s', %d)\", message, duration.Milliseconds()))\n}\n\nvar Default = time.Second * 2\n\nvar Show = ShowOn(\"click\")\n\nfunc ShowOn(event string) *html.Attribute {\n\treturn html.Attr(\"x-on:\"+event, \"show()\")\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/toast/toast.go"
+    }
+  ]
+}

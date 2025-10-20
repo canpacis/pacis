@@ -3,8 +3,15 @@
     "registry:build": "shadcn build"
   },
   "dependencies": {
-    "@types/alpinejs": "^3.13.11",
+    "@alpinejs/anchor": "^3.15.0",
+    "@alpinejs/focus": "^3.15.0",
     "alpinejs": "^3.15.0",
-    "shadcn": "^2.9.3-canary.0"
+    "notyf": "^3.10.0"
+  },
+  "devDependencies": {
+    "shadcn": "^2.9.3-canary.0",
+    "@types/alpinejs__anchor": "^3.13.1",
+    "@types/alpinejs__focus": "^3.13.4",
+    "@types/alpinejs": "^3.13.11"
   }
 }
