@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 	"sync"
 
 	"github.com/canpacis/pacis/html"
@@ -48,13 +50,13 @@ func DefaultLayout(server *Server, head html.Node, children html.Node) html.Node
 	)
 }
 
-func head(page Page, dev bool) html.Node {
+func head(page Page, devserver *url.URL, dev bool) html.Node {
 	staticmeta, ok := page.(interface{ Metadata() *metadata.Metadata })
 	if ok {
 		if dev {
 			return html.Fragment(
 				staticmeta.Metadata().Node(),
-				html.Script(html.Type("module"), html.Src("/@vite/client")),
+				html.Script(html.Type("module"), html.Src(devserver.String()+"/@vite/client")),
 			)
 		}
 		return staticmeta.Metadata().Node()
@@ -70,7 +72,7 @@ func head(page Page, dev bool) html.Node {
 				html.Component(func(ctx context.Context) html.Node {
 					return dynamicmeta.Metadata(ctx).Node()
 				}),
-				html.Script(html.Type("module"), html.Src("/@vite/client")),
+				html.Script(html.Type("module"), html.Src(devserver.String()+"/@vite/client")),
 			)
 		}
 		return html.Component(func(ctx context.Context) html.Node {
@@ -131,7 +133,7 @@ func handler(server *Server, page Page, layout Layout, internal bool) http.Handl
 	if wrapper == nil {
 		wrapper = func(s *Server, h, c html.Node) html.Node { return c }
 	}
-	node := wrapper(server, head(page, server.options.Env == Dev), page.Page())
+	node := wrapper(server, head(page, server.options.DevServer, server.options.Env == Dev), page.Page())
 
 	renderer := NewStaticRenderer()
 	if err := renderer.Build(node); err != nil {
@@ -139,6 +141,10 @@ func handler(server *Server, page Page, layout Layout, internal bool) http.Handl
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ((r.Pattern == "/" || r.Pattern == "GET /") && r.URL.Path != "/") && !internal {
+			server.notfound.ServeHTTP(w, r)
+			return
+		}
 		ctx := intserver.NewContext(w, r)
 
 		buf := bufpool.New().(*bytes.Buffer)
@@ -162,14 +168,18 @@ func handler(server *Server, page Page, layout Layout, internal bool) http.Handl
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
+		w.Header().Set("Content-Type", "text/html")
+		if len(ctx.AsyncChunks) == 0 {
+			w.Header().Set("Content-Length", strconv.Itoa(buf.Len()))
+		}
 		io.Copy(w, buf)
 
+		if len(ctx.AsyncChunks) == 0 {
+			return
+		}
 		flusher, ok := w.(http.Flusher)
 		if !ok {
 			server.options.Logger.Warn("Http writer does not support chunked encoding")
-			return
-		}
-		if len(ctx.AsyncChunks) == 0 {
 			return
 		}
 		flusher.Flush()

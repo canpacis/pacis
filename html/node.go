@@ -497,7 +497,7 @@ func IfFn(cond bool, fn func() Item) Item {
 // It holds a value of type T to match against and a function Fn that returns a Node
 // to be executed if the case matches. The generic type T must be comparable.
 type SwitchCase[T comparable] struct {
-	Value   T
+	Value   []T
 	Fn      func() Item
 	Default bool
 }
@@ -509,7 +509,7 @@ type SwitchCase[T comparable] struct {
 func Switch[T comparable](expr T, cases ...*SwitchCase[T]) Item {
 	var d *SwitchCase[T]
 	for _, c := range cases {
-		if expr == c.Value {
+		if slices.Contains(c.Value, expr) {
 			return c.Fn()
 		} else if c.Default {
 			d = c
@@ -535,7 +535,7 @@ func Switch[T comparable](expr T, cases ...*SwitchCase[T]) Item {
 // Returns:
 //
 //	A pointer to a SwitchCase[T] containing the value and associated node function.
-func Case[T comparable](v T, item Item) *SwitchCase[T] {
+func Case[T comparable](item Item, v ...T) *SwitchCase[T] {
 	return &SwitchCase[T]{
 		Value: v,
 		Fn: func() Item {
@@ -557,7 +557,7 @@ func Case[T comparable](v T, item Item) *SwitchCase[T] {
 // Returns:
 //
 //	A pointer to a SwitchCase[T] containing the value and associated node function.
-func CaseFn[T comparable](v T, fn func() Item) *SwitchCase[T] {
+func CaseFn[T comparable](fn func() Item, v ...T) *SwitchCase[T] {
 	return &SwitchCase[T]{
 		Value: v,
 		Fn:    fn,

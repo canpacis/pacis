@@ -121,9 +121,6 @@ func (s *Server) SetBuildDir(name string, dir fs.FS, vite fs.FS) error {
 	}
 
 	var handler http.Handler = internal.NewFileServer(static, s.notfound)
-	for _, middleware := range s.middlewares {
-		handler = middleware.Apply(handler)
-	}
 	s.Handle("GET /{path}", middleware.NewCache(time.Hour*24*365).Apply(handler))
 
 	file, err := vite.Open(path.Join(name, ".vite/manifest.json"))
@@ -152,14 +149,11 @@ func (s *Server) RegisterDevHandlers() {
 		}
 	}
 	var handler http.Handler = proxy
-	// for _, middleware := range s.middlewares {
-	// 	handler = middleware.Apply(handler)
-	// }
 
 	s.Handle("GET /{path}", handler)
-	s.Handle("GET /src/", handler)
-	s.Handle("GET /@vite/", handler)
-	s.Handle("GET /node_modules/", handler)
+	// s.Handle("GET /src/", handler)
+	// s.Handle("GET /@vite/", handler)
+	// s.Handle("GET /node_modules/", handler)
 }
 
 func (s *Server) SetNotFoundPage(page Page, layout Layout) {
@@ -184,7 +178,7 @@ func (s *Server) SetNotFoundPage(page Page, layout Layout) {
 //	The URL or path to the requested asset as a string.
 func (s *Server) Asset(name string) string {
 	if s.options.Env == Dev {
-		return name
+		return s.options.DevServer.String() + name
 	}
 	entry, ok := s.manifest[strings.TrimPrefix(name, "/")]
 	if !ok {

@@ -42,7 +42,6 @@ func getvalue[T any](ctx context.Context, name, key string) T {
 }
 
 type Middleware interface {
-	Name() string
 	Apply(http.Handler) http.Handler
 }
 
@@ -266,17 +265,24 @@ func NewLogger(logger *slog.Logger) *Logger {
 
 // GzipHandler wraps an HTTP handler, to transparently gzip the response body if the client supports
 // it (via the Accept-Encoding header). This will compress at the default compression level.
-type Gzip struct{}
+type Gzip struct {
+	Dev bool
+}
 
 func (*Gzip) Name() string {
 	return "Gzip"
 }
 
-func (*Gzip) Apply(h http.Handler) http.Handler {
+func (g *Gzip) Apply(h http.Handler) http.Handler {
+	if g.Dev {
+		return h
+	}
 	return gziphandler.GzipHandler(h)
 }
 
-var DefaultGzip = &Gzip{}
+func DefaultGzip(dev bool) *Gzip {
+	return &Gzip{Dev: dev}
+}
 
 type Recover struct {
 	logger *slog.Logger
