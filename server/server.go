@@ -194,6 +194,11 @@ func (s *Server) Asset(name string) string {
 	return "/" + entry.File
 }
 
+// Returns the configured server environment
+func (s *Server) Env() Environment {
+	return s.options.Env
+}
+
 func (s *Server) Serve() {
 	server := &http.Server{
 		Addr:              s.options.Port,
